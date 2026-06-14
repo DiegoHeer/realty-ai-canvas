@@ -7,7 +7,7 @@ module.exports = {
     '<rootDir>/../../packages/ui/src/**/__tests__/**/*.test.ts?(x)',
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@realty/.*|nativewind|react-native-css-interop)/)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?(-.*)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@realty/.*|nativewind|react-native-css-interop)/)',
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
