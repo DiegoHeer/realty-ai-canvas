@@ -2,10 +2,11 @@
 module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/test-setup.ts'],
-  roots: ['<rootDir>/src', '<rootDir>/../../packages/ui/src'],
+  roots: ['<rootDir>/src', '<rootDir>/../../packages/ui/src', '<rootDir>/../../packages/data/src'],
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.test.ts?(x)',
     '<rootDir>/../../packages/ui/src/**/__tests__/**/*.test.ts?(x)',
+    '<rootDir>/../../packages/data/src/**/__tests__/**/*.test.ts?(x)',
   ],
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?(-.*)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@realty/.*|nativewind|react-native-css-interop)/)',
