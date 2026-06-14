@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "jest --verbose"
   },
   "dependencies": {
     "i18next": "^24.2.0",
@@ -15,8 +16,11 @@
     "react": "*"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
+    "jest": "^30.4.2",
     "react": "19.2.3",
+    "ts-jest": "^29.4.11",
     "typescript": "~6.0.3"
   }
 }
