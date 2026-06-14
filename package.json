@@ -14,6 +14,13 @@
     "web": "bun --filter @realty/mobile web",
     "export:web": "bun --filter @realty/mobile export:web",
     "lint": "bun --filter @realty/mobile lint",
+    "test": "bun --filter '*' test",
+    "test:e2e": "bunx playwright test",
+    "test:update-snapshots": "bunx playwright test --update-snapshots",
     "typecheck": "bun --filter '*' typecheck"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "serve": "^14.2.6"
   }
 }
