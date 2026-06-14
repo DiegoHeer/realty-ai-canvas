@@ -23,9 +23,5 @@
     "@playwright/test": "^1.60.0",
     "serve": "^14.2.6"
   },
-  "overrides": {
-    "jest-environment-node": "^30.4.1",
-    "@jest/create-cache-key-function": "^30.4.1",
-    "babel-jest": "^30.4.1"
-  }
+  "overrides": {}
 }
