@@ -3,13 +3,15 @@ import { initReactI18next } from 'react-i18next';
 
 import en from './locales/en.json';
 import nl from './locales/nl.json';
+import pt from './locales/pt.json';
 
 export const resources = {
   en: { translation: en },
   nl: { translation: nl },
+  pt: { translation: pt },
 } as const;
 
-export const supportedLanguages = ['en', 'nl'] as const;
+export const supportedLanguages = ['en', 'nl', 'pt'] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
 
 export const defaultLanguage: SupportedLanguage = 'en';

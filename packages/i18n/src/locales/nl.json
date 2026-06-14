@@ -11,12 +11,34 @@
   },
   "profile": {
     "title": "Profiel",
-    "subtitle": "Beheer je account en voorkeuren"
+    "subtitle": "Beheer je account en voorkeuren",
+    "guestTitle": "Je kijkt rond als gast",
+    "guestSubtitle": "Log in of maak een account om woningen en zoekopdrachten op te slaan.",
+    "logIn": "Inloggen",
+    "register": "Registreren",
+    "signOut": "Uitloggen",
+    "preferences": "Voorkeuren",
+    "language": "Taal",
+    "appearance": "Weergave",
+    "appearance_system": "Systeem",
+    "appearance_light": "Licht",
+    "appearance_dark": "Donker"
+  },
+  "search": {
+    "placeholder": "Zoek op plaats, adres of buurt",
+    "clear": "Zoekopdracht wissen",
+    "noResults": "Geen plaats gevonden.",
+    "error": "Zoeken lukt nu niet. Probeer het opnieuw.",
+    "recentTitle": "Recente zoekopdrachten",
+    "clearRecent": "Wissen",
+    "removeRecent": "Verwijderen uit recente zoekopdrachten"
   },
   "listings": {
     "title": "Aanbod",
     "count_one": "{{count}} woning",
-    "count_other": "{{count}} woningen"
+    "count_other": "{{count}} woningen",
+    "recentlyViewed": "Recent bekeken",
+    "clearRecent": "Wissen"
   },
   "listing": {
     "beds": "{{count}} slpk",
@@ -25,7 +47,13 @@
     "bedrooms": "Slaapkamers",
     "bathrooms": "Badkamers",
     "areaLabel": "Oppervlakte",
+    "rooms": "Kamers",
+    "constructionPeriod": "Bouwjaar",
+    "energyLabel": "Energielabel",
     "visitRealtor": "Bekijk bij makelaar",
+    "close": "Sluiten",
+    "like": "Aan favorieten toevoegen",
+    "unlike": "Uit favorieten verwijderen",
     "loadError": "Sorry, deze woning kon niet worden geladen.",
     "status": {
       "for_sale": "Te koop",

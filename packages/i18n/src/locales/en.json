@@ -11,12 +11,34 @@
   },
   "profile": {
     "title": "Profile",
-    "subtitle": "Manage your account and preferences"
+    "subtitle": "Manage your account and preferences",
+    "guestTitle": "You're browsing as a guest",
+    "guestSubtitle": "Log in or create an account to save homes and searches.",
+    "logIn": "Log in",
+    "register": "Register",
+    "signOut": "Sign out",
+    "preferences": "Preferences",
+    "language": "Language",
+    "appearance": "Appearance",
+    "appearance_system": "System",
+    "appearance_light": "Light",
+    "appearance_dark": "Dark"
+  },
+  "search": {
+    "placeholder": "Search city, address, or neighborhood",
+    "clear": "Clear search",
+    "noResults": "No matching place found.",
+    "error": "Couldn’t search right now. Try again.",
+    "recentTitle": "Recent searches",
+    "clearRecent": "Clear",
+    "removeRecent": "Remove from recent searches"
   },
   "listings": {
     "title": "Listings",
     "count_one": "{{count}} home",
-    "count_other": "{{count}} homes"
+    "count_other": "{{count}} homes",
+    "recentlyViewed": "Recently viewed",
+    "clearRecent": "Clear"
   },
   "listing": {
     "beds": "{{count}} bd",
@@ -25,7 +47,13 @@
     "bedrooms": "Bedrooms",
     "bathrooms": "Bathrooms",
     "areaLabel": "Area",
+    "rooms": "Rooms",
+    "constructionPeriod": "Built",
+    "energyLabel": "Energy label",
     "visitRealtor": "Visit realtor",
+    "close": "Close",
+    "like": "Save to favorites",
+    "unlike": "Remove from favorites",
     "loadError": "Sorry, we couldn’t load this listing.",
     "status": {
       "for_sale": "For sale",

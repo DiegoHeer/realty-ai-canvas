@@ -29,3 +29,11 @@ export const API_BASE = isWebDev ? '/realty-api' : API_URL;
 export const USE_MOCKS =
   process.env.EXPO_PUBLIC_USE_MOCKS === 'true' ||
   (process.env.EXPO_PUBLIC_USE_MOCKS !== 'false' && API_URL === '');
+
+/**
+ * Listings have a real backend endpoint (`/v1/residences`), so prefer it
+ * whenever an API URL is configured — even when `USE_MOCKS` is on for resources
+ * that have no endpoint yet (e.g. area polygons). Falls back to the bundled mock
+ * listings only when no API URL is set, so the app still renders out of the box.
+ */
+export const USE_LISTING_MOCKS = API_URL === '';

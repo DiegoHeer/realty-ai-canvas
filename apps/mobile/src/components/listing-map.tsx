@@ -1,7 +1,14 @@
 import type { AreaPolygon, Listing } from '@realty/types';
-import { Camera, GeoJSONSource, Layer, Map, Marker } from '@maplibre/maplibre-react-native';
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Camera,
+  type CameraRef,
+  GeoJSONSource,
+  Layer,
+  Map,
+  Marker,
+} from '@maplibre/maplibre-react-native';
+import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 import {
   areasCenter,
@@ -23,12 +30,27 @@ export interface ListingMapProps {
   onSelect?: (id: string) => void;
 }
 
+/** Imperative handle for driving the camera, e.g. flying to a search result. */
+export interface ListingMapRef {
+  flyTo: (target: { longitude: number; latitude: number; zoom?: number }) => void;
+}
+
 /**
  * Native map (iOS/Android) via MapLibre React Native (v11).
  * Requires a custom dev build — MapLibre's native module is not in Expo Go.
  * The web implementation lives in `listing-map.web.tsx`.
  */
-export function ListingMap({ listings, polygons, onSelect }: ListingMapProps) {
+export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
+  { listings, polygons, onSelect },
+  ref,
+) {
+  const cameraRef = useRef<CameraRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    flyTo: ({ longitude, latitude, zoom }) =>
+      cameraRef.current?.flyTo({ center: [longitude, latitude], zoom, duration: 1200 }),
+  }));
+
   // Prefer framing the polygons (the map's overlay focus); fall back to the
   // first listing, then a sensible default. Memoized — the bbox scan is O(verts).
   const center = useMemo<[number, number]>(() => {
@@ -40,7 +62,7 @@ export function ListingMap({ listings, polygons, onSelect }: ListingMapProps) {
 
   return (
     <Map style={StyleSheet.absoluteFill} mapStyle={MAP_STYLE}>
-      <Camera center={center} zoom={11} />
+      <Camera ref={cameraRef} center={center} zoom={11} />
       {polygons && polygons.length > 0 && (
         <GeoJSONSource id="area-polygons" data={toFeatureCollection(polygons)}>
           <Layer
@@ -61,19 +83,21 @@ export function ListingMap({ listings, polygons, onSelect }: ListingMapProps) {
         <Marker
           key={listing.id}
           id={listing.id}
-          lngLat={[listing.location.longitude, listing.location.latitude]}>
-          <Pressable onPress={() => onSelect?.(listing.id)} hitSlop={8}>
-            <View style={styles.marker}>
-              <Text style={styles.markerText} numberOfLines={1}>
-                {priceLabel(listing)}
-              </Text>
-            </View>
-          </Pressable>
+          lngLat={[listing.location.longitude, listing.location.latitude]}
+          // Use the Marker's own onPress rather than a nested Pressable: a
+          // Pressable inside a Marker (MarkerView) does not fire onPress
+          // reliably on Android. https://github.com/maplibre/maplibre-react-native/issues/1018
+          onPress={() => onSelect?.(listing.id)}>
+          <View style={styles.marker}>
+            <Text style={styles.markerText} numberOfLines={1}>
+              {priceLabel(listing)}
+            </Text>
+          </View>
         </Marker>
       ))}
     </Map>
   );
-}
+});
 
 function priceLabel(listing: Listing): string {
   const k = Math.round(listing.price / 1000);

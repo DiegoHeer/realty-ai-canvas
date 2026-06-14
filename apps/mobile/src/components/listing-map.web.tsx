@@ -1,10 +1,10 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { Listing } from '@realty/types';
-import { useMemo } from 'react';
-import { Layer, Map, Marker, Source } from 'react-map-gl/maplibre';
+import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
+import { Layer, Map, type MapRef, Marker, Source } from 'react-map-gl/maplibre';
 
-import type { ListingMapProps } from './listing-map';
+import type { ListingMapProps, ListingMapRef } from './listing-map';
 import {
   areasCenter,
   FILL_OPACITY,
@@ -19,7 +19,17 @@ const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron';
 const DEFAULT_CENTER = { longitude: 4.9041, latitude: 52.3676 }; // Amsterdam
 
 /** Web map via react-map-gl (MapLibre GL JS). Selected by Metro on web. */
-export function ListingMap({ listings, polygons, onSelect }: ListingMapProps) {
+export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
+  { listings, polygons, onSelect },
+  ref,
+) {
+  const mapRef = useRef<MapRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    flyTo: ({ longitude, latitude, zoom }) =>
+      mapRef.current?.flyTo({ center: [longitude, latitude], zoom, duration: 1200 }),
+  }));
+
   // Prefer framing the polygons (the map's overlay focus); fall back to the
   // first listing, then a sensible default. Memoized — the bbox scan is O(verts).
   const center = useMemo(() => {
@@ -31,6 +41,7 @@ export function ListingMap({ listings, polygons, onSelect }: ListingMapProps) {
 
   return (
     <Map
+      ref={mapRef}
       initialViewState={{ ...center, zoom: 11 }}
       mapStyle={MAP_STYLE}
       style={{ width: '100%', height: '100%' }}>
@@ -57,6 +68,13 @@ export function ListingMap({ listings, polygons, onSelect }: ListingMapProps) {
           latitude={listing.location.latitude}
           onClick={() => onSelect?.(listing.id)}>
           <div
+            // Touch devices don't reliably fire the Marker's click handler;
+            // handle the tap explicitly and preventDefault so the synthetic
+            // mouse click that follows doesn't select the listing twice.
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              onSelect?.(listing.id);
+            }}
             style={{
               background: '#2563eb',
               color: '#fff',
@@ -67,6 +85,7 @@ export function ListingMap({ listings, polygons, onSelect }: ListingMapProps) {
               border: '1px solid #fff',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
+              touchAction: 'manipulation',
             }}>
             {priceLabel(listing)}
           </div>
@@ -74,7 +93,7 @@ export function ListingMap({ listings, polygons, onSelect }: ListingMapProps) {
       ))}
     </Map>
   );
-}
+});
 
 function priceLabel(listing: Listing): string {
   const k = Math.round(listing.price / 1000);

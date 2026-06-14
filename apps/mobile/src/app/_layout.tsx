@@ -1,5 +1,7 @@
 import '@/global.css';
 import '@/i18n';
+// Side-effect import: applies any saved appearance override at boot.
+import '@/lib/appearance';
 
 import { DataProvider } from '@realty/data';
 import { i18n, I18nextProvider, useTranslation } from '@realty/i18n';

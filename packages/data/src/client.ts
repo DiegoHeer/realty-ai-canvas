@@ -1,6 +1,6 @@
 import type { AreaPolygon, Listing, ListingQuery } from '@realty/types';
 
-import { API_BASE, USE_MOCKS } from './env';
+import { API_BASE, USE_LISTING_MOCKS, USE_MOCKS } from './env';
 import { mockAreas, mockListings } from './mocks';
 import {
   hasCoordinates,
@@ -39,7 +39,7 @@ function matchesQuery(listing: Listing, query: ListingQuery): boolean {
 }
 
 export async function getListings(query: ListingQuery = {}): Promise<Listing[]> {
-  if (USE_MOCKS) {
+  if (USE_LISTING_MOCKS) {
     return mockListings.filter((l) => matchesQuery(l, query));
   }
   const params = new URLSearchParams();
@@ -67,7 +67,7 @@ export async function getAreas(): Promise<AreaPolygon[]> {
 }
 
 export async function getListing(id: string): Promise<Listing> {
-  if (USE_MOCKS) {
+  if (USE_LISTING_MOCKS) {
     const found = mockListings.find((l) => l.id === id);
     if (!found) throw new Error(`Listing ${id} not found`);
     return found;

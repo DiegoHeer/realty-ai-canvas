@@ -1,0 +1,65 @@
+{
+  "common": {
+    "appName": "Realty AI Canvas",
+    "docs": "Documentação",
+    "loading": "A carregar…"
+  },
+  "tabs": {
+    "map": "Mapa",
+    "listings": "Imóveis",
+    "profile": "Perfil"
+  },
+  "profile": {
+    "title": "Perfil",
+    "subtitle": "Faça a gestão da sua conta e preferências",
+    "guestTitle": "Está a navegar como convidado",
+    "guestSubtitle": "Inicie sessão ou crie uma conta para guardar imóveis e pesquisas.",
+    "logIn": "Iniciar sessão",
+    "register": "Registar",
+    "signOut": "Terminar sessão",
+    "preferences": "Preferências",
+    "language": "Idioma",
+    "appearance": "Aparência",
+    "appearance_system": "Sistema",
+    "appearance_light": "Claro",
+    "appearance_dark": "Escuro"
+  },
+  "search": {
+    "placeholder": "Pesquisar cidade, morada ou bairro",
+    "clear": "Limpar pesquisa",
+    "noResults": "Nenhum local encontrado.",
+    "error": "Não foi possível pesquisar agora. Tente novamente.",
+    "recentTitle": "Pesquisas recentes",
+    "clearRecent": "Limpar",
+    "removeRecent": "Remover das pesquisas recentes"
+  },
+  "listings": {
+    "title": "Imóveis",
+    "count_one": "{{count}} imóvel",
+    "count_other": "{{count}} imóveis",
+    "recentlyViewed": "Vistos recentemente",
+    "clearRecent": "Limpar"
+  },
+  "listing": {
+    "beds": "{{count}} qrt",
+    "baths": "{{count}} wc",
+    "area": "{{value}} m²",
+    "bedrooms": "Quartos",
+    "bathrooms": "Casas de banho",
+    "areaLabel": "Área",
+    "rooms": "Divisões",
+    "constructionPeriod": "Ano de construção",
+    "energyLabel": "Certificado energético",
+    "visitRealtor": "Ver no agente imobiliário",
+    "close": "Fechar",
+    "like": "Guardar nos favoritos",
+    "unlike": "Remover dos favoritos",
+    "loadError": "Lamentamos, não foi possível carregar este imóvel.",
+    "status": {
+      "for_sale": "À venda",
+      "for_rent": "Para arrendar",
+      "sold": "Vendido",
+      "pending": "Sob proposta"
+    }
+  }
+}

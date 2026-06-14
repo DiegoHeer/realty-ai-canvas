@@ -39,6 +39,12 @@ export interface Listing {
   bathrooms: number;
   /** Living area in square meters. */
   areaSqm: number;
+  /** Total number of rooms, when reported by the source. */
+  roomCount?: number;
+  /** Construction year/period as reported by the source, e.g. "1973". */
+  constructionPeriod?: string;
+  /** Energy label, e.g. "C". */
+  energyLabel?: string;
   address: ListingAddress;
   location: GeoPoint;
   images: ListingImage[];

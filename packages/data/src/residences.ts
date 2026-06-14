@@ -20,6 +20,15 @@ export interface ResidenceSource {
   first_seen_at: string;
   /** Present in responses though absent from the OpenAPI schema. */
   image_url?: string | null;
+  /** Living area in square meters. */
+  surface_area_m2?: number | null;
+  bedroom_count?: number | null;
+  bathroom_count?: number | null;
+  room_count?: number | null;
+  /** Construction year/period as reported by the source, e.g. "1973". */
+  construction_period?: string | null;
+  /** Energy label, e.g. "C". */
+  energy_label?: string | null;
 }
 
 /** A residence as returned by `GET /v1/residences` (the `ResidenceOut` schema). */
@@ -82,18 +91,21 @@ export function residenceToListing(
   const images = r.listings
     .filter((l) => l.image_url)
     .map((l, i) => ({ id: `${r.id}-${i}`, url: l.image_url as string, alt: line1 }));
+  // The per-residence attributes (area, beds, …) live on the source listings.
+  // A residence can carry several; prefer the first that reports a living area.
+  const detail = r.listings.find((l) => l.surface_area_m2 != null) ?? r.listings[0];
   return {
     id: String(r.id),
     title: line1,
-    // The list endpoint doesn't carry bed/bath/area; those arrive via the
-    // detail scrape, which isn't exposed publicly yet. Map markers only need
-    // location + price, so 0 is a safe placeholder here.
     price: r.current_price_eur ?? 0,
     currency: 'EUR',
     status: STATUS_TO_LISTING[r.current_status] ?? 'for_sale',
-    bedrooms: 0,
-    bathrooms: 0,
-    areaSqm: 0,
+    bedrooms: detail?.bedroom_count ?? 0,
+    bathrooms: detail?.bathroom_count ?? 0,
+    areaSqm: detail?.surface_area_m2 ?? 0,
+    roomCount: detail?.room_count ?? undefined,
+    constructionPeriod: detail?.construction_period ?? undefined,
+    energyLabel: detail?.energy_label ?? undefined,
     address: {
       line1,
       city: r.city,
