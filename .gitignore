@@ -29,6 +29,8 @@ expo-env.d.ts
 # test / coverage
 coverage/
 .nyc_output/
+test-results/
+playwright-report/
 
 # debug / logs
 *.log
