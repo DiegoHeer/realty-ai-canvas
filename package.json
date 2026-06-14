@@ -1,0 +1,19 @@
+{
+  "name": "realty-ai-canvas",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "bun@1.3.5",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "start": "bun --filter @realty/mobile start",
+    "android": "bun --filter @realty/mobile android",
+    "ios": "bun --filter @realty/mobile ios",
+    "web": "bun --filter @realty/mobile web",
+    "export:web": "bun --filter @realty/mobile export:web",
+    "lint": "bun --filter @realty/mobile lint",
+    "typecheck": "bun --filter '*' typecheck"
+  }
+}

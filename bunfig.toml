@@ -1,0 +1,5 @@
+# Expo's Metro + Babel resolve transitive plugins/presets by bare name from
+# deep in the dependency tree. bun's default isolated linker hides those, so we
+# use the hoisted (npm-style flat) linker to keep them resolvable.
+[install]
+linker = "hoisted"

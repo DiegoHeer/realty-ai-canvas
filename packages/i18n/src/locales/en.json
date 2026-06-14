@@ -1,0 +1,37 @@
+{
+  "common": {
+    "appName": "Realty AI Canvas",
+    "docs": "Docs",
+    "loading": "Loading…"
+  },
+  "tabs": {
+    "map": "Map",
+    "listings": "Listings",
+    "profile": "Profile"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your account and preferences"
+  },
+  "listings": {
+    "title": "Listings",
+    "count_one": "{{count}} home",
+    "count_other": "{{count}} homes"
+  },
+  "listing": {
+    "beds": "{{count}} bd",
+    "baths": "{{count}} ba",
+    "area": "{{value}} m²",
+    "bedrooms": "Bedrooms",
+    "bathrooms": "Bathrooms",
+    "areaLabel": "Area",
+    "visitRealtor": "Visit realtor",
+    "loadError": "Sorry, we couldn’t load this listing.",
+    "status": {
+      "for_sale": "For sale",
+      "for_rent": "For rent",
+      "sold": "Sold",
+      "pending": "Pending"
+    }
+  }
+}

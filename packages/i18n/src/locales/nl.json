@@ -1,0 +1,37 @@
+{
+  "common": {
+    "appName": "Realty AI Canvas",
+    "docs": "Documentatie",
+    "loading": "Laden…"
+  },
+  "tabs": {
+    "map": "Kaart",
+    "listings": "Aanbod",
+    "profile": "Profiel"
+  },
+  "profile": {
+    "title": "Profiel",
+    "subtitle": "Beheer je account en voorkeuren"
+  },
+  "listings": {
+    "title": "Aanbod",
+    "count_one": "{{count}} woning",
+    "count_other": "{{count}} woningen"
+  },
+  "listing": {
+    "beds": "{{count}} slpk",
+    "baths": "{{count}} badk",
+    "area": "{{value}} m²",
+    "bedrooms": "Slaapkamers",
+    "bathrooms": "Badkamers",
+    "areaLabel": "Oppervlakte",
+    "visitRealtor": "Bekijk bij makelaar",
+    "loadError": "Sorry, deze woning kon niet worden geladen.",
+    "status": {
+      "for_sale": "Te koop",
+      "for_rent": "Te huur",
+      "sold": "Verkocht",
+      "pending": "Onder bod"
+    }
+  }
+}

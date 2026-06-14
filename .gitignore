@@ -1,0 +1,58 @@
+# dependencies
+node_modules/
+.bun/
+
+# build output
+dist/
+build/
+web-build/
+out/
+*.tsbuildinfo
+
+# generated from data/denhaag_buurten_2024.geojson via `bun run build:areas`
+packages/data/src/den-haag-areas.json
+
+# expo (per-app .gitignore covers generated native folders)
+.expo/
+expo-env.d.ts
+.metro-health-check*
+
+# native secrets
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+
+# test / coverage
+coverage/
+.nyc_output/
+
+# debug / logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# env
+.env
+.env.*
+!.env.example
+
+# scratch / local data
+tmp/
+
+# caches
+.cache/
+.turbo/
+.eslintcache
+
+# os
+.DS_Store
+Thumbs.db
+
+# editor
+.idea/
+*.swp
