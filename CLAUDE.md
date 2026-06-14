@@ -41,3 +41,18 @@ e2e/tests/                         # Playwright visual regression specs
 ### Principle
 
 Tests define expected behavior. If source code produces results that diverge from what's correct, fix the source code — don't weaken the tests.
+
+## CI
+
+Three GitHub Actions workflows run on every push to `main` and every PR:
+
+| Workflow | File | What it runs | Blocking? |
+|----------|------|-------------|-----------|
+| Lint & Typecheck | `.github/workflows/lint.yml` | `bun run lint` + `bun run typecheck` | Yes |
+| Tests | `.github/workflows/test.yml` | `bun run test` (all Jest suites) | Yes |
+| Visual Regression | `.github/workflows/visual.yml` | Playwright against Expo web export | No (warn only) |
+
+- All workflows use `oven-sh/setup-bun@v2` and `bun install --frozen-lockfile`.
+- Concurrency groups cancel in-progress runs on the same PR.
+- Playwright uploads its HTML report as a build artifact on every run (14-day retention).
+- Visual regression baselines may differ between local (macOS) and CI (Ubuntu) due to font rendering. Regenerate baselines in CI if needed.
