@@ -5,6 +5,8 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { BookmarkIcon } from './icons';
+
 export interface ListingCardProps {
   listing: Listing;
   /** Tapping the card body (open the full listing). */
@@ -49,9 +51,7 @@ export function ListingCard({ listing, onPress, onClose }: ListingCardProps) {
             accessibilityLabel={t(liked ? 'listing.unlike' : 'listing.like')}
             hitSlop={8}
             className="h-11 w-11 items-center justify-center rounded-full bg-white shadow active:opacity-70">
-            <Text className="text-xl leading-none" style={{ color: liked ? '#ef4444' : '#404040' }}>
-              {liked ? '♥' : '♡'}
-            </Text>
+            <BookmarkIcon filled={liked} color={liked ? '#2563eb' : '#404040'} />
           </Pressable>
           <Pressable
             onPress={onClose}

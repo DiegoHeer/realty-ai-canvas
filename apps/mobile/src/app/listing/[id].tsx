@@ -2,12 +2,22 @@ import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { formatPrice, useListing } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import { Image } from 'expo-image';
+import { createURL } from 'expo-linking';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { openBrowserAsync } from 'expo-web-browser';
-import { useEffect } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Share,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
 
 import { recordRecentView } from '@/lib/recent-views';
+import { BookmarkIcon, ShareIcon } from '../../components/icons';
 import { LocationMap } from '../../components/location-map';
 // maptiler-basic GL style, with its key-gated MapTiler source/glyphs rewritten
 // to keyless OpenFreeMap endpoints. https://github.com/openmaptiles/maptiler-basic-gl-style
@@ -17,6 +27,8 @@ export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: listing, isLoading, isError } = useListing(id);
   const { t, i18n } = useTranslation();
+  const scheme = useColorScheme();
+  const [liked, setLiked] = useState(false);
 
   // Snapshot the listing as recently viewed once it loads. Re-runs (and so
   // refreshes the cached copy) whenever a different listing resolves.
@@ -44,6 +56,23 @@ export default function ListingDetailScreen() {
 
   const cover = listing.images[0];
 
+  // The header bookmark's notch is "cut out" by painting it in the header's
+  // background color, so it reads correctly in both light and dark mode.
+  const isDark = scheme === 'dark';
+  const headerBg = isDark ? 'rgb(18, 18, 18)' : '#ffffff';
+  const headerTint = isDark ? '#f5f5f5' : '#404040';
+
+  // Native share sheet with a deep link back to this listing. `url` is honoured
+  // by iOS; Android only reads `message`, so the link is included in both.
+  const onShare = async () => {
+    const url = createURL(`/listing/${listing.id}`);
+    try {
+      await Share.share({ title: listing.title, message: `${listing.title}\n${url}`, url });
+    } catch {
+      // Sheet dismissed or share failed — best-effort, nothing to recover.
+    }
+  };
+
   const stats = [
     listing.areaSqm
       ? { label: t('listing.areaLabel'), value: t('listing.area', { value: listing.areaSqm }) }
@@ -65,7 +94,36 @@ export default function ListingDetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: listing.address.city }} />
+      <Stack.Screen
+        options={{
+          title: listing.address.city,
+          headerRight: () => (
+            <View className="flex-row items-center gap-4 pr-3">
+              <Pressable
+                onPress={() => setLiked((v) => !v)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: liked }}
+                accessibilityLabel={t(liked ? 'listing.unlike' : 'listing.like')}
+                hitSlop={8}
+                className="h-9 w-9 items-center justify-center active:opacity-60">
+                <BookmarkIcon
+                  filled={liked}
+                  color={liked ? '#2563eb' : headerTint}
+                  cutoutColor={headerBg}
+                />
+              </Pressable>
+              <Pressable
+                onPress={onShare}
+                accessibilityRole="button"
+                accessibilityLabel={t('listing.share')}
+                hitSlop={8}
+                className="h-9 w-9 pr-4 items-center justify-center active:opacity-60">
+                <ShareIcon color={headerTint} />
+              </Pressable>
+            </View>
+          ),
+        }}
+      />
       <ScrollView className="flex-1 bg-white dark:bg-black">
         {cover ? (
           <Image source={{ uri: cover.url }} style={{ width: '100%', height: 288 }} contentFit="cover" />

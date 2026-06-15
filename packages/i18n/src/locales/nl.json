@@ -22,7 +22,16 @@
     "appearance": "Weergave",
     "appearance_system": "Systeem",
     "appearance_light": "Licht",
-    "appearance_dark": "Donker"
+    "appearance_dark": "Donker",
+    "account": "Account",
+    "notifications": "Meldingen",
+    "savedHomes": "Opgeslagen woningen",
+    "savedSearches": "Opgeslagen zoekopdrachten",
+    "paymentMethods": "Betaalmethoden",
+    "support": "Ondersteuning",
+    "privacy": "Privacy en beveiliging",
+    "help": "Help en ondersteuning",
+    "about": "Over"
   },
   "search": {
     "placeholder": "Zoek op plaats, adres of buurt",
@@ -54,6 +63,7 @@
     "close": "Sluiten",
     "like": "Aan favorieten toevoegen",
     "unlike": "Uit favorieten verwijderen",
+    "share": "Delen",
     "loadError": "Sorry, deze woning kon niet worden geladen.",
     "status": {
       "for_sale": "Te koop",

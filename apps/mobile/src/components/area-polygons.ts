@@ -54,9 +54,5 @@ export function areasCenter(polygons: AreaPolygon[]): { longitude: number; latit
 export const FILL_OPACITY = 0.4;
 export const OUTLINE_WIDTH = .5;
 
-/**
- * Insert the polygon layers *below* this basemap layer so place-name labels
- * (and all other symbol layers) draw on top of the fill. `waterway_line_label`
- * is the first symbol layer in the OpenFreeMap Positron style.
- */
-export const LABELS_BEFORE_ID = 'waterway_line_label';
+// The layer to insert the polygons below lives in `map-style.ts` as
+// `polygonsBeforeId` — it depends on the active basemap.

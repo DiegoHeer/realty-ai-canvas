@@ -1,24 +1,38 @@
 import { useAreas, useListings } from '@realty/data';
 import { router } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ListingCard } from '@/components/listing-card';
 import { ListingMap, type ListingMapRef } from '@/components/listing-map';
-import { LocationSearch } from '@/components/location-search';
+import { LocationSearch, type LocationSearchRef } from '@/components/location-search';
 import { zoomForType } from '@/lib/pdok';
+import { recordRecentView } from '@/lib/recent-views';
 
 export default function MapScreen() {
   const { data: listings = [], isLoading } = useListings();
   const { data: areas = [] } = useAreas();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ListingMapRef>(null);
+  const searchRef = useRef<LocationSearchRef>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchActive, setSearchActive] = useState(false);
 
   const selected = useMemo(
     () => listings.find((l) => l.id === selectedId) ?? null,
     [listings, selectedId],
+  );
+
+  // Selecting a marker shows its preview card, which counts as a view — record
+  // it so the pin recolors immediately (the map reads from the same store).
+  const handleSelect = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      const listing = listings.find((l) => l.id === id);
+      if (listing) recordRecentView(listing);
+    },
+    [listings],
   );
 
   return (
@@ -27,13 +41,27 @@ export default function MapScreen() {
         ref={mapRef}
         listings={listings}
         polygons={areas}
-        onSelect={(id) => setSelectedId(id)}
+        onSelect={handleSelect}
       />
+      {/* Full-screen backdrop: while the search is active, a tap anywhere
+          outside the field/dropdown collapses it and hides the keyboard.
+          Rendered above the map but below the search overlay (which keeps its
+          own taps), so only "outside" taps reach it. */}
+      {searchActive && (
+        <Pressable
+          className="absolute inset-0"
+          onPress={() => searchRef.current?.dismiss()}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
+      )}
       <View
         className="absolute inset-x-0 px-4"
         style={{ top: insets.top + 8 }}
         pointerEvents="box-none">
         <LocationSearch
+          ref={searchRef}
+          onActiveChange={setSearchActive}
           onResult={(r) =>
             mapRef.current?.flyTo({
               longitude: r.longitude,

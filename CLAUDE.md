@@ -1,6 +1,15 @@
 use `bun` or `bunx`. dont use `npx` or `npm`.
 This project implements i18n for all texts visible to user (except for data fields), see `packages/i18n/src/`.
 
+## Storage
+
+Persistent storage is AsyncStorage only, wrapped in `apps/mobile/src/lib/storage.ts`. All reads/writes are best-effort (failures resolve to a safe default, never throw). Keys live under the `realty:` namespace — add new ones to `StorageKeys`.
+
+- **Single value** (e.g. a preference): use `loadJSON`/`saveJSON`/`removeKey` directly. See `appearance.ts`, `i18n.ts`.
+- **MRU list** (recent searches/views): use `createPersistedListStore({ key, limit, idOf })` from `persisted-list-store.ts`. It hydrates from disk on load, dedupes + caps on every add, and exposes a `use()` React hook. See `recent-searches.ts`, `recent-views.ts`.
+
+Don't use SecureStore/SQLite/MMKV/filesystem. React Query (`packages/data`) is in-memory only — not persisted.
+
 ## Testing
 
 **Test runner:** Jest via `jest-expo` for all unit and component tests.

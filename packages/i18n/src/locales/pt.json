@@ -22,7 +22,16 @@
     "appearance": "Aparência",
     "appearance_system": "Sistema",
     "appearance_light": "Claro",
-    "appearance_dark": "Escuro"
+    "appearance_dark": "Escuro",
+    "account": "Conta",
+    "notifications": "Notificações",
+    "savedHomes": "Imóveis guardados",
+    "savedSearches": "Pesquisas guardadas",
+    "paymentMethods": "Métodos de pagamento",
+    "support": "Apoio",
+    "privacy": "Privacidade e segurança",
+    "help": "Ajuda e apoio",
+    "about": "Sobre"
   },
   "search": {
     "placeholder": "Pesquisar cidade, morada ou bairro",
@@ -54,6 +63,7 @@
     "close": "Fechar",
     "like": "Guardar nos favoritos",
     "unlike": "Remover dos favoritos",
+    "share": "Partilhar",
     "loadError": "Lamentamos, não foi possível carregar este imóvel.",
     "status": {
       "for_sale": "À venda",

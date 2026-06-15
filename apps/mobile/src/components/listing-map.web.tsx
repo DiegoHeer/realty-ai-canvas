@@ -8,14 +8,15 @@ import type { ListingMapProps, ListingMapRef } from './listing-map';
 import {
   areasCenter,
   FILL_OPACITY,
-  LABELS_BEFORE_ID,
   OUTLINE_WIDTH,
   toFeatureCollection,
 } from './area-polygons';
+import { useMapStyle } from './map-style';
+import { useRecentViews } from '../lib/recent-views';
 
-// OpenMapTiles Positron GL style, hosted keyless by OpenFreeMap.
-// https://github.com/openmaptiles/positron-gl-style
-const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron';
+const MARKER_COLOR = '#2563eb'; // blue-600
+const MARKER_COLOR_VIEWED = '#60a5fa'; // blue-400 — lighter, for recently viewed
+
 const DEFAULT_CENTER = { longitude: 4.9041, latitude: 52.3676 }; // Amsterdam
 
 /** Web map via react-map-gl (MapLibre GL JS). Selected by Metro on web. */
@@ -24,6 +25,12 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   ref,
 ) {
   const mapRef = useRef<MapRef>(null);
+  const { mapStyle, polygonsBeforeId } = useMapStyle();
+  const { recentViews } = useRecentViews();
+  const viewedIds = useMemo(
+    () => new Set(recentViews.map((listing) => listing.id)),
+    [recentViews],
+  );
 
   useImperativeHandle(ref, () => ({
     flyTo: ({ longitude, latitude, zoom }) =>
@@ -43,20 +50,20 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
     <Map
       ref={mapRef}
       initialViewState={{ ...center, zoom: 11 }}
-      mapStyle={MAP_STYLE}
+      mapStyle={mapStyle}
       style={{ width: '100%', height: '100%' }}>
       {polygons && polygons.length > 0 && (
         <Source id="area-polygons" type="geojson" data={toFeatureCollection(polygons)}>
           <Layer
             id="area-polygons-fill"
             type="fill"
-            beforeId={LABELS_BEFORE_ID}
+            beforeId={polygonsBeforeId}
             paint={{ 'fill-color': ['get', 'color'], 'fill-opacity': FILL_OPACITY }}
           />
           <Layer
             id="area-polygons-outline"
             type="line"
-            beforeId={LABELS_BEFORE_ID}
+            beforeId={polygonsBeforeId}
             paint={{ 'line-color': ['get', 'color'], 'line-width': OUTLINE_WIDTH }}
           />
         </Source>
@@ -76,7 +83,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
               onSelect?.(listing.id);
             }}
             style={{
-              background: '#2563eb',
+              background: viewedIds.has(listing.id) ? MARKER_COLOR_VIEWED : MARKER_COLOR,
               color: '#fff',
               fontSize: 12,
               fontWeight: 700,

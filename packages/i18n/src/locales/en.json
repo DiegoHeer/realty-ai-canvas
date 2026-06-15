@@ -22,7 +22,16 @@
     "appearance": "Appearance",
     "appearance_system": "System",
     "appearance_light": "Light",
-    "appearance_dark": "Dark"
+    "appearance_dark": "Dark",
+    "account": "Account",
+    "notifications": "Notifications",
+    "savedHomes": "Saved homes",
+    "savedSearches": "Saved searches",
+    "paymentMethods": "Payment methods",
+    "support": "Support",
+    "privacy": "Privacy & security",
+    "help": "Help & support",
+    "about": "About"
   },
   "search": {
     "placeholder": "Search city, address, or neighborhood",
@@ -54,6 +63,7 @@
     "close": "Close",
     "like": "Save to favorites",
     "unlike": "Remove from favorites",
+    "share": "Share",
     "loadError": "Sorry, we couldn’t load this listing.",
     "status": {
       "for_sale": "For sale",

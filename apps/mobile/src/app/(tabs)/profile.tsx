@@ -47,6 +47,10 @@ export default function ProfileScreen() {
 
         <PreferencesCard />
 
+        <AccountCard />
+
+        <SupportCard />
+
         {isAuthenticated && (
           <Pressable
             onPress={signOut}
@@ -117,6 +121,66 @@ function PreferencesCard() {
 }
 
 /**
+ * Account section — a card of navigational rows. These are placeholders for now:
+ * each row is a tappable target without a destination wired up yet.
+ */
+function AccountCard() {
+  const { t } = useTranslation();
+
+  return (
+    <View className="gap-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
+      <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        {t('profile.account')}
+      </Text>
+
+      <MenuRow emoji="🔔" label={t('profile.notifications')} />
+      <MenuRow emoji="❤️" label={t('profile.savedHomes')} />
+      <MenuRow emoji="🔍" label={t('profile.savedSearches')} />
+      <MenuRow emoji="💳" label={t('profile.paymentMethods')} />
+    </View>
+  );
+}
+
+/**
+ * Support section — a card of navigational rows. Placeholders, like {@link AccountCard}.
+ */
+function SupportCard() {
+  const { t } = useTranslation();
+
+  return (
+    <View className="gap-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
+      <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        {t('profile.support')}
+      </Text>
+
+      <MenuRow emoji="🔒" label={t('profile.privacy')} />
+      <MenuRow emoji="❓" label={t('profile.help')} />
+      <MenuRow emoji="ℹ️" label={t('profile.about')} />
+    </View>
+  );
+}
+
+/**
+ * A tappable settings row: leading emoji icon, label, and a trailing chevron.
+ * `onPress` is optional — without it the row is a visual placeholder that still
+ * gives press feedback, matching the dummy entries on the profile screen.
+ */
+function MenuRow({ emoji, label, onPress }: { emoji: string; label: string; onPress?: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      className="flex-row items-center justify-between py-3 active:opacity-60">
+      <View className="flex-row items-center gap-3">
+        <Text className="text-2xl">{emoji}</Text>
+        <Text className="text-lg text-neutral-900 dark:text-white">{label}</Text>
+      </View>
+      <Text className="text-xl text-neutral-400">›</Text>
+    </Pressable>
+  );
+}
+
+/**
  * A single tappable row inside a picker sheet. Built from `@expo/ui`'s native
  * `Row` + `Text` (not `ListItem`) so we control the vertical padding for a
  * roomier touch target. `NativeText` themes itself from the active color scheme
@@ -170,11 +234,11 @@ function LanguageField() {
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
-        className="flex-row items-center justify-between active:opacity-60">
-        <Text className="text-base text-neutral-900 dark:text-white">{t('profile.language')}</Text>
+        className="flex-row items-center justify-between py-3 active:opacity-60">
+        <Text className="text-lg text-neutral-900 dark:text-white">{t('profile.language')}</Text>
         <View className="flex-row items-center gap-1.5">
-          <Text className="text-base text-neutral-500">{LANGUAGE_LABELS[activeLanguage]}</Text>
-          <Text className="text-base text-neutral-400">›</Text>
+          <Text className="text-lg text-neutral-500">{LANGUAGE_LABELS[activeLanguage]}</Text>
+          <Text className="text-xl text-neutral-400">›</Text>
         </View>
       </Pressable>
 
@@ -221,13 +285,13 @@ function AppearanceField() {
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
-        className="flex-row items-center justify-between active:opacity-60">
-        <Text className="text-base text-neutral-900 dark:text-white">
+        className="flex-row items-center justify-between py-3 active:opacity-60">
+        <Text className="text-lg text-neutral-900 dark:text-white">
           {t('profile.appearance')}
         </Text>
         <View className="flex-row items-center gap-1.5">
-          <Text className="text-base text-neutral-500">{label(appearance)}</Text>
-          <Text className="text-base text-neutral-400">›</Text>
+          <Text className="text-lg text-neutral-500">{label(appearance)}</Text>
+          <Text className="text-xl text-neutral-400">›</Text>
         </View>
       </Pressable>
 

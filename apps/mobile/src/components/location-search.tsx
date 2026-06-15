@@ -1,5 +1,5 @@
 import { useTranslation } from '@realty/i18n';
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -20,6 +20,17 @@ const MIN_QUERY_LENGTH = 2;
 export interface LocationSearchProps {
   /** Fired with the resolved place when the user submits or picks a suggestion. */
   onResult: (result: GeocodeResult) => void;
+  /**
+   * Fired when the field gains/loses focus or a dropdown opens/closes. The
+   * parent uses this to render a full-screen, tap-catching backdrop while the
+   * search is active (see `dismiss`).
+   */
+  onActiveChange?: (active: boolean) => void;
+}
+
+export interface LocationSearchRef {
+  /** Close any dropdown, blur the field, and hide the keyboard. */
+  dismiss: () => void;
 }
 
 /**
@@ -29,7 +40,8 @@ export interface LocationSearchProps {
  * it to the parent, which flies the camera there. Built on React Native
  * primitives so the single file serves web and native.
  */
-export function LocationSearch({ onResult }: LocationSearchProps) {
+export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>(
+  function LocationSearch({ onResult, onActiveChange }, ref) {
   const { t } = useTranslation();
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } =
     useRecentSearches();
@@ -43,6 +55,7 @@ export function LocationSearch({ onResult }: LocationSearchProps) {
   // managed — we deliberately don't hide on blur so a recent stays tappable.
   const [focused, setFocused] = useState(false);
 
+  const inputRef = useRef<TextInput>(null);
   // Abort an in-flight resolve (submit / suggestion pick) if a newer one starts.
   const inFlight = useRef<AbortController | null>(null);
   // Separate controller + timer for the debounced suggest stream.
@@ -58,6 +71,26 @@ export function LocationSearch({ onResult }: LocationSearchProps) {
       if (debounce.current) clearTimeout(debounce.current);
     };
   }, []);
+
+  // The field/dropdown is "active" whenever it's focused or showing a panel.
+  // The parent overlays a tap-catching backdrop while active so a tap anywhere
+  // outside collapses the search (see `dismiss`).
+  useEffect(() => {
+    onActiveChange?.(focused || open);
+  }, [focused, open, onActiveChange]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      dismiss() {
+        Keyboard.dismiss();
+        inputRef.current?.blur();
+        setOpen(false);
+        setFocused(false);
+      },
+    }),
+    [],
+  );
 
   function fetchSuggestions(text: string) {
     suggestCtrl.current?.abort();
@@ -175,7 +208,8 @@ export function LocationSearch({ onResult }: LocationSearchProps) {
     <View>
       <View className="flex-row items-center rounded-2xl bg-white px-4 py-1 shadow-md shadow-black/20 dark:bg-neutral-800">
         <TextInput
-          className="flex-1 py-2 text-base text-neutral-900 dark:text-white"
+          ref={inputRef}
+          className="flex-1 text-lg py-2 text-base text-neutral-900 dark:text-white"
           value={query}
           onChangeText={handleChange}
           onSubmitEditing={handleSubmit}
@@ -224,7 +258,7 @@ export function LocationSearch({ onResult }: LocationSearchProps) {
               <Pressable
                 onPress={() => handlePickRecent(item)}
                 accessibilityRole="button"
-                className="flex-1 flex-row items-center gap-2 px-4 py-3 active:bg-neutral-100 dark:active:bg-neutral-700">
+                className="flex-1  text-lg  flex-row items-center gap-2 px-4 py-3 active:bg-neutral-100 dark:active:bg-neutral-700">
                 <Text className="text-base text-neutral-400">↩</Text>
                 <Text className="flex-1 text-base text-neutral-900 dark:text-white" numberOfLines={1}>
                   {item.label}
@@ -235,7 +269,7 @@ export function LocationSearch({ onResult }: LocationSearchProps) {
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={t('search.removeRecent')}
-                className="px-4 py-3 active:opacity-60">
+                className="px-4 text-lg py-3 active:opacity-60">
                 <Text className="text-base text-neutral-400">✕</Text>
               </Pressable>
             </View>
@@ -268,4 +302,4 @@ export function LocationSearch({ onResult }: LocationSearchProps) {
       )}
     </View>
   );
-}
+});

@@ -58,3 +58,4 @@ Thumbs.db
 # editor
 .idea/
 *.swp
+.playwright-mcp
