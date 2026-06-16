@@ -23,5 +23,10 @@
     "@playwright/test": "^1.60.0",
     "serve": "^14.2.6"
   },
-  "overrides": {}
+  "overrides": {},
+  "dependencies": {
+    "expo": "~56.0.0-preview.8",
+    "react": "19.2.3",
+    "react-native": "0.85.3"
+  }
 }

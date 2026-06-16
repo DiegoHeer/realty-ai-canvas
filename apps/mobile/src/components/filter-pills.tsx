@@ -30,7 +30,7 @@ export function FilterPills() {
           key={key}
           accessibilityRole="button"
           className="rounded-full bg-white px-4 py-2 shadow-md shadow-black/20 active:bg-neutral-100 dark:bg-neutral-800 dark:active:bg-neutral-700">
-          <Text className="text-gt font-medium text-neutral-900 dark:text-white">
+          <Text className="text-lg font-medium text-neutral-900 dark:text-white">
             {t(`filters.${key}`)}
           </Text>
         </Pressable>

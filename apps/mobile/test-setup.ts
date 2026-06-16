@@ -93,12 +93,18 @@ jest.mock('@/components/animated-icon', () => ({
   AnimatedSplashOverlay: () => null,
 }));
 
-// --- expo-symbols mock (avoid loading the Material icon font in tests) ---
-jest.mock('expo-symbols', () => {
+// --- react-native-svg mock (render plain views for SVG icon primitives) ---
+jest.mock('react-native-svg', () => {
   const React = require('react');
   const { View } = require('react-native');
+  const stub = (name: string) => (props: any) =>
+    React.createElement(View, { testID: name, ...props }, props.children);
   return {
-    SymbolView: (props: any) => React.createElement(View, { testID: 'symbol-view', ...props }),
+    __esModule: true,
+    default: stub('svg'),
+    Svg: stub('svg'),
+    Circle: stub('circle'),
+    Path: stub('path'),
   };
 });
 

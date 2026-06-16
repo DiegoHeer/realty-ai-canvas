@@ -1,5 +1,4 @@
 import { useTranslation } from '@realty/i18n';
-import { SymbolView } from 'expo-symbols';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,9 +10,64 @@ import {
   type NativeSyntheticEvent,
   type TextInputSubmitEditingEventData,
 } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { geocode, lookup, suggest, type GeocodeResult, type GeocodeSuggestion } from '@/lib/pdok';
 import { useRecentSearches } from '@/lib/recent-searches';
+
+const ICON_COLOR = '#9ca3af';
+
+// Feather-style stroked icons, drawn as SVG so they render identically across
+// web/iOS/Android without depending on an icon font.
+function SearchIcon({ size = 22 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle
+        cx={11}
+        cy={11}
+        r={8}
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+      />
+      <Path
+        d="M21 21l-4.35-4.35"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+function BackIcon({ size = 22 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M19 12H5M12 19l-7-7 7-7"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+// Clock face + hands — marks a recent search as a past/history entry.
+function ClockIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={9} stroke={ICON_COLOR} strokeWidth={2} />
+      <Path
+        d="M12 7v5l3 2"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
 
 const SUGGEST_DEBOUNCE_MS = 200;
 const MIN_QUERY_LENGTH = 2;
@@ -215,15 +269,11 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
           accessibilityRole="button"
           accessibilityLabel={focused ? t('search.back') : t('search.focus')}
           className="mr-2">
-          {focused ? (
-            <SymbolView name={{ ios: 'chevron.left', web: 'arrow_back' }} size={22} tintColor="#9ca3af" />
-          ) : (
-            <SymbolView name={{ ios: 'magnifyingglass', web: 'search' }} size={22} tintColor="#9ca3af" />
-          )}
+          {focused ? <BackIcon /> : <SearchIcon />}
         </Pressable>
         <TextInput
           ref={inputRef}
-          className="flex-1 text-lg py-2 text-base text-neutral-900 dark:text-white"
+          className="flex-1 text-xl py-2 text-base text-neutral-900 dark:text-white"
           value={query}
           onChangeText={handleChange}
           onSubmitEditing={handleSubmit}
@@ -273,7 +323,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
                 onPress={() => handlePickRecent(item)}
                 accessibilityRole="button"
                 className="flex-1  text-lg  flex-row items-center gap-2 px-4 py-3 active:bg-neutral-100 dark:active:bg-neutral-700">
-                <Text className="text-base text-neutral-400">↩</Text>
+                <ClockIcon />
                 <Text className="flex-1 text-base text-neutral-900 dark:text-white" numberOfLines={1}>
                   {item.label}
                 </Text>
