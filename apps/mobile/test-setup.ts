@@ -93,5 +93,14 @@ jest.mock('@/components/animated-icon', () => ({
   AnimatedSplashOverlay: () => null,
 }));
 
+// --- expo-symbols mock (avoid loading the Material icon font in tests) ---
+jest.mock('expo-symbols', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    SymbolView: (props: any) => React.createElement(View, { testID: 'symbol-view', ...props }),
+  };
+});
+
 // Export mocks for use in tests
 export { mockPush, mockReplace, mockBack, mockOpenBrowserAsync };

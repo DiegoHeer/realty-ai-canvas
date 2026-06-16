@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FilterPills } from '@/components/filter-pills';
 import { ListingCard } from '@/components/listing-card';
 import { ListingMap, type ListingMapRef } from '@/components/listing-map';
 import { LocationSearch, type LocationSearchRef } from '@/components/location-search';
@@ -70,6 +71,9 @@ export default function MapScreen() {
             })
           }
         />
+        <View className="mt-2">
+          <FilterPills />
+        </View>
       </View>
       {selected && (
         <View

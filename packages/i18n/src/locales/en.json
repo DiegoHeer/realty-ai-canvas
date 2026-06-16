@@ -34,13 +34,24 @@
     "about": "About"
   },
   "search": {
-    "placeholder": "Search city, address, or neighborhood",
+    "placeholder": "Search",
+    "focus": "Search",
+    "back": "Close search",
     "clear": "Clear search",
     "noResults": "No matching place found.",
     "error": "Couldn’t search right now. Try again.",
     "recentTitle": "Recent searches",
     "clearRecent": "Clear",
     "removeRecent": "Remove from recent searches"
+  },
+  "filters": {
+    "favorites": "Favorites",
+    "shops": "Shops",
+    "hotspots": "Hotspots",
+    "noise": "Noise",
+    "airQuality": "Airquality",
+    "restaurants": "Restaurants",
+    "parks": "Parks"
   },
   "listings": {
     "title": "Listings",

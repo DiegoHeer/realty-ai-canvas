@@ -25,12 +25,10 @@ const MARKER_COLOR_VIEWED = '#60a5fa'; // blue-400 — lighter, for recently vie
 
 const DEFAULT_CENTER: [number, number] = [4.9041, 52.3676]; // [lng, lat] Amsterdam
 
-// The search bar overlays the map's top-right corner (where the compass lives).
-// It sits at `insets.top + 8` (see the map screen) and is ~48px tall; nudge the
-// compass down past it with an extra gap so the two never overlap when rotated.
-const SEARCH_BAR_TOP = 8; // matches the search overlay's `top: insets.top + 8`
-const SEARCH_BAR_HEIGHT = 48;
-const COMPASS_GAP = 8;
+// The search bar overlays the top of the map, so park the compass in the
+// bottom-left corner instead — clear of both the search field and the listing
+// preview card (which spans the bottom but is inset from the left edge).
+const COMPASS_MARGIN = 16;
 
 export interface ListingMapProps {
   listings: Listing[];
@@ -80,9 +78,9 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
     <Map
       style={StyleSheet.absoluteFill}
       mapStyle={mapStyle}
-      compassViewMargins={{
-        x: 16,
-        y: insets.top + SEARCH_BAR_TOP + SEARCH_BAR_HEIGHT + COMPASS_GAP,
+      compassPosition={{
+        bottom: insets.bottom + COMPASS_MARGIN,
+        left: COMPASS_MARGIN,
       }}>
       <Camera ref={cameraRef} center={center} zoom={11} />
       {polygons && polygons.length > 0 && (

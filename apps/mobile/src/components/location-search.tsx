@@ -1,4 +1,5 @@
 import { useTranslation } from '@realty/i18n';
+import { SymbolView } from 'expo-symbols';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -79,18 +80,16 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     onActiveChange?.(focused || open);
   }, [focused, open, onActiveChange]);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      dismiss() {
-        Keyboard.dismiss();
-        inputRef.current?.blur();
-        setOpen(false);
-        setFocused(false);
-      },
-    }),
-    [],
-  );
+  // Close any dropdown, blur the field, and hide the keyboard. Shared by the
+  // imperative handle (backdrop tap) and the left-side back-arrow button.
+  function dismiss() {
+    Keyboard.dismiss();
+    inputRef.current?.blur();
+    setOpen(false);
+    setFocused(false);
+  }
+
+  useImperativeHandle(ref, () => ({ dismiss }), []);
 
   function fetchSuggestions(text: string) {
     suggestCtrl.current?.abort();
@@ -207,6 +206,21 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
   return (
     <View>
       <View className="flex-row items-center rounded-2xl bg-white px-4 py-1 shadow-md shadow-black/20 dark:bg-neutral-800">
+        {/* Left affordance: a search glyph that focuses the field, swapping to a
+            back arrow while focused that collapses the search (mirrors the
+            backdrop-tap dismiss). */}
+        <Pressable
+          onPress={() => (focused ? dismiss() : inputRef.current?.focus())}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={focused ? t('search.back') : t('search.focus')}
+          className="mr-2">
+          {focused ? (
+            <SymbolView name={{ ios: 'chevron.left', web: 'arrow_back' }} size={22} tintColor="#9ca3af" />
+          ) : (
+            <SymbolView name={{ ios: 'magnifyingglass', web: 'search' }} size={22} tintColor="#9ca3af" />
+          )}
+        </Pressable>
         <TextInput
           ref={inputRef}
           className="flex-1 text-lg py-2 text-base text-neutral-900 dark:text-white"

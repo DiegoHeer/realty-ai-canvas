@@ -34,13 +34,24 @@
     "about": "Sobre"
   },
   "search": {
-    "placeholder": "Pesquisar cidade, morada ou bairro",
+    "placeholder": "Pesquisar",
+    "focus": "Pesquisar",
+    "back": "Fechar pesquisa",
     "clear": "Limpar pesquisa",
     "noResults": "Nenhum local encontrado.",
     "error": "Não foi possível pesquisar agora. Tente novamente.",
     "recentTitle": "Pesquisas recentes",
     "clearRecent": "Limpar",
     "removeRecent": "Remover das pesquisas recentes"
+  },
+  "filters": {
+    "favorites": "Favoritos",
+    "shops": "Lojas",
+    "hotspots": "Hotspots",
+    "noise": "Ruído",
+    "airQuality": "Qualidade do ar",
+    "restaurants": "Restaurantes",
+    "parks": "Parques"
   },
   "listings": {
     "title": "Imóveis",

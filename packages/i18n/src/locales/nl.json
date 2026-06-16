@@ -34,13 +34,24 @@
     "about": "Over"
   },
   "search": {
-    "placeholder": "Zoek op plaats, adres of buurt",
+    "placeholder": "Zoeken",
+    "focus": "Zoeken",
+    "back": "Zoeken sluiten",
     "clear": "Zoekopdracht wissen",
     "noResults": "Geen plaats gevonden.",
     "error": "Zoeken lukt nu niet. Probeer het opnieuw.",
     "recentTitle": "Recente zoekopdrachten",
     "clearRecent": "Wissen",
     "removeRecent": "Verwijderen uit recente zoekopdrachten"
+  },
+  "filters": {
+    "favorites": "Favorieten",
+    "shops": "Winkels",
+    "hotspots": "Hotspots",
+    "noise": "Geluid",
+    "airQuality": "Luchtkwaliteit",
+    "restaurants": "Restaurants",
+    "parks": "Parken"
   },
   "listings": {
     "title": "Aanbod",
