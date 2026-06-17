@@ -8,13 +8,18 @@ import {
   Marker,
 } from '@maplibre/maplibre-react-native';
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
+  AREA_FOCUS_ANCHOR_Y,
   areasCenter,
-  FILL_OPACITY,
-  OUTLINE_WIDTH,
+  fillOpacityFor,
+  outlineWidthFor,
+  SELECTED_DASH_ARRAY,
+  SELECTED_DASH_COLOR,
+  SELECTED_DASH_WIDTH,
+  selectedFilter,
   toFeatureCollection,
 } from './area-polygons';
 import { useMapStyle } from './map-style';
@@ -35,11 +40,20 @@ export interface ListingMapProps {
   /** Colored area overlays drawn beneath the markers, each at 50% fill opacity. */
   polygons?: AreaPolygon[];
   onSelect?: (id: string) => void;
+  /** Fired with the polygon's id when one of the area overlays is tapped. */
+  onSelectPolygon?: (id: string) => void;
+  /** Id of the area overlay to highlight (denser fill + bolder outline). */
+  selectedPolygonId?: string | null;
 }
 
 /** Imperative handle for driving the camera, e.g. flying to a search result. */
 export interface ListingMapRef {
   flyTo: (target: { longitude: number; latitude: number; zoom?: number }) => void;
+  /**
+   * Pan (no zoom change) so the coordinate sits two-fifths down / centered
+   * horizontally — leaving room for the area sheet below it.
+   */
+  focusArea: (target: { longitude: number; latitude: number }) => void;
 }
 
 /**
@@ -48,11 +62,12 @@ export interface ListingMapRef {
  * The web implementation lives in `listing-map.web.tsx`.
  */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect },
+  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId },
   ref,
 ) {
   const cameraRef = useRef<CameraRef>(null);
   const insets = useSafeAreaInsets();
+  const { height: screenH } = useWindowDimensions();
   const { mapStyle, polygonsBeforeId } = useMapStyle();
   const { recentViews } = useRecentViews();
   const viewedIds = useMemo(
@@ -62,7 +77,20 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
 
   useImperativeHandle(ref, () => ({
     flyTo: ({ longitude, latitude, zoom }) =>
-      cameraRef.current?.flyTo({ center: [longitude, latitude], zoom, duration: 1200 }),
+      // Reset any focus padding so search results recenter normally.
+      cameraRef.current?.flyTo({
+        center: [longitude, latitude],
+        zoom,
+        padding: { top: 0, right: 0, bottom: 0, left: 0 },
+        duration: 1200,
+      }),
+    focusArea: ({ longitude, latitude }) =>
+      // Bottom padding pushes the centered coordinate up to AREA_FOCUS_ANCHOR_Y.
+      cameraRef.current?.easeTo({
+        center: [longitude, latitude],
+        padding: { top: 0, right: 0, bottom: Math.round(screenH * (1 - 2 * AREA_FOCUS_ANCHOR_Y)), left: 0 },
+        duration: 600,
+      }),
   }));
 
   // Prefer framing the polygons (the map's overlay focus); fall back to the
@@ -84,19 +112,38 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
       }}>
       <Camera ref={cameraRef} center={center} zoom={11} />
       {polygons && polygons.length > 0 && (
-        <GeoJSONSource id="area-polygons" data={toFeatureCollection(polygons)}>
+        <GeoJSONSource
+          id="area-polygons"
+          data={toFeatureCollection(polygons)}
+          onPress={(e) => {
+            const id = e.nativeEvent.features[0]?.properties?.id;
+            if (typeof id === 'string') onSelectPolygon?.(id);
+          }}>
           <Layer
             id="area-polygons-fill"
             type="fill"
             beforeId={polygonsBeforeId}
-            paint={{ 'fill-color': ['get', 'color'], 'fill-opacity': FILL_OPACITY }}
+            paint={{ 'fill-color': ['get', 'color'], 'fill-opacity': fillOpacityFor(selectedPolygonId) }}
           />
           <Layer
             id="area-polygons-outline"
             type="line"
             beforeId={polygonsBeforeId}
-            paint={{ 'line-color': ['get', 'color'], 'line-width': OUTLINE_WIDTH }}
+            paint={{ 'line-color': ['get', 'color'], 'line-width': outlineWidthFor(selectedPolygonId) }}
           />
+          {selectedPolygonId && (
+            <Layer
+              id="area-polygons-selected"
+              type="line"
+              beforeId={polygonsBeforeId}
+              filter={selectedFilter(selectedPolygonId)}
+              paint={{
+                'line-color': SELECTED_DASH_COLOR,
+                'line-width': SELECTED_DASH_WIDTH,
+                'line-dasharray': SELECTED_DASH_ARRAY,
+              }}
+            />
+          )}
         </GeoJSONSource>
       )}
       {listings.map((listing) => (

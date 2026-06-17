@@ -4,6 +4,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { areasCenter } from '@/components/area-polygons';
+import { AreaSheet } from '@/components/area-sheet';
 import { FilterPills } from '@/components/filter-pills';
 import { ListingCard } from '@/components/listing-card';
 import { ListingMap, type ListingMapRef } from '@/components/listing-map';
@@ -18,6 +20,7 @@ export default function MapScreen() {
   const mapRef = useRef<ListingMapRef>(null);
   const searchRef = useRef<LocationSearchRef>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
   const [searchActive, setSearchActive] = useState(false);
 
   const selected = useMemo(
@@ -25,15 +28,35 @@ export default function MapScreen() {
     [listings, selectedId],
   );
 
+  const selectedArea = useMemo(
+    () => areas.find((a) => a.id === selectedAreaId) ?? null,
+    [areas, selectedAreaId],
+  );
+
   // Selecting a marker shows its preview card, which counts as a view — record
   // it so the pin recolors immediately (the map reads from the same store).
   const handleSelect = useCallback(
     (id: string) => {
       setSelectedId(id);
+      setSelectedAreaId(null);
       const listing = listings.find((l) => l.id === id);
       if (listing) recordRecentView(listing);
     },
     [listings],
+  );
+
+  // Selecting an area and a listing are mutually exclusive — the area sheet and
+  // the listing card both anchor to the bottom, so showing one dismisses the other.
+  const handleSelectPolygon = useCallback(
+    (id: string) => {
+      setSelectedAreaId(id);
+      setSelectedId(null);
+      // Pan (no zoom) so the area sits two-fifths down, clear of the sheet below.
+      const area = areas.find((a) => a.id === id);
+      const center = area ? areasCenter([area]) : null;
+      if (center) mapRef.current?.focusArea(center);
+    },
+    [areas],
   );
 
   return (
@@ -43,6 +66,8 @@ export default function MapScreen() {
         listings={listings}
         polygons={areas}
         onSelect={handleSelect}
+        onSelectPolygon={handleSelectPolygon}
+        selectedPolygonId={selectedAreaId}
       />
       {/* Full-screen backdrop: while the search is active, a tap anywhere
           outside the field/dropdown collapses it and hides the keyboard.
@@ -92,6 +117,9 @@ export default function MapScreen() {
           <ActivityIndicator />
         </View>
       )}
+      {/* Draggable, animated card for a selected area. Rendered in its own Modal
+          so it overlays the native tab bar; dragging it off screen deselects. */}
+      <AreaSheet area={selectedArea} onClose={() => setSelectedAreaId(null)} />
     </View>
   );
 }

@@ -82,5 +82,8 @@
       "sold": "Verkocht",
       "pending": "Onder bod"
     }
+  },
+  "area": {
+    "unnamed": "Gebied"
   }
 }

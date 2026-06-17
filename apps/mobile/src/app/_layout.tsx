@@ -6,6 +6,7 @@ import { i18n, I18nextProvider, useTranslation } from '@realty/i18n';
 import { StatusBar } from 'expo-status-bar';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Importing the hook also runs the module side-effect that applies any saved
 // appearance override at boot.
@@ -23,20 +24,24 @@ export default function RootLayout() {
   const statusBarStyle = effectiveScheme === 'dark' ? 'light' : 'dark';
 
   return (
-    <I18nextProvider i18n={i18n}>
-      <DataProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <StatusBar style={statusBarStyle} />
-          <AnimatedSplashOverlay />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="listing/[id]"
-              options={{ headerShown: true, title: t('tabs.listings') }}
-            />
-          </Stack>
-        </ThemeProvider>
-      </DataProvider>
-    </I18nextProvider>
+    // Roots the gesture system for react-native-gesture-handler (the area sheet's
+    // drag gestures live in the (tabs) tree, not in a Modal, so they need this).
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <I18nextProvider i18n={i18n}>
+        <DataProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <StatusBar style={statusBarStyle} />
+            <AnimatedSplashOverlay />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="listing/[id]"
+                options={{ headerShown: true, title: t('tabs.listings') }}
+              />
+            </Stack>
+          </ThemeProvider>
+        </DataProvider>
+      </I18nextProvider>
+    </GestureHandlerRootView>
   );
 }

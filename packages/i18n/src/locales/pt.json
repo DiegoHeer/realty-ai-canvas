@@ -82,5 +82,8 @@
       "sold": "Vendido",
       "pending": "Sob proposta"
     }
+  },
+  "area": {
+    "unnamed": "Área"
   }
 }

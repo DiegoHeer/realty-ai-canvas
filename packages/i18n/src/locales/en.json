@@ -82,5 +82,8 @@
       "sold": "Sold",
       "pending": "Pending"
     }
+  },
+  "area": {
+    "unnamed": "Area"
   }
 }

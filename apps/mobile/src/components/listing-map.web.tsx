@@ -2,13 +2,19 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { Listing } from '@realty/types';
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { Layer, Map, type MapRef, Marker, Source } from 'react-map-gl/maplibre';
 
 import type { ListingMapProps, ListingMapRef } from './listing-map';
 import {
+  AREA_FOCUS_ANCHOR_Y,
   areasCenter,
-  FILL_OPACITY,
-  OUTLINE_WIDTH,
+  fillOpacityFor,
+  outlineWidthFor,
+  SELECTED_DASH_ARRAY,
+  SELECTED_DASH_COLOR,
+  SELECTED_DASH_WIDTH,
+  selectedFilter,
   toFeatureCollection,
 } from './area-polygons';
 import { useMapStyle } from './map-style';
@@ -21,10 +27,11 @@ const DEFAULT_CENTER = { longitude: 4.9041, latitude: 52.3676 }; // Amsterdam
 
 /** Web map via react-map-gl (MapLibre GL JS). Selected by Metro on web. */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect },
+  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId },
   ref,
 ) {
   const mapRef = useRef<MapRef>(null);
+  const { height: screenH } = useWindowDimensions();
   const { mapStyle, polygonsBeforeId } = useMapStyle();
   const { recentViews } = useRecentViews();
   const viewedIds = useMemo(
@@ -35,6 +42,13 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   useImperativeHandle(ref, () => ({
     flyTo: ({ longitude, latitude, zoom }) =>
       mapRef.current?.flyTo({ center: [longitude, latitude], zoom, duration: 1200 }),
+    focusArea: ({ longitude, latitude }) =>
+      // Negative y offset lifts the centered coordinate up to AREA_FOCUS_ANCHOR_Y.
+      mapRef.current?.easeTo({
+        center: [longitude, latitude],
+        offset: [0, Math.round(screenH * (AREA_FOCUS_ANCHOR_Y - 0.5))],
+        duration: 600,
+      }),
   }));
 
   // Prefer framing the polygons (the map's overlay focus); fall back to the
@@ -51,21 +65,39 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
       ref={mapRef}
       initialViewState={{ ...center, zoom: 11 }}
       mapStyle={mapStyle}
-      style={{ width: '100%', height: '100%' }}>
+      style={{ width: '100%', height: '100%' }}
+      interactiveLayerIds={['area-polygons-fill']}
+      onClick={(e) => {
+        const id = e.features?.[0]?.properties?.id;
+        if (typeof id === 'string') onSelectPolygon?.(id);
+      }}>
       {polygons && polygons.length > 0 && (
         <Source id="area-polygons" type="geojson" data={toFeatureCollection(polygons)}>
           <Layer
             id="area-polygons-fill"
             type="fill"
             beforeId={polygonsBeforeId}
-            paint={{ 'fill-color': ['get', 'color'], 'fill-opacity': FILL_OPACITY }}
+            paint={{ 'fill-color': ['get', 'color'], 'fill-opacity': fillOpacityFor(selectedPolygonId) }}
           />
           <Layer
             id="area-polygons-outline"
             type="line"
             beforeId={polygonsBeforeId}
-            paint={{ 'line-color': ['get', 'color'], 'line-width': OUTLINE_WIDTH }}
+            paint={{ 'line-color': ['get', 'color'], 'line-width': outlineWidthFor(selectedPolygonId) }}
           />
+          {selectedPolygonId && (
+            <Layer
+              id="area-polygons-selected"
+              type="line"
+              beforeId={polygonsBeforeId}
+              filter={selectedFilter(selectedPolygonId)}
+              paint={{
+                'line-color': SELECTED_DASH_COLOR,
+                'line-width': SELECTED_DASH_WIDTH,
+                'line-dasharray': SELECTED_DASH_ARRAY,
+              }}
+            />
+          )}
         </Source>
       )}
       {listings.map((listing: Listing) => (

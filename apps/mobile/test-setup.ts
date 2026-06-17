@@ -69,6 +69,38 @@ jest.mock('react-native-reanimated', () => {
   return Reanimated;
 });
 
+// --- react-native-gesture-handler mock ---
+// Gesture builders (`Gesture.Pan()` …) run during render, so they must be
+// chainable; the view wrappers render as plain Views passing children through.
+jest.mock('react-native-gesture-handler', () => {
+  const React = require('react');
+  const { View, ScrollView } = require('react-native');
+  const makeGesture = () => {
+    const gesture: Record<string, () => unknown> = {};
+    const chain = () => gesture;
+    for (const method of [
+      'onStart',
+      'onUpdate',
+      'onEnd',
+      'onBegin',
+      'onFinalize',
+      'enabled',
+      'simultaneousWithExternalGesture',
+      'requireExternalGestureToFail',
+    ]) {
+      gesture[method] = chain;
+    }
+    return gesture;
+  };
+  return {
+    GestureHandlerRootView: ({ children, ...props }: any) =>
+      React.createElement(View, props, children),
+    GestureDetector: ({ children }: any) => children,
+    Gesture: { Pan: makeGesture, Native: makeGesture, Tap: makeGesture },
+    ScrollView,
+  };
+});
+
 // --- MapLibre mock ---
 jest.mock('@maplibre/maplibre-react-native', () => {
   const React = require('react');

@@ -1,3 +1,7 @@
+import type {
+  DataDrivenPropertyValueSpecification,
+  FilterSpecification,
+} from '@maplibre/maplibre-gl-style-spec';
 import type { AreaPolygon } from '@realty/types';
 import type { Feature, FeatureCollection, MultiPolygon, Polygon } from 'geojson';
 
@@ -53,6 +57,46 @@ export function areasCenter(polygons: AreaPolygon[]): { longitude: number; latit
 /** Shared paint constants so web and native render identically. */
 export const FILL_OPACITY = 0.4;
 export const OUTLINE_WIDTH = .5;
+/** The selected polygon gets a denser fill and thicker outline to stand out. */
+export const FILL_OPACITY_SELECTED = 0.7;
+export const OUTLINE_WIDTH_SELECTED = 3;
+
+/**
+ * Paint value for the fill opacity: the polygon whose `id` matches `selectedId`
+ * is drawn denser, the rest keep the base opacity. Returns a plain number when
+ * nothing is selected so the layer skips the per-feature branch.
+ */
+export function fillOpacityFor(
+  selectedId: string | null | undefined,
+): DataDrivenPropertyValueSpecification<number> {
+  if (!selectedId) return FILL_OPACITY;
+  return ['case', ['==', ['get', 'id'], selectedId], FILL_OPACITY_SELECTED, FILL_OPACITY];
+}
+
+/** Paint value for the outline width: the selected polygon gets a bolder line. */
+export function outlineWidthFor(
+  selectedId: string | null | undefined,
+): DataDrivenPropertyValueSpecification<number> {
+  if (!selectedId) return OUTLINE_WIDTH;
+  return ['case', ['==', ['get', 'id'], selectedId], OUTLINE_WIDTH_SELECTED, OUTLINE_WIDTH];
+}
+
+/** White dashed line drawn on top of the selected polygon for extra emphasis. */
+export const SELECTED_DASH_COLOR = '#ffffff';
+export const SELECTED_DASH_WIDTH = 2;
+export const SELECTED_DASH_ARRAY = [2, 2];
+
+/** Layer filter that matches only the polygon with the given id. */
+export function selectedFilter(selectedId: string): FilterSpecification {
+  return ['==', ['get', 'id'], selectedId];
+}
+
+/**
+ * Where a selected area's center should sit on screen, as a fraction from the
+ * top (0.4 = two-fifths down). Horizontally it stays centered. Shared by both
+ * map implementations so the framing matches.
+ */
+export const AREA_FOCUS_ANCHOR_Y = 0.4;
 
 // The layer to insert the polygons below lives in `map-style.ts` as
 // `polygonsBeforeId` — it depends on the active basemap.
