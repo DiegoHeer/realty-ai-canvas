@@ -3,7 +3,7 @@
    worklets) is the intended API, but the React Compiler rule flags it because
    the same value is also written in an effect. */
 import { useTranslation } from '@realty/i18n';
-import type { AreaPolygon } from '@realty/types';
+import type { AreaPolygon, NeighborhoodStats } from '@realty/types';
 import { useEffect } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -18,32 +18,18 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AreaStats } from '@/components/area-stats';
+
 const SPRING = { damping: 24, stiffness: 220, mass: 0.7 } as const;
 const CLOSE_DURATION = 220;
-
-// Placeholder body — the sheet is meant to grow into a rich area detail view.
-const LOREM =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod ' +
-  'tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, ' +
-  'quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo ' +
-  'consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse ' +
-  'cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat ' +
-  'non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n' +
-  'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium ' +
-  'doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore ' +
-  'veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ' +
-  'ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.\n\n' +
-  'Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, ' +
-  'adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et ' +
-  'dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis ' +
-  'nostrum exercitationem ullam corporis suscipit laboriosam.\n\n' +
-  'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis ' +
-  'praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias ' +
-  'excepturi sint occaecati cupiditate non provident, similique sunt in culpa.';
 
 export interface AreaSheetProps {
   /** The area to show. When null the sheet is hidden. */
   area: AreaPolygon | null;
+  /** Stats for `area` (matched by code). Null when none are available. */
+  stats?: NeighborhoodStats | null;
+  /** Municipality the area belongs to, prefixed to its name (e.g. "Den Haag · Singels"). */
+  municipality?: string;
   /** Called once the sheet has fully dismissed (dragged off the bottom). */
   onClose: () => void;
 }
@@ -62,7 +48,7 @@ export interface AreaSheetProps {
  *
  * Requires a `GestureHandlerRootView` ancestor (provided at the app root).
  */
-export function AreaSheet({ area, onClose }: AreaSheetProps) {
+export function AreaSheet({ area, stats, municipality, onClose }: AreaSheetProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
@@ -147,6 +133,10 @@ export function AreaSheet({ area, onClose }: AreaSheetProps) {
 
   if (!area) return null;
 
+  // Prefix the neighborhood name with its municipality, e.g. "Den Haag · Singels".
+  const areaName = area.name ?? t('area.unnamed');
+  const title = municipality ? `${municipality} · ${areaName}` : areaName;
+
   return (
     // box-none: this full-screen layer never captures touches itself, so the map
     // behind it stays interactive — only the card below does. The high zIndex
@@ -155,7 +145,7 @@ export function AreaSheet({ area, onClose }: AreaSheetProps) {
       <GestureDetector gesture={pan}>
         <Animated.View style={[styles.sheet, { height: screenH }, sheetStyle]}>
           <View
-            className="flex-1 overflow-hidden rounded-t-3xl bg-white dark:bg-neutral-900"
+            className="flex-1 overflow-hidden rounded-t-3xl bg-neutral-50 dark:bg-neutral-900"
             style={styles.shadow}>
             {/* Drag notch — the affordance for pulling the sheet up/down. */}
             <View className="items-center pb-2 pt-3">
@@ -174,11 +164,9 @@ export function AreaSheet({ area, onClose }: AreaSheetProps) {
                 <Text
                   className="text-2xl font-bold text-neutral-900 dark:text-white"
                   numberOfLines={1}>
-                  {area.name ?? t('area.unnamed')}
+                  {title}
                 </Text>
-                <Text className="text-base leading-6 text-neutral-600 dark:text-neutral-300">
-                  {LOREM} {LOREM}
-                </Text>
+                <AreaStats stats={stats} />
               </Animated.ScrollView>
             </GestureDetector>
           </View>

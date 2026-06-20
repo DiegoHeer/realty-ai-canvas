@@ -22,9 +22,6 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Generate area data stub
-        run: echo '[]' > packages/data/src/den-haag-areas.json
-
       - name: Lint
         run: bun run lint
 

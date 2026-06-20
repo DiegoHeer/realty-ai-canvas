@@ -67,17 +67,23 @@ export interface AreaPolygon {
   geometry: Polygon | MultiPolygon;
 }
 
+/**
+ * CBS statistics for a single neighborhood. Matched to an {@link AreaPolygon}
+ * by `code` === the polygon's `id`.
+ */
+export interface NeighborhoodStats {
+  /** CBS neighborhood code; matches an AreaPolygon's `id`. */
+  code: string;
+  /** Year the figures describe, e.g. 2023. */
+  statsYear: number;
+  /** Raw CBS metrics keyed by field name. Values are counts, percentages, etc. */
+  stats: Record<string, number>;
+}
+
 /** Filters accepted by the listings query. All fields optional. */
 export interface ListingQuery {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
   status?: ListingStatus;
-}
-
-export interface Paginated<T> {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
 }

@@ -29,18 +29,31 @@ export interface MapStyleConfig {
   mapStyle: string | StyleSpecification;
   /** `beforeId` for the polygon layers, matching the active basemap. */
   polygonsBeforeId: string;
+  /** The resolved theme, so callers can pick theme-aware overlay colors. */
+  scheme: 'light' | 'dark';
 }
 
 /**
- * The basemap matching the app's effective theme, driven by the persisted
- * appearance preference (see {@link useAppearance}). `'system'` falls back to
- * the OS color scheme. Dark theme → brightened dark-matter, light → positron.
+ * The app's effective theme, driven by the persisted appearance preference (see
+ * {@link useAppearance}). `'system'` falls back to the OS color scheme. Shared
+ * by the basemap ({@link useMapStyle}) and the choropleth overlay so both stay
+ * in lock-step from a single source of truth.
  */
-export function useMapStyle(): MapStyleConfig {
+export function useEffectiveColorScheme(): 'light' | 'dark' {
   const colorScheme = useColorScheme();
   const { appearance } = useAppearance();
-  const effectiveScheme = appearance === 'system' ? colorScheme : appearance;
-  return effectiveScheme === 'dark'
-    ? { mapStyle: MAP_STYLE_DARK, polygonsBeforeId: POLYGONS_BEFORE_DARK }
-    : { mapStyle: MAP_STYLE_LIGHT, polygonsBeforeId: POLYGONS_BEFORE_LIGHT };
+  const effective = appearance === 'system' ? colorScheme : appearance;
+  return effective === 'dark' ? 'dark' : 'light';
+}
+
+/**
+ * The basemap matching the app's effective theme. Dark theme → brightened
+ * dark-matter, light → positron. Also returns the resolved `scheme` so the
+ * overlay layers can match it without re-deriving the theme.
+ */
+export function useMapStyle(): MapStyleConfig {
+  const scheme = useEffectiveColorScheme();
+  return scheme === 'dark'
+    ? { mapStyle: MAP_STYLE_DARK, polygonsBeforeId: POLYGONS_BEFORE_DARK, scheme }
+    : { mapStyle: MAP_STYLE_LIGHT, polygonsBeforeId: POLYGONS_BEFORE_LIGHT, scheme };
 }

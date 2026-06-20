@@ -18,12 +18,10 @@ import {
   toFeatureCollection,
 } from './area-polygons';
 import { useMapStyle } from './map-style';
+import { DEFAULT_CENTER, priceLabel } from './map-shared';
+import { outlineColorFor } from '../lib/area-choropleth';
 import { useRecentViews } from '../lib/recent-views';
-
-const MARKER_COLOR = '#2563eb'; // blue-600
-const MARKER_COLOR_VIEWED = '#60a5fa'; // blue-400 — lighter, for recently viewed
-
-const DEFAULT_CENTER = { longitude: 4.9041, latitude: 52.3676 }; // Amsterdam
+import { Brand } from '../constants/theme';
 
 /** Web map via react-map-gl (MapLibre GL JS). Selected by Metro on web. */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
@@ -32,7 +30,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
 ) {
   const mapRef = useRef<MapRef>(null);
   const { height: screenH } = useWindowDimensions();
-  const { mapStyle, polygonsBeforeId } = useMapStyle();
+  const { mapStyle, polygonsBeforeId, scheme } = useMapStyle();
   const { recentViews } = useRecentViews();
   const viewedIds = useMemo(
     () => new Set(recentViews.map((listing) => listing.id)),
@@ -83,7 +81,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
             id="area-polygons-outline"
             type="line"
             beforeId={polygonsBeforeId}
-            paint={{ 'line-color': ['get', 'color'], 'line-width': outlineWidthFor(selectedPolygonId) }}
+            paint={{ 'line-color': outlineColorFor(scheme), 'line-width': outlineWidthFor(selectedPolygonId) }}
           />
           {selectedPolygonId && (
             <Layer
@@ -115,7 +113,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
               onSelect?.(listing.id);
             }}
             style={{
-              background: viewedIds.has(listing.id) ? MARKER_COLOR_VIEWED : MARKER_COLOR,
+              background: viewedIds.has(listing.id) ? Brand.blueLight : Brand.blue,
               color: '#fff',
               fontSize: 12,
               fontWeight: 700,
@@ -133,8 +131,3 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
     </Map>
   );
 });
-
-function priceLabel(listing: Listing): string {
-  const k = Math.round(listing.price / 1000);
-  return k >= 1 ? `${listing.currency === 'EUR' ? '€' : ''}${k}k` : `${listing.price}`;
-}

@@ -1,12 +1,4 @@
-import type { AreaPolygon, Listing } from '@realty/types';
-
-import denHaagAreas from './den-haag-areas.json';
-
-/**
- * Den Haag neighborhood ("buurten") boundaries, generated from the CBS 2024
- * dataset by `scripts/build-den-haag-areas.mjs`. Each is colored by district.
- */
-export const mockAreas = denHaagAreas as unknown as AreaPolygon[];
+import type { Listing } from '@realty/types';
 
 /**
  * Bundled sample listings (around Amsterdam) used until the real API is wired

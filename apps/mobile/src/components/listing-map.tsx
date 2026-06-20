@@ -23,12 +23,10 @@ import {
   toFeatureCollection,
 } from './area-polygons';
 import { useMapStyle } from './map-style';
+import { DEFAULT_CENTER, priceLabel } from './map-shared';
+import { outlineColorFor } from '../lib/area-choropleth';
 import { useRecentViews } from '../lib/recent-views';
-
-const MARKER_COLOR = '#2563eb'; // blue-600
-const MARKER_COLOR_VIEWED = '#60a5fa'; // blue-400 — lighter, for recently viewed
-
-const DEFAULT_CENTER: [number, number] = [4.9041, 52.3676]; // [lng, lat] Amsterdam
+import { Brand } from '../constants/theme';
 
 // The search bar overlays the top of the map, so park the compass in the
 // bottom-left corner instead — clear of both the search field and the listing
@@ -68,7 +66,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   const cameraRef = useRef<CameraRef>(null);
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
-  const { mapStyle, polygonsBeforeId } = useMapStyle();
+  const { mapStyle, polygonsBeforeId, scheme } = useMapStyle();
   const { recentViews } = useRecentViews();
   const viewedIds = useMemo(
     () => new Set(recentViews.map((listing) => listing.id)),
@@ -99,7 +97,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
     const area = polygons && polygons.length > 0 ? areasCenter(polygons) : null;
     if (area) return [area.longitude, area.latitude];
     const first = listings[0]?.location;
-    return first ? [first.longitude, first.latitude] : DEFAULT_CENTER;
+    return first ? [first.longitude, first.latitude] : [DEFAULT_CENTER.longitude, DEFAULT_CENTER.latitude];
   }, [polygons, listings]);
 
   return (
@@ -129,7 +127,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
             id="area-polygons-outline"
             type="line"
             beforeId={polygonsBeforeId}
-            paint={{ 'line-color': ['get', 'color'], 'line-width': outlineWidthFor(selectedPolygonId) }}
+            paint={{ 'line-color': outlineColorFor(scheme), 'line-width': outlineWidthFor(selectedPolygonId) }}
           />
           {selectedPolygonId && (
             <Layer
@@ -170,14 +168,9 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   );
 });
 
-function priceLabel(listing: Listing): string {
-  const k = Math.round(listing.price / 1000);
-  return k >= 1 ? `${listing.currency === 'EUR' ? '€' : ''}${k}k` : `${listing.price}`;
-}
-
 const styles = StyleSheet.create({
   marker: {
-    backgroundColor: MARKER_COLOR,
+    backgroundColor: Brand.blue,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
@@ -185,7 +178,7 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
   },
   markerViewed: {
-    backgroundColor: MARKER_COLOR_VIEWED,
+    backgroundColor: Brand.blueLight,
   },
   markerText: {
     color: '#ffffff',

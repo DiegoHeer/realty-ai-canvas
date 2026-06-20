@@ -13,6 +13,10 @@ export const StorageKeys = {
   appearance: `${PREFIX}appearance`,
   recentSearches: `${PREFIX}recent-searches`,
   recentViews: `${PREFIX}recent-views`,
+  /** Cached neighborhood boundaries; suffixed with `:<cityCode>` per city. */
+  areas: `${PREFIX}areas`,
+  /** Cached neighborhood statistics; suffixed with `:<cityCode>` per city. */
+  stats: `${PREFIX}stats`,
 } as const;
 
 export async function loadJSON<T>(key: string): Promise<T | null> {

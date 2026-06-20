@@ -3,6 +3,7 @@ import i18n from 'i18next';
 import { defaultLanguage, initI18n, isSupportedLanguage, supportedLanguages } from '../index';
 import en from '../locales/en.json';
 import nl from '../locales/nl.json';
+import pt from '../locales/pt.json';
 
 afterEach(() => {
   if (i18n.isInitialized) {
@@ -66,8 +67,8 @@ describe('initI18n', () => {
 });
 
 describe('constants', () => {
-  it('has en and nl as supported languages', () => {
-    expect(supportedLanguages).toEqual(['en', 'nl']);
+  it('has en, nl and pt as supported languages', () => {
+    expect(supportedLanguages).toEqual(['en', 'nl', 'pt']);
   });
 
   it('defaults to English', () => {
@@ -100,6 +101,20 @@ describe('locale completeness', () => {
     const enKeys = flatKeys(en);
     const nlKeys = flatKeys(nl);
     const missingInEn = nlKeys.filter((k) => !enKeys.includes(k));
+    expect(missingInEn).toEqual([]);
+  });
+
+  it('pt.json has every key that en.json has', () => {
+    const enKeys = flatKeys(en);
+    const ptKeys = flatKeys(pt);
+    const missingInPt = enKeys.filter((k) => !ptKeys.includes(k));
+    expect(missingInPt).toEqual([]);
+  });
+
+  it('en.json has every key that pt.json has', () => {
+    const enKeys = flatKeys(en);
+    const ptKeys = flatKeys(pt);
+    const missingInEn = ptKeys.filter((k) => !enKeys.includes(k));
     expect(missingInEn).toEqual([]);
   });
 });

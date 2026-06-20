@@ -9,9 +9,6 @@ web-build/
 out/
 *.tsbuildinfo
 
-# generated from data/denhaag_buurten_2024.geojson via `bun run build:areas`
-packages/data/src/den-haag-areas.json
-
 # expo (per-app .gitignore covers generated native folders)
 .expo/
 expo-env.d.ts

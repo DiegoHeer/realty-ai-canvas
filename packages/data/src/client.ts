@@ -1,7 +1,7 @@
-import type { AreaPolygon, Listing, ListingQuery } from '@realty/types';
+import type { AreaPolygon, Listing, ListingQuery, NeighborhoodStats } from '@realty/types';
 
-import { API_BASE, USE_LISTING_MOCKS, USE_MOCKS } from './env';
-import { mockAreas, mockListings } from './mocks';
+import { API_BASE, API_URL, USE_LISTING_MOCKS } from './env';
+import { mockListings } from './mocks';
 import {
   hasCoordinates,
   LISTING_TO_RESIDENCE_STATUS,
@@ -57,13 +57,101 @@ export async function getListings(query: ListingQuery = {}): Promise<Listing[]> 
   return query.search ? listings.filter((l) => matchesQuery(l, { search: query.search })) : listings;
 }
 
-export async function getAreas(): Promise<AreaPolygon[]> {
-  if (USE_MOCKS) {
-    return mockAreas;
-  }
-  // The Realty Alerts API exposes no area-boundary endpoint yet; render the map
-  // without overlays rather than failing the request.
-  return [];
+// --- Neighborhood area polygons ----------------------------------------------
+
+/** CBS municipality code for Den Haag ('s-Gravenhage) — the default city. */
+export const DEN_HAAG_CITY_CODE = '0518';
+
+/** Display name for {@link DEN_HAAG_CITY_CODE}, shown alongside neighborhoods. */
+export const DEN_HAAG_CITY_NAME = 'Den Haag';
+
+/** Raw neighborhood shape as returned by `/v1/shapes/neighborhoods`. */
+interface NeighborhoodShape {
+  code: string;
+  name: string;
+  city_code: string;
+  district_code: string;
+  /**
+   * Bare GeoJSON coordinates (no `type`): a Polygon's `Position[][]` or a
+   * MultiPolygon's `Position[][][]`, the latter nested one level deeper.
+   */
+  geometry: number[][][] | number[][][][];
+}
+
+// Distinct, readable hues. Districts cycle through these in order of appearance
+// so neighborhoods group by color. (Previously baked into the bundled dataset.)
+const AREA_PALETTE = [
+  '#2563eb', '#16a34a', '#db2777', '#ea580c', '#7c3aed', '#0891b2',
+  '#ca8a04', '#dc2626', '#4d7c0f', '#9333ea', '#0d9488', '#be123c',
+];
+
+/** Wrap the API's bare coordinates in a typed GeoJSON geometry. */
+function toAreaGeometry(coords: NeighborhoodShape['geometry']): AreaPolygon['geometry'] {
+  // MultiPolygon coordinates nest one level deeper than Polygon coordinates.
+  const isMultiPolygon = Array.isArray((coords as number[][][][])[0]?.[0]?.[0]);
+  return isMultiPolygon
+    ? { type: 'MultiPolygon', coordinates: coords as number[][][][] }
+    : { type: 'Polygon', coordinates: coords as number[][][] };
+}
+
+/** Map the API's neighborhood shapes to the compact `AreaPolygon` overlay shape. */
+function shapesToAreas(shapes: NeighborhoodShape[]): AreaPolygon[] {
+  const districtColor = new Map<string, string>();
+  const colorFor = (district: string): string => {
+    let color = districtColor.get(district);
+    if (!color) {
+      color = AREA_PALETTE[districtColor.size % AREA_PALETTE.length]!;
+      districtColor.set(district, color);
+    }
+    return color;
+  };
+
+  return shapes.map((shape) => ({
+    id: shape.code,
+    name: shape.name,
+    color: colorFor(shape.district_code),
+    geometry: toAreaGeometry(shape.geometry),
+  }));
+}
+
+/**
+ * Neighborhood ("buurten") boundaries for a city (CBS municipality code, e.g.
+ * `0518` for Den Haag), fetched from the Realty Alerts shapes API and
+ * transformed into `AreaPolygon[]`. Returns an empty array when no backend is
+ * configured (mock/offline builds) so the map renders without overlays rather
+ * than failing. Boundaries never change, so the app caches the result per city
+ * (see `loadAreas`).
+ */
+export async function getAreas(city: string = DEN_HAAG_CITY_CODE): Promise<AreaPolygon[]> {
+  if (!API_URL) return [];
+  const shapes = await request<NeighborhoodShape[]>(
+    `/v1/shapes/neighborhoods?city=${encodeURIComponent(city)}`,
+  );
+  return shapesToAreas(shapes);
+}
+
+/** Raw stats entry from `/v1/stats/neighborhoods` (its `geometry` is dropped). */
+interface NeighborhoodStatsShape {
+  code: string;
+  stats_year: number;
+  stats: Record<string, number>;
+}
+
+/**
+ * CBS statistics per neighborhood for a city, matched to areas by `code`.
+ * Returns an empty array when no backend is configured. Like the boundaries,
+ * the figures are static, so the app caches them per city (see `loadStats`).
+ */
+export async function getStats(city: string = DEN_HAAG_CITY_CODE): Promise<NeighborhoodStats[]> {
+  if (!API_URL) return [];
+  const entries = await request<NeighborhoodStatsShape[]>(
+    `/v1/stats/neighborhoods?city=${encodeURIComponent(city)}`,
+  );
+  return entries.map((entry) => ({
+    code: entry.code,
+    statsYear: entry.stats_year,
+    stats: entry.stats ?? {},
+  }));
 }
 
 export async function getListing(id: string): Promise<Listing> {

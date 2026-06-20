@@ -1,5 +1,5 @@
 import { getAreas, getListing, getListings } from '../client';
-import { mockAreas, mockListings } from '../mocks';
+import { mockListings } from '../mocks';
 
 // ---- Mock-mode tests ----
 // By default USE_MOCKS is true when EXPO_PUBLIC_API_URL is empty.
@@ -65,9 +65,9 @@ describe('client (mock mode)', () => {
   });
 
   describe('getAreas', () => {
-    it('returns mock areas', async () => {
+    it('returns an empty array when no backend is configured', async () => {
       const areas = await getAreas();
-      expect(areas).toBe(mockAreas);
+      expect(areas).toEqual([]);
     });
   });
 });
@@ -125,6 +125,7 @@ describe('client (API mode)', () => {
   // Re-import client with mocked env for each test
   let getListingsApi: typeof getListings;
   let getAreasApi: typeof getAreas;
+  let getStatsApi: typeof import('../client').getStats;
 
   beforeEach(() => {
     jest.resetModules();
@@ -139,6 +140,7 @@ describe('client (API mode)', () => {
     const client = require('../client');
     getListingsApi = client.getListings;
     getAreasApi = client.getAreas;
+    getStatsApi = client.getStats;
   });
 
   afterEach(() => {
@@ -189,9 +191,62 @@ describe('client (API mode)', () => {
     expect(noMatch).toHaveLength(0);
   });
 
-  it('getAreas returns empty array in API mode', async () => {
+  it('getAreas fetches neighborhood shapes and transforms them', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        {
+          code: 'BU05180546',
+          name: 'Archipelbuurt',
+          city_code: '0518',
+          district_code: 'WK051805',
+          geometry: [[[[4.3, 52.0], [4.31, 52.0], [4.31, 52.01], [4.3, 52.0]]]],
+        },
+        {
+          code: 'BU05180478',
+          name: 'Arendsdorp',
+          city_code: '0518',
+          district_code: 'WK051804',
+          geometry: [[[[4.32, 52.09], [4.33, 52.09], [4.33, 52.1], [4.32, 52.09]]]],
+        },
+      ],
+    });
+
     const areas = await getAreasApi();
-    expect(areas).toEqual([]);
+
+    const url = (global.fetch as jest.Mock).mock.calls[0]![0] as string;
+    expect(url).toContain('/v1/shapes/neighborhoods?city=0518');
+    expect(areas).toHaveLength(2);
+    expect(areas[0]).toMatchObject({
+      id: 'BU05180546',
+      name: 'Archipelbuurt',
+      geometry: { type: 'MultiPolygon' },
+    });
+    // Each distinct district gets a distinct color.
+    expect(areas[0]!.color).not.toBe(areas[1]!.color);
+  });
+
+  it('getStats fetches neighborhood stats and maps stats_year → statsYear', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        {
+          code: 'BU05180546',
+          name: 'Archipelbuurt',
+          stats_year: 2023,
+          stats: { AantalInwoners_5: 6285, Koopwoningen_41: 54 },
+          geometry: [[[[4.3, 52.0]]]],
+        },
+      ],
+    });
+
+    const stats = await getStatsApi();
+
+    const url = (global.fetch as jest.Mock).mock.calls[0]![0] as string;
+    expect(url).toContain('/v1/stats/neighborhoods?city=0518');
+    expect(stats).toEqual([
+      { code: 'BU05180546', statsYear: 2023, stats: { AantalInwoners_5: 6285, Koopwoningen_41: 54 } },
+    ]);
   });
 
   it('request throws on non-ok response', async () => {

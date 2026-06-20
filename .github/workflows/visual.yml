@@ -23,9 +23,6 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Generate area data stub
-        run: echo '[]' > packages/data/src/den-haag-areas.json
-
       - name: Build web export
         run: EXPO_PUBLIC_USE_MOCKS=true bun run export:web
 

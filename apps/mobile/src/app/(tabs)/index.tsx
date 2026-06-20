@@ -1,4 +1,10 @@
-import { useAreas, useListings } from '@realty/data';
+import {
+  DEN_HAAG_CITY_CODE,
+  DEN_HAAG_CITY_NAME,
+  useAreas,
+  useListings,
+  useStats,
+} from '@realty/data';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
@@ -10,12 +16,16 @@ import { FilterPills } from '@/components/filter-pills';
 import { ListingCard } from '@/components/listing-card';
 import { ListingMap, type ListingMapRef } from '@/components/listing-map';
 import { LocationSearch, type LocationSearchRef } from '@/components/location-search';
+import { useEffectiveColorScheme } from '@/components/map-style';
+import { loadAreas, loadStats } from '@/lib/area-cache';
+import { colorAreasByStat } from '@/lib/area-choropleth';
 import { zoomForType } from '@/lib/pdok';
 import { recordRecentView } from '@/lib/recent-views';
 
 export default function MapScreen() {
   const { data: listings = [], isLoading } = useListings();
-  const { data: areas = [] } = useAreas();
+  const { data: areas = [] } = useAreas(DEN_HAAG_CITY_CODE, loadAreas);
+  const { data: stats = [] } = useStats(DEN_HAAG_CITY_CODE, loadStats);
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ListingMapRef>(null);
   const searchRef = useRef<LocationSearchRef>(null);
@@ -31,6 +41,19 @@ export default function MapScreen() {
   const selectedArea = useMemo(
     () => areas.find((a) => a.id === selectedAreaId) ?? null,
     [areas, selectedAreaId],
+  );
+
+  // Stats are a separate dataset matched to areas by code (=== the area's id).
+  const statsByCode = useMemo(() => new Map(stats.map((s) => [s.code, s])), [stats]);
+  const selectedAreaStats = selectedArea ? statsByCode.get(selectedArea.id) ?? null : null;
+
+  // Shade each neighborhood by its inhabitant count relative to the rest of the
+  // municipality: light→dark blue (more = darker) on the light basemap, inverted
+  // to brighter = more on the dark one. Recomputed when areas, stats or theme change.
+  const scheme = useEffectiveColorScheme();
+  const coloredAreas = useMemo(
+    () => colorAreasByStat(areas, statsByCode, { scheme }),
+    [areas, statsByCode, scheme],
   );
 
   // Selecting a marker shows its preview card, which counts as a view — record
@@ -64,7 +87,7 @@ export default function MapScreen() {
       <ListingMap
         ref={mapRef}
         listings={listings}
-        polygons={areas}
+        polygons={coloredAreas}
         onSelect={handleSelect}
         onSelectPolygon={handleSelectPolygon}
         selectedPolygonId={selectedAreaId}
@@ -119,7 +142,12 @@ export default function MapScreen() {
       )}
       {/* Draggable, animated card for a selected area. Rendered in its own Modal
           so it overlays the native tab bar; dragging it off screen deselects. */}
-      <AreaSheet area={selectedArea} onClose={() => setSelectedAreaId(null)} />
+      <AreaSheet
+        area={selectedArea}
+        stats={selectedAreaStats}
+        municipality={DEN_HAAG_CITY_NAME}
+        onClose={() => setSelectedAreaId(null)}
+      />
     </View>
   );
 }

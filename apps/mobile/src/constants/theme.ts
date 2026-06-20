@@ -26,6 +26,15 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+/**
+ * Brand accent, used for map markers/pins, the bookmark "liked" state and other
+ * highlights. `blue` is Tailwind blue-600; `blueLight` is blue-400.
+ */
+export const Brand = {
+  blue: '#2563eb',
+  blueLight: '#60a5fa',
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
@@ -61,5 +70,4 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;

@@ -51,6 +51,13 @@ jest.mock('expo-splash-screen', () => ({
   hideAsync: jest.fn(),
 }));
 
+// --- AsyncStorage mock ---
+// The native module is null under Jest, so use the library's in-memory mock.
+// Screens reach it through `lib/storage` (appearance, recent views, area cache).
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 // --- react-native-safe-area-context mock ---
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');

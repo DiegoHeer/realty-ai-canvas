@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { BookmarkIcon } from './icons';
+import { Brand } from '../constants/theme';
 
 export interface ListingCardProps {
   listing: Listing;
@@ -33,59 +34,65 @@ export function ListingCard({ listing, onPress, onClose }: ListingCardProps) {
   ].filter((f): f is string => f != null);
 
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      className="overflow-hidden rounded-2xl bg-white shadow-lg active:opacity-95 dark:bg-neutral-900">
-      <View>
-        {cover ? (
-          <Image source={{ uri: cover.url }} style={{ width: '100%', height: 180 }} contentFit="cover" />
-        ) : (
-          <View className="h-[180px] w-full bg-neutral-200 dark:bg-neutral-800" />
-        )}
-        <View className="absolute inset-x-0 top-0 flex-row justify-end gap-3 p-5">
-          <Pressable
-            onPress={() => setLiked((v) => !v)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: liked }}
-            accessibilityLabel={t(liked ? 'listing.unlike' : 'listing.like')}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-full bg-white shadow active:opacity-70">
-            <BookmarkIcon filled={liked} color={liked ? '#2563eb' : '#404040'} />
-          </Pressable>
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel={t('listing.close')}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-full bg-white shadow active:opacity-70">
-            <Text className="text-2xl leading-none text-neutral-700">×</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <View className="gap-0.5 p-3">
-        <View className="flex-row items-center justify-between gap-2">
-          <Text className="flex-1 text-base font-semibold text-neutral-900 dark:text-white" numberOfLines={1}>
-            {listing.title}
-          </Text>
-          <Text className="text-xs font-medium uppercase text-blue-600 dark:text-blue-400">
-            {t(`listing.status.${listing.status}`)}
-          </Text>
+    <View className="overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-neutral-900">
+      {/* Card body: tapping anywhere here opens the full listing. The action
+          buttons below are rendered as siblings (overlaid) rather than nested
+          inside this Pressable — on web a Pressable becomes a <button>, and a
+          <button> cannot legally contain another <button>. */}
+      <Pressable onPress={onPress} accessibilityRole="button" className="active:opacity-95">
+        <View>
+          {cover ? (
+            <Image source={{ uri: cover.url }} style={{ width: '100%', height: 180 }} contentFit="cover" />
+          ) : (
+            <View className="h-[180px] w-full bg-neutral-200 dark:bg-neutral-800" />
+          )}
         </View>
 
-        <Text className="text-sm text-neutral-500" numberOfLines={1}>
-          {listing.address.line1}, {listing.address.postalCode} {listing.address.city}
-        </Text>
+        <View className="gap-0.5 p-3">
+          <View className="flex-row items-center justify-between gap-2">
+            <Text className="flex-1 text-base font-semibold text-neutral-900 dark:text-white" numberOfLines={1}>
+              {listing.title}
+            </Text>
+            <Text className="text-xs font-medium uppercase text-blue-600 dark:text-blue-400">
+              {t(`listing.status.${listing.status}`)}
+            </Text>
+          </View>
 
-        {facts.length ? (
-          <Text className="text-sm text-neutral-500">{facts.join('  ·  ')}</Text>
-        ) : null}
+          <Text className="text-sm text-neutral-500" numberOfLines={1}>
+            {listing.address.line1}, {listing.address.postalCode} {listing.address.city}
+          </Text>
 
-        <Text className="mt-0.5 text-base font-bold text-neutral-900 dark:text-white">
-          {formatPrice(listing.price, listing.currency, i18n.language)}
-        </Text>
+          {facts.length ? (
+            <Text className="text-sm text-neutral-500">{facts.join('  ·  ')}</Text>
+          ) : null}
+
+          <Text className="mt-0.5 text-base font-bold text-neutral-900 dark:text-white">
+            {formatPrice(listing.price, listing.currency, i18n.language)}
+          </Text>
+        </View>
+      </Pressable>
+
+      <View
+        className="absolute inset-x-0 top-0 flex-row justify-end gap-3 p-5"
+        pointerEvents="box-none">
+        <Pressable
+          onPress={() => setLiked((v) => !v)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: liked }}
+          accessibilityLabel={t(liked ? 'listing.unlike' : 'listing.like')}
+          hitSlop={8}
+          className="h-11 w-11 items-center justify-center rounded-full bg-white shadow active:opacity-70">
+          <BookmarkIcon filled={liked} color={liked ? Brand.blue : '#404040'} />
+        </Pressable>
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={t('listing.close')}
+          hitSlop={8}
+          className="h-11 w-11 items-center justify-center rounded-full bg-white shadow active:opacity-70">
+          <Text className="text-2xl leading-none text-neutral-700">×</Text>
+        </Pressable>
       </View>
-    </Pressable>
+    </View>
   );
 }

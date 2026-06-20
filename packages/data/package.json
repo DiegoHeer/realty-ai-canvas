@@ -6,8 +6,7 @@
   "types": "src/index.ts",
   "scripts": {
     "test": "jest --verbose",
-    "typecheck": "tsc --noEmit",
-    "build:areas": "bun scripts/build-den-haag-areas.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@realty/types": "workspace:*"

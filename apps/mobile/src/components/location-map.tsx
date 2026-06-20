@@ -2,9 +2,8 @@ import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { Camera, Map, Marker } from '@maplibre/maplibre-react-native';
 import { StyleSheet, View } from 'react-native';
 
-// OpenMapTiles Positron GL style, hosted keyless by OpenFreeMap.
-// https://github.com/openmaptiles/positron-gl-style
-const DEFAULT_MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron';
+import { MAP_STYLE_LIGHT } from './map-style';
+import { Brand } from '../constants/theme';
 
 export interface LocationMapProps {
   latitude: number;
@@ -26,7 +25,7 @@ export function LocationMap({
   latitude,
   longitude,
   zoom = 14,
-  mapStyle = DEFAULT_MAP_STYLE,
+  mapStyle = MAP_STYLE_LIGHT,
   interactive = false,
 }: LocationMapProps) {
   return (
@@ -60,7 +59,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 999,
-    backgroundColor: '#2563eb',
+    backgroundColor: Brand.blue,
     borderWidth: 2,
     borderColor: '#ffffff',
   },

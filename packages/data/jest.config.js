@@ -6,6 +6,5 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@realty/types$': '<rootDir>/../types/src/index.ts',
-    'den-haag-areas\\.json$': '<rootDir>/src/__mocks__/den-haag-areas.json',
   },
 };

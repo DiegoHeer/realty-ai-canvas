@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 
 import { recordRecentView } from '@/lib/recent-views';
+import { Brand } from '@/constants/theme';
 import { BookmarkIcon, ShareIcon } from '../../components/icons';
 import { LocationMap } from '../../components/location-map';
 // maptiler-basic GL style, with its key-gated MapTiler source/glyphs rewritten
@@ -108,7 +109,7 @@ export default function ListingDetailScreen() {
                 className="h-9 w-9 items-center justify-center active:opacity-60">
                 <BookmarkIcon
                   filled={liked}
-                  color={liked ? '#2563eb' : headerTint}
+                  color={liked ? Brand.blue : headerTint}
                   cutoutColor={headerBg}
                 />
               </Pressable>
