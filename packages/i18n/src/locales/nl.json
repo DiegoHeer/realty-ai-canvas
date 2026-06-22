@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Realty AI Canvas",
+    "cancel": "Annuleren",
     "docs": "Documentatie",
     "loading": "Laden…"
   },
@@ -17,6 +18,8 @@
     "logIn": "Inloggen",
     "register": "Registreren",
     "signOut": "Uitloggen",
+    "signOutConfirmTitle": "Uitloggen?",
+    "signOutConfirmMessage": "Weet je zeker dat je wilt uitloggen?",
     "preferences": "Voorkeuren",
     "language": "Taal",
     "appearance": "Weergave",

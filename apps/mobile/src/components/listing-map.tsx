@@ -24,6 +24,7 @@ import {
 } from './area-polygons';
 import { useMapStyle } from './map-style';
 import { DEFAULT_CENTER, priceLabel } from './map-shared';
+import { usePulseOpacity } from './use-pulse-opacity';
 import { outlineColorFor } from '../lib/area-choropleth';
 import { useRecentViews } from '../lib/recent-views';
 import { Brand } from '../constants/theme';
@@ -32,6 +33,34 @@ import { Brand } from '../constants/theme';
 // bottom-left corner instead — clear of both the search field and the listing
 // preview card (which spans the bottom but is inset from the left edge).
 const COMPASS_MARGIN = 16;
+
+/**
+ * The tapped city's own outline, pulsing in opacity while its neighborhoods
+ * load. Mounted only during the load (the parent passes null once the data
+ * arrives or another city is picked), so the pulse interval lives just that
+ * long. Memoizes the feature so each frame changes only the fill opacity, not
+ * the source data.
+ */
+function PulsingCityOverlay({ polygon, beforeId }: { polygon: AreaPolygon; beforeId?: string }) {
+  const opacity = usePulseOpacity(true);
+  const data = useMemo(() => toFeatureCollection([polygon]), [polygon]);
+  return (
+    <GeoJSONSource id="loading-city" data={data}>
+      <Layer
+        id="loading-city-fill"
+        type="fill"
+        beforeId={beforeId}
+        paint={{ 'fill-color': polygon.color, 'fill-opacity': opacity }}
+      />
+      <Layer
+        id="loading-city-outline"
+        type="line"
+        beforeId={beforeId}
+        paint={{ 'line-color': polygon.color, 'line-width': 1.5, 'line-opacity': 0.9 }}
+      />
+    </GeoJSONSource>
+  );
+}
 
 export interface ListingMapProps {
   listings: Listing[];
@@ -42,6 +71,16 @@ export interface ListingMapProps {
   onSelectPolygon?: (id: string) => void;
   /** Id of the area overlay to highlight (denser fill + bolder outline). */
   selectedPolygonId?: string | null;
+  /**
+   * Fired with the tapped geographic coordinate for a press that isn't on an
+   * area overlay — used to hit-test which city was tapped.
+   */
+  onMapPress?: (coord: { longitude: number; latitude: number }) => void;
+  /**
+   * The tapped city's outline, pulsing while its neighborhoods load. Null hides
+   * it (data arrived, or no city is loading).
+   */
+  loadingPolygon?: AreaPolygon | null;
 }
 
 /** Imperative handle for driving the camera, e.g. flying to a search result. */
@@ -60,7 +99,7 @@ export interface ListingMapRef {
  * The web implementation lives in `listing-map.web.tsx`.
  */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId },
+  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, loadingPolygon },
   ref,
 ) {
   const cameraRef = useRef<CameraRef>(null);
@@ -104,11 +143,21 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
     <Map
       style={StyleSheet.absoluteFill}
       mapStyle={mapStyle}
+      // A press not consumed by an area overlay falls through to here; hit-test
+      // it against the cities. `lngLat` is a [longitude, latitude] tuple.
+      onPress={(e) => {
+        const [longitude, latitude] = e.nativeEvent.lngLat;
+        onMapPress?.({ longitude, latitude });
+      }}
       compassPosition={{
         bottom: insets.bottom + COMPASS_MARGIN,
         left: COMPASS_MARGIN,
       }}>
-      <Camera ref={cameraRef} center={center} zoom={11} />
+      {/* Uncontrolled initial framing only: applied once on load. Camera moves
+          are then driven solely by the imperative ref (search flyTo, area
+          focusArea) — loading a tapped city's neighborhoods must not move it. */}
+      <Camera ref={cameraRef} initialViewState={{ center, zoom: 11 }} />
+      {loadingPolygon && <PulsingCityOverlay polygon={loadingPolygon} beforeId={polygonsBeforeId} />}
       {polygons && polygons.length > 0 && (
         <GeoJSONSource
           id="area-polygons"

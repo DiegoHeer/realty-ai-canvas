@@ -198,9 +198,7 @@ function Donut({ segments, center }: { segments: StatSegment[]; center?: string 
             strokeWidth={DONUT.sw}
             strokeDasharray={`${arc.len} ${CIRC - arc.len}`}
             strokeDashoffset={-arc.offset}
-            rotation={-90}
-            originX={DONUT.c}
-            originY={DONUT.c}
+            transform={`rotate(-90, ${DONUT.c}, ${DONUT.c})`}
           />
         ))}
       </Svg>

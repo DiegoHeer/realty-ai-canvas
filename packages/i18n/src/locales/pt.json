@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Realty AI Canvas",
+    "cancel": "Cancelar",
     "docs": "Documentação",
     "loading": "A carregar…"
   },
@@ -17,6 +18,8 @@
     "logIn": "Iniciar sessão",
     "register": "Registar",
     "signOut": "Terminar sessão",
+    "signOutConfirmTitle": "Terminar sessão?",
+    "signOutConfirmMessage": "Tem a certeza de que pretende terminar sessão?",
     "preferences": "Preferências",
     "language": "Idioma",
     "appearance": "Aparência",

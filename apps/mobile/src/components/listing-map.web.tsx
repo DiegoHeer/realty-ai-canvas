@@ -1,6 +1,6 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import type { Listing } from '@realty/types';
+import type { AreaPolygon, Listing } from '@realty/types';
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { Layer, Map, type MapRef, Marker, Source } from 'react-map-gl/maplibre';
@@ -19,13 +19,40 @@ import {
 } from './area-polygons';
 import { useMapStyle } from './map-style';
 import { DEFAULT_CENTER, priceLabel } from './map-shared';
+import { usePulseOpacity } from './use-pulse-opacity';
 import { outlineColorFor } from '../lib/area-choropleth';
 import { useRecentViews } from '../lib/recent-views';
 import { Brand } from '../constants/theme';
 
+/**
+ * The tapped city's outline, pulsing in opacity while its neighborhoods load
+ * (web mirror of the native overlay). Mounted only during the load; memoizes
+ * the feature so each frame changes only the fill opacity, not the source data.
+ */
+function PulsingCityOverlay({ polygon, beforeId }: { polygon: AreaPolygon; beforeId?: string }) {
+  const opacity = usePulseOpacity(true);
+  const data = useMemo(() => toFeatureCollection([polygon]), [polygon]);
+  return (
+    <Source id="loading-city" type="geojson" data={data}>
+      <Layer
+        id="loading-city-fill"
+        type="fill"
+        beforeId={beforeId}
+        paint={{ 'fill-color': polygon.color, 'fill-opacity': opacity }}
+      />
+      <Layer
+        id="loading-city-outline"
+        type="line"
+        beforeId={beforeId}
+        paint={{ 'line-color': polygon.color, 'line-width': 1.5, 'line-opacity': 0.9 }}
+      />
+    </Source>
+  );
+}
+
 /** Web map via react-map-gl (MapLibre GL JS). Selected by Metro on web. */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId },
+  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, loadingPolygon },
   ref,
 ) {
   const mapRef = useRef<MapRef>(null);
@@ -64,11 +91,17 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
       initialViewState={{ ...center, zoom: 11 }}
       mapStyle={mapStyle}
       style={{ width: '100%', height: '100%' }}
-      interactiveLayerIds={['area-polygons-fill']}
+      interactiveLayerIds={polygons && polygons.length > 0 ? ['area-polygons-fill'] : []}
       onClick={(e) => {
         const id = e.features?.[0]?.properties?.id;
-        if (typeof id === 'string') onSelectPolygon?.(id);
+        if (typeof id === 'string') {
+          onSelectPolygon?.(id);
+          return;
+        }
+        // A click off any area overlay → hit-test which city it lands in.
+        onMapPress?.({ longitude: e.lngLat.lng, latitude: e.lngLat.lat });
       }}>
+      {loadingPolygon && <PulsingCityOverlay polygon={loadingPolygon} beforeId={polygonsBeforeId} />}
       {polygons && polygons.length > 0 && (
         <Source id="area-polygons" type="geojson" data={toFeatureCollection(polygons)}>
           <Layer

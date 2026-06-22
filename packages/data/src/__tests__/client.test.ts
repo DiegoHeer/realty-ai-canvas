@@ -126,6 +126,7 @@ describe('client (API mode)', () => {
   let getListingsApi: typeof getListings;
   let getAreasApi: typeof getAreas;
   let getStatsApi: typeof import('../client').getStats;
+  let getCitiesApi: typeof import('../client').getCities;
 
   beforeEach(() => {
     jest.resetModules();
@@ -141,6 +142,7 @@ describe('client (API mode)', () => {
     getListingsApi = client.getListings;
     getAreasApi = client.getAreas;
     getStatsApi = client.getStats;
+    getCitiesApi = client.getCities;
   });
 
   afterEach(() => {
@@ -224,6 +226,35 @@ describe('client (API mode)', () => {
     });
     // Each distinct district gets a distinct color.
     expect(areas[0]!.color).not.toBe(areas[1]!.color);
+  });
+
+  it('getCities pages through all results (limit 200) and wraps the geometry', async () => {
+    // A full page (200) forces a second request; the short second page ends it.
+    const fullPage = Array.from({ length: 200 }, (_, i) => ({
+      code: String(i).padStart(4, '0'),
+      name: `City ${i}`,
+      geometry: [[[4.3, 52.0], [4.31, 52.0], [4.31, 52.01], [4.3, 52.0]]], // Polygon
+    }));
+    const lastPage = [
+      {
+        code: '9999',
+        name: 'Laatste',
+        geometry: [[[[4.4, 52.1], [4.41, 52.1], [4.41, 52.11], [4.4, 52.1]]]], // MultiPolygon
+      },
+    ];
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => fullPage })
+      .mockResolvedValueOnce({ ok: true, json: async () => lastPage });
+
+    const cities = await getCitiesApi();
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const urls = (global.fetch as jest.Mock).mock.calls.map((c) => c[0] as string);
+    expect(urls[0]).toContain('/v1/shapes/cities?limit=200&offset=0');
+    expect(urls[1]).toContain('offset=200');
+    expect(cities).toHaveLength(201);
+    expect(cities[0]).toMatchObject({ code: '0000', name: 'City 0', geometry: { type: 'Polygon' } });
+    expect(cities[200]).toMatchObject({ code: '9999', geometry: { type: 'MultiPolygon' } });
   });
 
   it('getStats fetches neighborhood stats and maps stats_year → statsYear', async () => {

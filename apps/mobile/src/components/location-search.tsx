@@ -81,6 +81,12 @@ export interface LocationSearchProps {
    * search is active (see `dismiss`).
    */
   onActiveChange?: (active: boolean) => void;
+  /**
+   * Overrides the field's placeholder. The map screen passes the selected
+   * city's name while its neighborhoods are shown; falls back to the default
+   * "Search" hint when omitted.
+   */
+  placeholder?: string;
 }
 
 export interface LocationSearchRef {
@@ -96,7 +102,7 @@ export interface LocationSearchRef {
  * primitives so the single file serves web and native.
  */
 export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>(
-  function LocationSearch({ onResult, onActiveChange }, ref) {
+  function LocationSearch({ onResult, onActiveChange, placeholder }, ref) {
   const { t } = useTranslation();
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } =
     useRecentSearches();
@@ -281,7 +287,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
             setFocused(true);
             if (suggestions.length > 0) setOpen(true);
           }}
-          placeholder={t('search.placeholder')}
+          placeholder={placeholder ?? t('search.placeholder')}
           placeholderTextColor="#9ca3af"
           returnKeyType="search"
           autoCapitalize="words"

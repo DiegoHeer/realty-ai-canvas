@@ -1,5 +1,5 @@
-import { getAreas, getStats } from '@realty/data';
-import type { AreaPolygon, NeighborhoodStats } from '@realty/types';
+import { getAreas, getCities, getStats } from '@realty/data';
+import type { AreaPolygon, CityShape, NeighborhoodStats } from '@realty/types';
 
 import { loadJSON, saveJSON, StorageKeys } from './storage';
 
@@ -44,4 +44,19 @@ export async function loadStats(city: string): Promise<NeighborhoodStats[]> {
   const stats = await getStats(city);
   if (stats.length > 0) await saveJSON(key, stats);
   return stats;
+}
+
+/**
+ * All municipality boundaries for the country, permanently cached on device.
+ * Cached exactly like {@link loadAreas} but under a single key (the list covers
+ * the whole country): served from AsyncStorage when present (no API call),
+ * fetched + persisted only on a miss, and never cached when empty so it retries.
+ */
+export async function loadCities(): Promise<CityShape[]> {
+  const cached = await loadJSON<CityShape[]>(StorageKeys.cities);
+  if (cached && cached.length > 0) return cached;
+
+  const cities = await getCities();
+  if (cities.length > 0) await saveJSON(StorageKeys.cities, cities);
+  return cities;
 }

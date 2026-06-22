@@ -1,4 +1,4 @@
-import type { AreaPolygon, Listing, ListingQuery, NeighborhoodStats } from '@realty/types';
+import type { AreaPolygon, CityShape, Listing, ListingQuery, NeighborhoodStats } from '@realty/types';
 
 import { API_BASE, API_URL, USE_LISTING_MOCKS } from './env';
 import { mockListings } from './mocks';
@@ -128,6 +128,41 @@ export async function getAreas(city: string = DEN_HAAG_CITY_CODE): Promise<AreaP
     `/v1/shapes/neighborhoods?city=${encodeURIComponent(city)}`,
   );
   return shapesToAreas(shapes);
+}
+
+// --- Cities (municipalities) -------------------------------------------------
+
+/** Raw city shape as returned by `/v1/shapes/cities`. */
+interface CityShapeResponse {
+  code: string;
+  name: string;
+  /** Bare GeoJSON coordinates, like {@link NeighborhoodShape.geometry}. */
+  geometry: number[][][] | number[][][][];
+}
+
+/** The endpoint returns 50 per page by default and caps `limit` at 200. */
+const CITY_PAGE_SIZE = 200;
+
+/**
+ * All Dutch municipality ("gemeente") boundaries, fetched from the shapes API
+ * and transformed into {@link CityShape}. The endpoint is paginated (max 200 per
+ * request), so this pages through every offset until a short page ends it.
+ * Returns an empty array when no backend is configured (mock/offline builds).
+ * Boundaries never change, so the app caches the result (see `loadCities`).
+ */
+export async function getCities(): Promise<CityShape[]> {
+  if (!API_URL) return [];
+  const cities: CityShape[] = [];
+  for (let offset = 0; ; offset += CITY_PAGE_SIZE) {
+    const page = await request<CityShapeResponse[]>(
+      `/v1/shapes/cities?limit=${CITY_PAGE_SIZE}&offset=${offset}`,
+    );
+    for (const c of page) {
+      cities.push({ code: c.code, name: c.name, geometry: toAreaGeometry(c.geometry) });
+    }
+    if (page.length < CITY_PAGE_SIZE) break;
+  }
+  return cities;
 }
 
 /** Raw stats entry from `/v1/stats/neighborhoods` (its `geometry` is dropped). */

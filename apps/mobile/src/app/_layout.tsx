@@ -38,6 +38,14 @@ export default function RootLayout() {
                 name="listing/[id]"
                 options={{ headerShown: true, title: t('tabs.listings') }}
               />
+              <Stack.Screen
+                name="settings/language"
+                options={{ headerShown: true, title: t('profile.language') }}
+              />
+              <Stack.Screen
+                name="settings/appearance"
+                options={{ headerShown: true, title: t('profile.appearance') }}
+              />
             </Stack>
           </ThemeProvider>
         </DataProvider>

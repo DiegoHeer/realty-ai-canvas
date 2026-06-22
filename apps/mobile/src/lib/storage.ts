@@ -17,6 +17,8 @@ export const StorageKeys = {
   areas: `${PREFIX}areas`,
   /** Cached neighborhood statistics; suffixed with `:<cityCode>` per city. */
   stats: `${PREFIX}stats`,
+  /** Cached municipality boundaries for the whole country (a single list). */
+  cities: `${PREFIX}cities`,
 } as const;
 
 export async function loadJSON<T>(key: string): Promise<T | null> {

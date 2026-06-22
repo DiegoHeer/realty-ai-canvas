@@ -2,7 +2,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
-import { areaKeys, listingKeys, useAreas, useListing, useListings } from '../queries';
+import {
+  areaKeys,
+  cityKeys,
+  listingKeys,
+  useAreas,
+  useCities,
+  useListing,
+  useListings,
+} from '../queries';
 
 let queryClient: QueryClient;
 
@@ -53,8 +61,21 @@ describe('useListing', () => {
 });
 
 describe('useAreas', () => {
-  it('returns area polygons', async () => {
-    const { result } = await renderHook(() => useAreas(), { wrapper: createWrapper() });
+  it('returns area polygons for a city', async () => {
+    const { result } = await renderHook(() => useAreas('0518'), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(Array.isArray(result.current.data)).toBe(true);
+  });
+
+  it('does not fetch when no city is given', async () => {
+    const { result } = await renderHook(() => useAreas(undefined), { wrapper: createWrapper() });
+    expect(result.current.fetchStatus).toBe('idle');
+  });
+});
+
+describe('useCities', () => {
+  it('returns the city list', async () => {
+    const { result } = await renderHook(() => useCities(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(Array.isArray(result.current.data)).toBe(true);
   });
@@ -74,5 +95,9 @@ describe('query keys', () => {
 
   it('areaKeys.all is stable', () => {
     expect(areaKeys.all).toEqual(['areas']);
+  });
+
+  it('cityKeys.all is stable', () => {
+    expect(cityKeys.all).toEqual(['cities']);
   });
 });

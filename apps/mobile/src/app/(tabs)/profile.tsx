@@ -1,35 +1,125 @@
-import { BottomSheet, Row, Text as NativeText } from '@expo/ui';
-import { supportedLanguages, useTranslation, type SupportedLanguage } from '@realty/i18n';
+import { useTranslation } from '@realty/i18n';
 import { Image } from 'expo-image';
-import { useState, type ComponentProps } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { type ReactElement, type ReactNode } from 'react';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 import { useAuth, type AuthUser } from '@/hooks/use-auth';
-import { useAppearance, type Appearance } from '@/lib/appearance';
-import { FILL_WIDTH } from '@/lib/sheet-modifiers';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAppearance } from '@/lib/appearance';
+import { activeLanguage, APPEARANCE_OPTIONS, LANGUAGE_LABELS } from '@/lib/settings-options';
+
+interface IconProps {
+  size?: number;
+  color: string;
+}
+
+// Shared stroke styling so every settings icon keeps Feather/Lucide proportions.
+const STROKE = { strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
 /**
- * Endonyms (each language named in itself) with a flag emoji. Not translated —
- * a language switcher always shows every option in its own language. The
- * `Record` forces a label whenever a new language is added to `supportedLanguages`.
+ * Feather/Lucide-style stroked icons for the settings rows, drawn as SVG so they
+ * render identically across web/iOS/Android without depending on an icon font —
+ * mirrors the icon approach in `components/filter-pills.tsx`.
  */
-const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
-  en: '🇬🇧 English',
-  nl: '🇳🇱 Nederlands',
-  pt: '🇵🇹 Português',
-};
+function StrokeSvg({ size = 22, children }: { size?: number; children: ReactNode }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {children}
+    </Svg>
+  );
+}
 
-/** Appearance options for the modal picker. `labelKey` is translated; `emoji` is decoration. */
-const APPEARANCE_OPTIONS: { value: Appearance; emoji: string; labelKey: string }[] = [
-  { value: 'system', emoji: '⚙️', labelKey: 'profile.appearance_system' },
-  { value: 'light', emoji: '☀️', labelKey: 'profile.appearance_light' },
-  { value: 'dark', emoji: '🌙', labelKey: 'profile.appearance_dark' },
-];
+function BellIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke={color} {...STROKE} />
+      <Path d="M13.73 21a2 2 0 0 1-3.46 0" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
+
+function HeartIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path
+        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"
+        stroke={color}
+        {...STROKE}
+      />
+    </StrokeSvg>
+  );
+}
+
+function SearchIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z" stroke={color} {...STROKE} />
+      <Path d="M21 21l-4.35-4.35" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
+
+function CreditCardIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path
+        d="M22 7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7z"
+        stroke={color}
+        {...STROKE}
+      />
+      <Path d="M2 10h20" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
+
+function LockIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path
+        d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z"
+        stroke={color}
+        {...STROKE}
+      />
+      <Path d="M7 11V7a5 5 0 0 1 10 0v4" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
+
+function HelpIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" stroke={color} {...STROKE} />
+      <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke={color} {...STROKE} />
+      <Path d="M12 17h.01" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
+
+function InfoIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" stroke={color} {...STROKE} />
+      <Path d="M12 16v-4" stroke={color} {...STROKE} />
+      <Path d="M12 8h.01" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const { user, isAuthenticated, signIn, signOut } = useAuth();
+
+  // Signing out is destructive (it drops back to the guest state), so confirm
+  // with a native dialog instead of acting on the first tap.
+  function confirmSignOut() {
+    Alert.alert(t('profile.signOutConfirmTitle'), t('profile.signOutConfirmMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('profile.signOut'), style: 'destructive', onPress: signOut },
+    ]);
+  }
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-neutral-100 dark:bg-black">
@@ -53,7 +143,8 @@ export default function ProfileScreen() {
 
         {isAuthenticated && (
           <Pressable
-            onPress={signOut}
+            onPress={confirmSignOut}
+            accessibilityRole="button"
             className="items-center rounded-2xl bg-white py-3 shadow-sm active:opacity-70 dark:bg-neutral-900">
             <Text className="text-base font-semibold text-red-600 dark:text-red-400">
               {t('profile.signOut')}
@@ -133,10 +224,10 @@ function AccountCard() {
         {t('profile.account')}
       </Text>
 
-      <MenuRow emoji="🔔" label={t('profile.notifications')} />
-      <MenuRow emoji="❤️" label={t('profile.savedHomes')} />
-      <MenuRow emoji="🔍" label={t('profile.savedSearches')} />
-      <MenuRow emoji="💳" label={t('profile.paymentMethods')} />
+      <MenuRow icon={BellIcon} label={t('profile.notifications')} />
+      <MenuRow icon={HeartIcon} label={t('profile.savedHomes')} />
+      <MenuRow icon={SearchIcon} label={t('profile.savedSearches')} />
+      <MenuRow icon={CreditCardIcon} label={t('profile.paymentMethods')} />
     </View>
   );
 }
@@ -153,26 +244,38 @@ function SupportCard() {
         {t('profile.support')}
       </Text>
 
-      <MenuRow emoji="🔒" label={t('profile.privacy')} />
-      <MenuRow emoji="❓" label={t('profile.help')} />
-      <MenuRow emoji="ℹ️" label={t('profile.about')} />
+      <MenuRow icon={LockIcon} label={t('profile.privacy')} />
+      <MenuRow icon={HelpIcon} label={t('profile.help')} />
+      <MenuRow icon={InfoIcon} label={t('profile.about')} />
     </View>
   );
 }
 
 /**
- * A tappable settings row: leading emoji icon, label, and a trailing chevron.
- * `onPress` is optional — without it the row is a visual placeholder that still
- * gives press feedback, matching the dummy entries on the profile screen.
+ * A tappable settings row: leading stroked SVG icon, label, and a trailing
+ * chevron. `onPress` is optional — without it the row is a visual placeholder
+ * that still gives press feedback, matching the dummy entries on the profile
+ * screen.
  */
-function MenuRow({ emoji, label, onPress }: { emoji: string; label: string; onPress?: () => void }) {
+function MenuRow({
+  icon: Icon,
+  label,
+  onPress,
+}: {
+  icon: (props: IconProps) => ReactElement;
+  label: string;
+  onPress?: () => void;
+}) {
+  const scheme = useColorScheme();
+  // Match the row label: neutral-900 in light, white in dark.
+  const iconColor = scheme === 'dark' ? '#ffffff' : '#171717';
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       className="flex-row items-center justify-between py-3 active:opacity-60">
       <View className="flex-row items-center gap-3">
-        <Text className="text-2xl">{emoji}</Text>
+        <Icon color={iconColor} />
         <Text className="text-lg text-neutral-900 dark:text-white">{label}</Text>
       </View>
       <Text className="text-xl text-neutral-400">›</Text>
@@ -181,131 +284,49 @@ function MenuRow({ emoji, label, onPress }: { emoji: string; label: string; onPr
 }
 
 /**
- * A single tappable row inside a picker sheet. Built from `@expo/ui`'s native
- * `Row` + `Text` (not `ListItem`) so we control the vertical padding for a
- * roomier touch target. `NativeText` themes itself from the active color scheme
- * (black in light, white in dark), so labels always contrast with the sheet.
- * The active option gets a checkmark appended to its label — a trailing element
- * can't be used because native `Text` and RN `Text` differ across platforms,
- * but an appended string renders correctly everywhere.
- */
-function SheetOption({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Row
-      onPress={onPress}
-      alignment="center"
-      style={{ paddingVertical: 18, paddingHorizontal: 12 }}
-      modifiers={FILL_WIDTH as ComponentProps<typeof Row>['modifiers']}>
-      <NativeText>{selected ? `${label}  ✓` : label}</NativeText>
-    </Row>
-  );
-}
-
-/**
- * Language selector: a row that opens a native modal list picker. The sheet is
- * `@expo/ui`'s `BottomSheet` (SwiftUI sheet on iOS, Material 3 modal sheet on
- * Android, vaul drawer on web).
+ * Language selector row: shows the active language and opens a full-screen
+ * selection page (`app/settings/language.tsx`) on press.
  */
 function LanguageField() {
   const { t, i18n } = useTranslation();
-  const [open, setOpen] = useState(false);
-
-  const activeLanguage = (
-    supportedLanguages.includes(i18n.language as SupportedLanguage)
-      ? i18n.language
-      : i18n.resolvedLanguage
-  ) as SupportedLanguage;
-
-  function select(language: SupportedLanguage) {
-    void i18n.changeLanguage(language);
-    setOpen(false);
-  }
+  const router = useRouter();
 
   return (
-    <>
-      <Pressable
-        onPress={() => setOpen(true)}
-        accessibilityRole="button"
-        className="flex-row items-center justify-between py-3 active:opacity-60">
-        <Text className="text-lg text-neutral-900 dark:text-white">{t('profile.language')}</Text>
-        <View className="flex-row items-center gap-1.5">
-          <Text className="text-lg text-neutral-500">{LANGUAGE_LABELS[activeLanguage]}</Text>
-          <Text className="text-xl text-neutral-400">›</Text>
-        </View>
-      </Pressable>
-
-      <BottomSheet isPresented={open} onDismiss={() => setOpen(false)}>
-        {supportedLanguages.map((lng) => (
-          <SheetOption
-            key={lng}
-            label={LANGUAGE_LABELS[lng]}
-            selected={lng === activeLanguage}
-            onPress={() => select(lng)}
-          />
-        ))}
-      </BottomSheet>
-    </>
+    <Pressable
+      onPress={() => router.push('/settings/language')}
+      accessibilityRole="button"
+      className="flex-row items-center justify-between py-3 active:opacity-60">
+      <Text className="text-lg text-neutral-900 dark:text-white">{t('profile.language')}</Text>
+      <View className="flex-row items-center gap-1.5">
+        <Text className="text-lg text-neutral-500">{LANGUAGE_LABELS[activeLanguage(i18n)]}</Text>
+        <Text className="text-xl text-neutral-400">›</Text>
+      </View>
+    </Pressable>
   );
 }
 
 /**
- * Appearance selector: same native modal-list pattern as {@link LanguageField}.
- * Each pick is written to two places so the whole app stays in one theme:
- *   - NativeWind's `setColorScheme` drives every `dark:` class (the GUI).
- *   - RN's `Appearance.setColorScheme` drives the native color scheme, which
- *     themes the `@expo/ui` sheet (including its drag handle), native text, and
- *     the expo-router Stack — they'd otherwise stay on the system theme and
- *     clash with a manual override.
+ * Appearance selector row: shows the active appearance and opens a full-screen
+ * selection page (`app/settings/appearance.tsx`) on press.
  */
 function AppearanceField() {
   const { t } = useTranslation();
-  const { appearance, setAppearance } = useAppearance();
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const { appearance } = useAppearance();
 
-  function select(next: Appearance) {
-    setAppearance(next);
-    setOpen(false);
-  }
-
-  const label = (value: Appearance) => {
-    const option = APPEARANCE_OPTIONS.find((entry) => entry.value === value)!;
-    return `${option.emoji} ${t(option.labelKey)}`;
-  };
+  const active = APPEARANCE_OPTIONS.find((entry) => entry.value === appearance)!;
 
   return (
-    <>
-      <Pressable
-        onPress={() => setOpen(true)}
-        accessibilityRole="button"
-        className="flex-row items-center justify-between py-3 active:opacity-60">
-        <Text className="text-lg text-neutral-900 dark:text-white">
-          {t('profile.appearance')}
-        </Text>
-        <View className="flex-row items-center gap-1.5">
-          <Text className="text-lg text-neutral-500">{label(appearance)}</Text>
-          <Text className="text-xl text-neutral-400">›</Text>
-        </View>
-      </Pressable>
-
-      <BottomSheet isPresented={open} onDismiss={() => setOpen(false)}>
-        {APPEARANCE_OPTIONS.map((option) => (
-          <SheetOption
-            key={option.value}
-            label={label(option.value)}
-            selected={option.value === appearance}
-            onPress={() => select(option.value)}
-          />
-        ))}
-      </BottomSheet>
-    </>
+    <Pressable
+      onPress={() => router.push('/settings/appearance')}
+      accessibilityRole="button"
+      className="flex-row items-center justify-between py-3 active:opacity-60">
+      <Text className="text-lg text-neutral-900 dark:text-white">{t('profile.appearance')}</Text>
+      <View className="flex-row items-center gap-1.5">
+        <Text className="text-lg text-neutral-500">{`${active.emoji} ${t(active.labelKey)}`}</Text>
+        <Text className="text-xl text-neutral-400">›</Text>
+      </View>
+    </Pressable>
   );
 }
 

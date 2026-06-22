@@ -1,10 +1,5 @@
-import {
-  DEN_HAAG_CITY_CODE,
-  DEN_HAAG_CITY_NAME,
-  useAreas,
-  useListings,
-  useStats,
-} from '@realty/data';
+import { useAreas, useCities, useListings, useStats } from '@realty/data';
+import type { AreaPolygon } from '@realty/types';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
@@ -17,21 +12,34 @@ import { ListingCard } from '@/components/listing-card';
 import { ListingMap, type ListingMapRef } from '@/components/listing-map';
 import { LocationSearch, type LocationSearchRef } from '@/components/location-search';
 import { useEffectiveColorScheme } from '@/components/map-style';
-import { loadAreas, loadStats } from '@/lib/area-cache';
+import { Brand } from '@/constants/theme';
+import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat } from '@/lib/area-choropleth';
+import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
 import { zoomForType } from '@/lib/pdok';
 import { recordRecentView } from '@/lib/recent-views';
 
 export default function MapScreen() {
   const { data: listings = [], isLoading } = useListings();
-  const { data: areas = [] } = useAreas(DEN_HAAG_CITY_CODE, loadAreas);
-  const { data: stats = [] } = useStats(DEN_HAAG_CITY_CODE, loadStats);
+  const { data: cities = [] } = useCities(loadCities);
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ListingMapRef>(null);
   const searchRef = useRef<LocationSearchRef>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
   const [searchActive, setSearchActive] = useState(false);
+  // No city is selected until the user taps one. Until then the map shows no
+  // neighborhoods; tapping a city loads + shows that city's neighborhoods.
+  const [selectedCity, setSelectedCity] = useState<
+    { code: string; name: string; geometry: AreaPolygon['geometry'] } | null
+  >(null);
+
+  const { data: areas = [], isFetching: areasFetching } = useAreas(selectedCity?.code, loadAreas);
+  const { data: stats = [] } = useStats(selectedCity?.code, loadStats);
+
+  // Precompute city bounding boxes once so a tap ray-casts only the polygons
+  // whose bbox contains it. Cities load once and are cached, so this is cheap.
+  const cityIndex = useMemo(() => buildCityIndex(cities), [cities]);
 
   const selected = useMemo(
     () => listings.find((l) => l.id === selectedId) ?? null,
@@ -55,6 +63,18 @@ export default function MapScreen() {
     () => colorAreasByStat(areas, statsByCode, { scheme }),
     [areas, statsByCode, scheme],
   );
+
+  // Once a city's neighborhoods are visible, surface its name in the search
+  // placeholder; otherwise the field keeps its default "Search" hint.
+  const cityName = selectedCity && areas.length > 0 ? selectedCity.name : undefined;
+
+  // While the tapped city's neighborhoods load, pulse its outline as a loading
+  // hint. Cleared the moment they arrive or another city is picked (both flip
+  // this back to null), so the overlay never lingers.
+  const loadingCityPolygon: AreaPolygon | null =
+    selectedCity && areasFetching
+      ? { id: selectedCity.code, color: Brand.blue, geometry: selectedCity.geometry }
+      : null;
 
   // Selecting a marker shows its preview card, which counts as a view — record
   // it so the pin recolors immediately (the map reads from the same store).
@@ -82,6 +102,20 @@ export default function MapScreen() {
     [areas],
   );
 
+  // A tap that isn't on a neighborhood overlay: find which city it lands in and
+  // switch to it. A hit on the already-selected city is a no-op (its own
+  // overlays handle taps); cities don't overlap, so at most one matches.
+  const handleMapPress = useCallback(
+    (coord: { longitude: number; latitude: number }) => {
+      const hit = findCityAt([coord.longitude, coord.latitude], cityIndex);
+      if (!hit || hit.code === selectedCity?.code) return;
+      setSelectedCity({ code: hit.code, name: hit.name, geometry: hit.geometry });
+      setSelectedAreaId(null);
+      setSelectedId(null);
+    },
+    [cityIndex, selectedCity],
+  );
+
   return (
     <View className="flex-1 bg-neutral-100 dark:bg-black">
       <ListingMap
@@ -90,6 +124,8 @@ export default function MapScreen() {
         polygons={coloredAreas}
         onSelect={handleSelect}
         onSelectPolygon={handleSelectPolygon}
+        onMapPress={handleMapPress}
+        loadingPolygon={loadingCityPolygon}
         selectedPolygonId={selectedAreaId}
       />
       {/* Full-screen backdrop: while the search is active, a tap anywhere
@@ -111,6 +147,7 @@ export default function MapScreen() {
         <LocationSearch
           ref={searchRef}
           onActiveChange={setSearchActive}
+          placeholder={cityName}
           onResult={(r) =>
             mapRef.current?.flyTo({
               longitude: r.longitude,
@@ -122,6 +159,15 @@ export default function MapScreen() {
         <View className="mt-2">
           <FilterPills />
         </View>
+        {/* While a tapped city's neighborhoods download, show a spinner centered
+            below the pills. Cached cities resolve instantly, so it rarely shows. */}
+        {selectedCity && areasFetching && (
+          <View
+            className="mt-3 self-center rounded-full bg-white p-2.5 shadow-md shadow-black/20 dark:bg-neutral-800"
+            pointerEvents="none">
+            <ActivityIndicator />
+          </View>
+        )}
       </View>
       {selected && (
         <View
@@ -145,7 +191,7 @@ export default function MapScreen() {
       <AreaSheet
         area={selectedArea}
         stats={selectedAreaStats}
-        municipality={DEN_HAAG_CITY_NAME}
+        municipality={selectedCity?.name ?? ''}
         onClose={() => setSelectedAreaId(null)}
       />
     </View>

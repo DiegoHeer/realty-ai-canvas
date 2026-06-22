@@ -10,8 +10,8 @@ export type Appearance = 'system' | 'light' | 'dark';
  * The app's appearance preference, persisted to AsyncStorage and applied to the
  * whole UI. Each value drives two sinks (see {@link applyAppearance}):
  *   - NativeWind's `colorScheme`, which themes every `dark:` class (the GUI).
- *   - RN's `Appearance`, which themes native surfaces (the `@expo/ui` sheets,
- *     native text, the expo-router Stack) so they don't clash with an override.
+ *   - RN's `Appearance`, which themes native surfaces (native text and the
+ *     expo-router Stack/header) so they don't clash with an override.
  *
  * Same in-memory `useSyncExternalStore` shape as {@link useAuth}, plus async
  * hydration on boot so a saved override is re-applied before the user sees the

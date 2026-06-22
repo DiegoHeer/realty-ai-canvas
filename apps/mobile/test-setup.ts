@@ -125,6 +125,8 @@ jest.mock('@maplibre/maplibre-react-native', () => {
 jest.mock('nativewind', () => ({
   styled: (component: any) => component,
   useColorScheme: () => ({ colorScheme: 'light', toggleColorScheme: jest.fn() }),
+  // Imperative API used by `lib/appearance` to drive `dark:` classes.
+  colorScheme: { set: jest.fn(), get: jest.fn(() => 'light'), toggle: jest.fn() },
 }));
 
 // --- Animated icon mock (avoid Reanimated complexity) ---

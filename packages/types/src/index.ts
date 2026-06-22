@@ -68,6 +68,18 @@ export interface AreaPolygon {
 }
 
 /**
+ * A municipality ("gemeente") boundary. Used to hit-test a tapped map point to
+ * its city; the `code` is then reused to fetch that city's neighborhood shapes.
+ */
+export interface CityShape {
+  /** CBS municipality code, e.g. "0518" for Den Haag. */
+  code: string;
+  name: string;
+  /** GeoJSON geometry in [longitude, latitude] order (WGS84). */
+  geometry: Polygon | MultiPolygon;
+}
+
+/**
  * CBS statistics for a single neighborhood. Matched to an {@link AreaPolygon}
  * by `code` === the polygon's `id`.
  */
