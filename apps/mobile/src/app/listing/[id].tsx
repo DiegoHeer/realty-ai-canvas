@@ -1,5 +1,5 @@
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
-import { formatPrice, useListing } from '@realty/data';
+import { formatPrice, relativeTimeSince, useListing } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import { Image } from 'expo-image';
 import { createURL } from 'expo-linking';
@@ -74,7 +74,21 @@ export default function ListingDetailScreen() {
     }
   };
 
+  // How long the listing has been on the platform, as a localized relative phrase.
+  const rel = relativeTimeSince(listing.createdAt);
+  const listedAgo = rel
+    ? rel.unit === 'today'
+      ? t('listing.listedAgo.today')
+      : t(`listing.listedAgo.${rel.unit}`, { count: rel.count })
+    : null;
+
   const stats = [
+    listing.buildingType
+      ? {
+          label: t('listing.buildingType'),
+          value: t(`listing.buildingTypes.${listing.buildingType}`),
+        }
+      : null,
     listing.areaSqm
       ? { label: t('listing.areaLabel'), value: t('listing.area', { value: listing.areaSqm }) }
       : null,
@@ -145,6 +159,9 @@ export default function ListingDetailScreen() {
           <Text className="text-sm text-neutral-500">
             {listing.address.line1}, {listing.address.postalCode} {listing.address.city}
           </Text>
+          {listedAgo ? (
+            <Text className="text-xs text-neutral-400 dark:text-neutral-500">{listedAgo}</Text>
+          ) : null}
 
           {stats.length ? (
             <View className="mt-2 flex-row flex-wrap gap-x-6 gap-y-3 border-y border-neutral-200 py-3 dark:border-neutral-800">
@@ -154,6 +171,35 @@ export default function ListingDetailScreen() {
             </View>
           ) : null}
 
+
+          {listing.foundationRisk ? (
+            <View className="mt-2 gap-2 rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
+              <Text className="text-base font-semibold text-neutral-900 dark:text-white">
+                {t('listing.foundationRisk.title')}
+              </Text>
+              {listing.foundationRisk.label ? (
+                <Text className="text-sm text-neutral-700 dark:text-neutral-300">
+                  {listing.foundationRisk.label}
+                </Text>
+              ) : null}
+              {listing.foundationRisk.soilType || listing.foundationRisk.pre1970Pct != null ? (
+                <View className="flex-row flex-wrap gap-x-6 gap-y-2">
+                  {listing.foundationRisk.soilType ? (
+                    <Stat
+                      label={t('listing.foundationRisk.soilType')}
+                      value={listing.foundationRisk.soilType}
+                    />
+                  ) : null}
+                  {listing.foundationRisk.pre1970Pct != null ? (
+                    <Stat
+                      label={t('listing.foundationRisk.pre1970')}
+                      value={`${Math.round(listing.foundationRisk.pre1970Pct)}%`}
+                    />
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
 
           {listing.description ? (
             <Text className="text-base leading-6 text-neutral-700 dark:text-neutral-300">

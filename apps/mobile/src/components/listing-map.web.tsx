@@ -136,12 +136,21 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
           key={listing.id}
           longitude={listing.location.longitude}
           latitude={listing.location.latitude}
-          onClick={() => onSelect?.(listing.id)}>
+          onClick={(e) => {
+            // A marker click otherwise bubbles up to the map's onClick, which
+            // hit-tests the point to a city and switches municipality. Stop it
+            // so tapping a marker only selects the listing. (Native suppresses
+            // the map press for marker taps itself; this is the web equivalent.)
+            e.originalEvent.stopPropagation();
+            onSelect?.(listing.id);
+          }}>
           <div
             // Touch devices don't reliably fire the Marker's click handler;
-            // handle the tap explicitly and preventDefault so the synthetic
-            // mouse click that follows doesn't select the listing twice.
+            // handle the tap explicitly. stopPropagation keeps it off the map's
+            // press handler (so no municipality switch); preventDefault stops the
+            // follow-up synthetic click from double-selecting the listing.
             onTouchEnd={(e) => {
+              e.stopPropagation();
               e.preventDefault();
               onSelect?.(listing.id);
             }}

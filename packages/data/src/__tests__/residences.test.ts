@@ -109,6 +109,34 @@ describe('residenceToListing', () => {
     const listing = residenceToListing(r);
     expect(listing.address.postalCode).toBe('');
   });
+
+  it('maps building_type and the foundation-risk fields', () => {
+    const r = makeResidence({
+      building_type: 'terraced',
+      foundation_risk_label: 'Kwetsbaar gebied - 60-80 %',
+      foundation_risk_soil_type: 'Zeekleigebied',
+      foundation_risk_pre1970_pct: 75,
+      foundation_risk_description: 'Lange Nederlandse uitleg…',
+    });
+    const listing = residenceToListing(r);
+    expect(listing.buildingType).toBe('terraced');
+    expect(listing.foundationRisk).toEqual({
+      label: 'Kwetsbaar gebied - 60-80 %',
+      soilType: 'Zeekleigebied',
+      pre1970Pct: 75,
+    });
+  });
+
+  it('leaves buildingType and foundationRisk undefined when absent', () => {
+    const listing = residenceToListing(makeResidence());
+    expect(listing.buildingType).toBeUndefined();
+    expect(listing.foundationRisk).toBeUndefined();
+  });
+
+  it('builds a partial foundationRisk from whichever fields are present', () => {
+    const listing = residenceToListing(makeResidence({ foundation_risk_soil_type: 'Duinen' }));
+    expect(listing.foundationRisk).toEqual({ soilType: 'Duinen' });
+  });
 });
 
 describe('hasCoordinates', () => {

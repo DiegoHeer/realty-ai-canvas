@@ -34,6 +34,13 @@ import { Brand } from '../constants/theme';
 // preview card (which spans the bottom but is inset from the left edge).
 const COMPASS_MARGIN = 16;
 
+// A marker tap on the native map also fires the map's own tap gesture — the RN
+// marker overlay and the native gesture are independent event streams, so both
+// land. Within this many ms of a marker tap, treat a map press as part of that
+// same gesture and ignore it, so tapping a marker selects the listing without
+// also switching municipality. (The web map stops the click from propagating.)
+const MARKER_TAP_GRACE_MS = 300;
+
 /**
  * The tapped city's own outline, pulsing in opacity while its neighborhoods
  * load. Mounted only during the load (the parent passes null once the data
@@ -103,6 +110,8 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   ref,
 ) {
   const cameraRef = useRef<CameraRef>(null);
+  // Timestamp of the last marker tap; see MARKER_TAP_GRACE_MS.
+  const markerTapAtRef = useRef(0);
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
   const { mapStyle, polygonsBeforeId, scheme } = useMapStyle();
@@ -146,6 +155,9 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
       // A press not consumed by an area overlay falls through to here; hit-test
       // it against the cities. `lngLat` is a [longitude, latitude] tuple.
       onPress={(e) => {
+        // Ignore the press a marker tap fires underneath itself (see
+        // markerTapAtRef) — a marker tap must not also switch municipality.
+        if (Date.now() - markerTapAtRef.current < MARKER_TAP_GRACE_MS) return;
         const [longitude, latitude] = e.nativeEvent.lngLat;
         onMapPress?.({ longitude, latitude });
       }}
@@ -201,7 +213,10 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
           // Use the Marker's own onPress rather than a nested Pressable: a
           // Pressable inside a Marker (MarkerView) does not fire onPress
           // reliably on Android. https://github.com/maplibre/maplibre-react-native/issues/1018
-          onPress={() => onSelect?.(listing.id)}>
+          onPress={() => {
+            markerTapAtRef.current = Date.now();
+            onSelect?.(listing.id);
+          }}>
           <View
             style={[
               styles.marker,

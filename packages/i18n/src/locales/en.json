@@ -36,6 +36,32 @@
     "help": "Help & support",
     "about": "About"
   },
+  "auth": {
+    "logInTitle": "Log in",
+    "registerTitle": "Create account",
+    "logInSubtitle": "Welcome back. Log in to continue.",
+    "registerSubtitle": "Create an account to save homes and searches.",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "logInCta": "Log in",
+    "registerCta": "Create account",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "orDivider": "or",
+    "noAccountPrompt": "Don't have an account?",
+    "haveAccountPrompt": "Already have an account?",
+    "goToRegister": "Sign up",
+    "goToLogin": "Log in",
+    "errorNameRequired": "Please enter your name.",
+    "errorEmailRequired": "Please enter your email.",
+    "errorEmailInvalid": "Please enter a valid email address.",
+    "errorPasswordRequired": "Please enter your password.",
+    "errorPasswordTooShort": "Password must be at least 8 characters."
+  },
   "search": {
     "placeholder": "Search",
     "focus": "Search",
@@ -45,16 +71,15 @@
     "error": "Couldn’t search right now. Try again.",
     "recentTitle": "Recent searches",
     "clearRecent": "Clear",
-    "removeRecent": "Remove from recent searches"
+    "removeRecent": "Remove from recent searches",
+    "filters": "Filters"
   },
   "filters": {
     "favorites": "Favorites",
-    "shops": "Shops",
-    "hotspots": "Hotspots",
-    "noise": "Noise",
-    "airQuality": "Airquality",
-    "restaurants": "Restaurants",
-    "parks": "Parks"
+    "recent": "Recent",
+    "popular": "Popular",
+    "new": "New",
+    "sold": "Sold"
   },
   "listings": {
     "title": "Listings",
@@ -73,6 +98,30 @@
     "rooms": "Rooms",
     "constructionPeriod": "Built",
     "energyLabel": "Energy label",
+    "buildingType": "Type",
+    "buildingTypes": {
+      "apartment": "Apartment",
+      "terraced": "Terraced house",
+      "corner": "Corner house",
+      "semi_detached": "Semi-detached house",
+      "detached": "Detached house"
+    },
+    "foundationRisk": {
+      "title": "Foundation risk",
+      "soilType": "Soil type",
+      "pre1970": "Built before 1970"
+    },
+    "listedAgo": {
+      "today": "Listed today",
+      "day_one": "Listed {{count}} day ago",
+      "day_other": "Listed {{count}} days ago",
+      "week_one": "Listed {{count}} week ago",
+      "week_other": "Listed {{count}} weeks ago",
+      "month_one": "Listed {{count}} month ago",
+      "month_other": "Listed {{count}} months ago",
+      "year_one": "Listed {{count}} year ago",
+      "year_other": "Listed {{count}} years ago"
+    },
     "visitRealtor": "Visit realtor",
     "close": "Close",
     "like": "Save to favorites",

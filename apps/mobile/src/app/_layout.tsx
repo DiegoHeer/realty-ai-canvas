@@ -46,6 +46,14 @@ export default function RootLayout() {
                 name="settings/appearance"
                 options={{ headerShown: true, title: t('profile.appearance') }}
               />
+              <Stack.Screen
+                name="auth/login"
+                options={{ headerShown: true, title: t('auth.logInTitle') }}
+              />
+              <Stack.Screen
+                name="auth/register"
+                options={{ headerShown: true, title: t('auth.registerTitle') }}
+              />
             </Stack>
           </ThemeProvider>
         </DataProvider>

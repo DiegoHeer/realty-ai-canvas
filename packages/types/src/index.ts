@@ -19,6 +19,27 @@ export interface ListingImage {
 
 export type ListingStatus = 'for_sale' | 'for_rent' | 'sold' | 'pending';
 
+/** Physical building/dwelling type of a residence. */
+export type BuildingType =
+  | 'apartment'
+  | 'terraced'
+  | 'corner'
+  | 'semi_detached'
+  | 'detached';
+
+/**
+ * Foundation-risk indicators for a residence's postcode area, sourced from the
+ * backend. The textual fields are Dutch domain data and are shown verbatim.
+ */
+export interface FoundationRisk {
+  /** Risk label, e.g. "Kwetsbaar gebied - 60-80 %". */
+  label?: string;
+  /** Soil classification, e.g. "Zeekleigebied". */
+  soilType?: string;
+  /** Share of nearby buildings constructed before 1970, as a percentage. */
+  pre1970Pct?: number;
+}
+
 export interface ListingAddress {
   line1: string;
   city: string;
@@ -45,6 +66,10 @@ export interface Listing {
   constructionPeriod?: string;
   /** Energy label, e.g. "C". */
   energyLabel?: string;
+  /** Physical building type, when known. */
+  buildingType?: BuildingType;
+  /** Foundation-risk indicators for the postcode area, when known. */
+  foundationRisk?: FoundationRisk;
   address: ListingAddress;
   location: GeoPoint;
   images: ListingImage[];

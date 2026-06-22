@@ -11,6 +11,8 @@ const PREFIX = 'realty:';
 export const StorageKeys = {
   language: `${PREFIX}language`,
   appearance: `${PREFIX}appearance`,
+  /** The signed-in user's session (mock auth); absent when signed out. */
+  session: `${PREFIX}session`,
   recentSearches: `${PREFIX}recent-searches`,
   recentViews: `${PREFIX}recent-views`,
   /** Cached neighborhood boundaries; suffixed with `:<cityCode>` per city. */

@@ -52,6 +52,15 @@ describe('ListingDetailScreen', () => {
     expect(getByText('1')).toBeTruthy(); // bathrooms value
     expect(getByText('Bathrooms')).toBeTruthy();
     expect(getByText('84 m²')).toBeTruthy();
+    // Building type
+    expect(getByText('Apartment')).toBeTruthy();
+    // Foundation risk (compact: title, label, soil type, % built before 1970)
+    expect(getByText('Foundation risk')).toBeTruthy();
+    expect(getByText('Kwetsbaar gebied - 60-80 %')).toBeTruthy();
+    expect(getByText('Zeekleigebied')).toBeTruthy();
+    expect(getByText('75%')).toBeTruthy();
+    // Time on platform — a relative phrase (exact span depends on today's date)
+    expect(getByText(/^Listed/)).toBeTruthy();
   });
 
   it('renders description when present', async () => {
@@ -74,6 +83,11 @@ describe('ListingDetailScreen', () => {
     expect(getByText('Slaapkamers')).toBeTruthy();
     expect(getByText('Badkamers')).toBeTruthy();
     expect(getByText('Oppervlakte')).toBeTruthy();
+    // Building type + foundation risk localise; the risk label stays Dutch data.
+    expect(getByText('Appartement')).toBeTruthy();
+    expect(getByText('Funderingsrisico')).toBeTruthy();
+    expect(getByText('Bodemtype')).toBeTruthy();
+    expect(getByText(/geplaatst/)).toBeTruthy();
     // "Visit realtor" button is only shown when sourceUrl is present;
     // the mock listing has no sourceUrl, so we verify label absence.
     expect(getByText('84 m²')).toBeTruthy();

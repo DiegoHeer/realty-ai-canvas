@@ -1,4 +1,4 @@
-import type { Listing, ListingStatus } from '@realty/types';
+import type { BuildingType, FoundationRisk, Listing, ListingStatus } from '@realty/types';
 
 /**
  * Adapter for the Realty Alerts API (`GET /v1/residences`).
@@ -45,6 +45,16 @@ export interface ResidenceOut {
   longitude: number | null;
   neighbourhood: string | null;
   district: string | null;
+  /** Physical building type. Absent/`null` when the backend hasn't classified it. */
+  building_type?: BuildingType | null;
+  /** Foundation-risk label for the postcode area, e.g. "Kwetsbaar gebied - 60-80 %". */
+  foundation_risk_label?: string | null;
+  /** Dominant soil classification, e.g. "Zeekleigebied". */
+  foundation_risk_soil_type?: string | null;
+  /** Share of nearby buildings built before 1970, as a percentage. */
+  foundation_risk_pre1970_pct?: number | null;
+  /** Long Dutch prose explaining the risk. Not surfaced in the app. */
+  foundation_risk_description?: string | null;
   current_price_eur: number | null;
   current_status: ResidenceStatus;
   last_scraped_at: string | null;
@@ -74,6 +84,15 @@ function addressLine(r: ResidenceOut): string {
     .filter((p) => p != null && p !== '')
     .join('');
   return [r.street, number].filter(Boolean).join(' ').trim();
+}
+
+/** Collect the foundation-risk fields into one object, or `undefined` if none are set. */
+function foundationRiskOf(r: ResidenceOut): FoundationRisk | undefined {
+  const label = r.foundation_risk_label ?? undefined;
+  const soilType = r.foundation_risk_soil_type ?? undefined;
+  const pre1970Pct = r.foundation_risk_pre1970_pct ?? undefined;
+  if (label == null && soilType == null && pre1970Pct == null) return undefined;
+  return { label, soilType, pre1970Pct };
 }
 
 /** A residence can only appear on the map if it has been geocoded. */
@@ -106,6 +125,8 @@ export function residenceToListing(
     roomCount: detail?.room_count ?? undefined,
     constructionPeriod: detail?.construction_period ?? undefined,
     energyLabel: detail?.energy_label ?? undefined,
+    buildingType: r.building_type ?? undefined,
+    foundationRisk: foundationRiskOf(r),
     address: {
       line1,
       city: r.city,

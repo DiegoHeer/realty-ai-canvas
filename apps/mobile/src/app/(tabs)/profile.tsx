@@ -110,7 +110,7 @@ function InfoIcon({ size, color }: IconProps) {
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
-  const { user, isAuthenticated, signIn, signOut } = useAuth();
+  const { user, isAuthenticated, signOut } = useAuth();
 
   // Signing out is destructive (it drops back to the guest state), so confirm
   // with a native dialog instead of acting on the first tap.
@@ -133,7 +133,7 @@ export default function ProfileScreen() {
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 128, gap: 16 }}
         showsVerticalScrollIndicator={false}>
-        {isAuthenticated && user ? <IdentityCard user={user} /> : <GuestCard onSignIn={signIn} />}
+        {isAuthenticated && user ? <IdentityCard user={user} /> : <GuestCard />}
 
         <PreferencesCard />
 
@@ -170,8 +170,9 @@ function IdentityCard({ user }: { user: AuthUser }) {
   );
 }
 
-function GuestCard({ onSignIn }: { onSignIn: () => void }) {
+function GuestCard() {
   const { t } = useTranslation();
+  const router = useRouter();
   return (
     <View className="gap-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
       <Text className="text-lg font-semibold text-neutral-900 dark:text-white">
@@ -180,12 +181,14 @@ function GuestCard({ onSignIn }: { onSignIn: () => void }) {
       <Text className="text-sm text-neutral-500">{t('profile.guestSubtitle')}</Text>
       <View className="mt-1 flex-row gap-3">
         <Pressable
-          onPress={onSignIn}
+          onPress={() => router.push('/auth/login')}
+          accessibilityRole="button"
           className="flex-1 items-center rounded-xl bg-blue-600 py-3 active:opacity-80">
           <Text className="text-base font-semibold text-white">{t('profile.logIn')}</Text>
         </Pressable>
         <Pressable
-          onPress={onSignIn}
+          onPress={() => router.push('/auth/register')}
+          accessibilityRole="button"
           className="flex-1 items-center rounded-xl border border-neutral-300 py-3 active:opacity-60 dark:border-neutral-700">
           <Text className="text-base font-semibold text-neutral-900 dark:text-white">
             {t('profile.register')}

@@ -36,6 +36,32 @@
     "help": "Ajuda e apoio",
     "about": "Sobre"
   },
+  "auth": {
+    "logInTitle": "Iniciar sessão",
+    "registerTitle": "Criar conta",
+    "logInSubtitle": "Bem-vindo de volta. Inicie sessão para continuar.",
+    "registerSubtitle": "Crie uma conta para guardar imóveis e pesquisas.",
+    "name": "Nome",
+    "namePlaceholder": "O seu nome",
+    "email": "E-mail",
+    "emailPlaceholder": "voce@exemplo.com",
+    "password": "Palavra-passe",
+    "passwordPlaceholder": "Introduza a sua palavra-passe",
+    "logInCta": "Iniciar sessão",
+    "registerCta": "Criar conta",
+    "continueWithGoogle": "Continuar com o Google",
+    "continueWithApple": "Continuar com a Apple",
+    "orDivider": "ou",
+    "noAccountPrompt": "Ainda não tem conta?",
+    "haveAccountPrompt": "Já tem uma conta?",
+    "goToRegister": "Registar",
+    "goToLogin": "Iniciar sessão",
+    "errorNameRequired": "Introduza o seu nome.",
+    "errorEmailRequired": "Introduza o seu e-mail.",
+    "errorEmailInvalid": "Introduza um e-mail válido.",
+    "errorPasswordRequired": "Introduza a sua palavra-passe.",
+    "errorPasswordTooShort": "A palavra-passe deve ter pelo menos 8 caracteres."
+  },
   "search": {
     "placeholder": "Pesquisar",
     "focus": "Pesquisar",
@@ -45,16 +71,15 @@
     "error": "Não foi possível pesquisar agora. Tente novamente.",
     "recentTitle": "Pesquisas recentes",
     "clearRecent": "Limpar",
-    "removeRecent": "Remover das pesquisas recentes"
+    "removeRecent": "Remover das pesquisas recentes",
+    "filters": "Filtros"
   },
   "filters": {
     "favorites": "Favoritos",
-    "shops": "Lojas",
-    "hotspots": "Hotspots",
-    "noise": "Ruído",
-    "airQuality": "Qualidade do ar",
-    "restaurants": "Restaurantes",
-    "parks": "Parques"
+    "recent": "Recentes",
+    "popular": "Populares",
+    "new": "Novos",
+    "sold": "Vendidos"
   },
   "listings": {
     "title": "Imóveis",
@@ -73,6 +98,30 @@
     "rooms": "Divisões",
     "constructionPeriod": "Ano de construção",
     "energyLabel": "Certificado energético",
+    "buildingType": "Tipo",
+    "buildingTypes": {
+      "apartment": "Apartamento",
+      "terraced": "Casa em banda",
+      "corner": "Casa de gaveto",
+      "semi_detached": "Moradia geminada",
+      "detached": "Moradia isolada"
+    },
+    "foundationRisk": {
+      "title": "Risco de fundação",
+      "soilType": "Tipo de solo",
+      "pre1970": "Construído antes de 1970"
+    },
+    "listedAgo": {
+      "today": "Publicado hoje",
+      "day_one": "Publicado há {{count}} dia",
+      "day_other": "Publicado há {{count}} dias",
+      "week_one": "Publicado há {{count}} semana",
+      "week_other": "Publicado há {{count}} semanas",
+      "month_one": "Publicado há {{count}} mês",
+      "month_other": "Publicado há {{count}} meses",
+      "year_one": "Publicado há {{count}} ano",
+      "year_other": "Publicado há {{count}} anos"
+    },
     "visitRealtor": "Ver no agente imobiliário",
     "close": "Fechar",
     "like": "Guardar nos favoritos",

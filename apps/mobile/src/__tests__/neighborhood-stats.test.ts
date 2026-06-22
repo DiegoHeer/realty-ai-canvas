@@ -1,6 +1,6 @@
 import type { NeighborhoodStats } from '@realty/types';
 
-import { deriveNeighborhoodStats, RAW_FIELDS } from '@/lib/neighborhood-stats';
+import { deriveNeighborhoodStats, normalizeStats, RAW_FIELDS } from '@/lib/neighborhood-stats';
 
 /** Build a NeighborhoodStats wrapper around a raw `{ field: value }` map. */
 function makeStats(stats: Record<string, number>): NeighborhoodStats {
@@ -152,5 +152,138 @@ describe('deriveNeighborhoodStats', () => {
     expect(view.income).toBeNull();
     expect(view.energy).toBeNull();
     expect(view.districtHeating).toBeNull();
+  });
+});
+
+// A 2024-vintage record (the CBS layout served for most neighborhoods outside
+// Den Haag): camelCase keys, with age/household/origin as percentages rather
+// than counts. Totals are round so the synthesized counts re-derive exactly.
+const borgerbuurt2024: NeighborhoodStats = {
+  code: 'BU0363ES02',
+  statsYear: 2024,
+  stats: {
+    aantalInwoners: 1000,
+    aantalHuishoudens: 500,
+    woningvoorraad: 480,
+    gemiddeldeWoningwaarde: 350,
+    gemiddeldeHuishoudsgrootte: 2.0,
+    // age (% of inhabitants), 0-15 .. 65+
+    percentagePersonen0Tot15Jaar: 10,
+    percentagePersonen15Tot25Jaar: 10,
+    percentagePersonen25Tot45Jaar: 30,
+    percentagePersonen45Tot65Jaar: 25,
+    percentagePersonen65JaarEnOuder: 25,
+    // household composition (% of households)
+    percentageEenpersoonshuishoudens: 60,
+    percentageHuishoudensMetKinderen: 25,
+    percentageHuishoudensZonderKinderen: 15,
+    // tenure (% of stock) — already percentages in both vintages
+    percentageKoopwoningen: 40,
+    percHuurwoningenInBezitWoningcorporaties: 45,
+    percHuurwoningenInBezitOverigeVerhuurders: 15,
+    // dwelling type + build year (%)
+    percentageEengezinswoning: 30,
+    percentageMeergezinswoning: 70,
+    percentageBouwjaarklasseTot2000: 80,
+    percentageBouwjaarklasseVanaf2000: 20,
+    // origin (% of inhabitants)
+    percentageMetHerkomstlandNederland: 50,
+    percentageMetHerkomstlandUitEuropaExclNl: 20,
+    percentageMetHerkomstlandBuitenEuropa: 30,
+    // income + energy + district heating
+    gemiddeldInkomenPerInwoner: 30.5,
+    gemiddeldGestandaardiseerdInkomenVanHuishoudens: 40.0,
+    mediaanVermogenVanParticuliereHuish: 120.0,
+    percentageHuishoudensOnderOfRondSociaalMinimum: 8.0,
+    gemiddeldAardgasverbruik: 900,
+    gemiddeldeElektriciteitslevering: 2500,
+    percentageWoningenMetStadsverwarming: 5,
+    // CBS string/identifier fields that ride along — must be ignored, not coerced.
+    buurtnaam: 'Borgerbuurt' as unknown as number,
+    water: 'NEE' as unknown as number,
+  },
+};
+
+describe('normalizeStats', () => {
+  it('leaves a 2023 record untouched', () => {
+    expect(normalizeStats(archipel)).toBe(archipel);
+  });
+
+  it('maps 2024 keys onto the canonical 2023 keys, preserving the year', () => {
+    const { stats, statsYear } = normalizeStats(borgerbuurt2024);
+    expect(statsYear).toBe(2024); // the "CBS 2024" label still reads correctly
+    expect(stats[RAW_FIELDS.inhabitants]).toBe(1000);
+    expect(stats[RAW_FIELDS.wozValue]).toBe(350);
+    expect(stats[RAW_FIELDS.tenureOwner]).toBe(40);
+    expect(stats[RAW_FIELDS.gas]).toBe(900);
+    expect(stats[RAW_FIELDS.districtHeating]).toBe(5);
+  });
+
+  it('reconstructs 2024 percentage breakdowns as counts of their total', () => {
+    const { stats } = normalizeStats(borgerbuurt2024);
+    expect(stats[RAW_FIELDS.age0to15]).toBe(100); // 10% of 1000 inhabitants
+    expect(stats[RAW_FIELDS.age65plus]).toBe(250); // 25% of 1000
+    expect(stats[RAW_FIELDS.singlePerson]).toBe(300); // 60% of 500 households
+    expect(stats[RAW_FIELDS.originNL]).toBe(500); // 50% of 1000
+  });
+
+  it('drops non-numeric CBS fields rather than coercing them', () => {
+    const { stats } = normalizeStats(borgerbuurt2024);
+    expect(stats.buurtnaam).toBeUndefined();
+    expect(stats.water).toBeUndefined();
+  });
+
+  it('is idempotent', () => {
+    const once = normalizeStats(borgerbuurt2024);
+    expect(normalizeStats(once)).toEqual(once);
+  });
+});
+
+describe('deriveNeighborhoodStats on a normalized 2024 record', () => {
+  const view = deriveNeighborhoodStats(normalizeStats(borgerbuurt2024))!;
+
+  it('fills the KPI strip from camelCase keys', () => {
+    expect(view.kpis).toEqual([
+      { labelKey: 'inhabitants', value: 1000, format: 'count' },
+      { labelKey: 'households', value: 500, format: 'count' },
+      { labelKey: 'dwellings', value: 480, format: 'count' },
+      { labelKey: 'wozValue', value: 350, format: 'euroK' },
+    ]);
+  });
+
+  it('re-derives the original age percentages, oldest first', () => {
+    expect(view.age).toEqual([
+      { labelKey: 'age65plus', percent: 25 },
+      { labelKey: 'age45to65', percent: 25 },
+      { labelKey: 'age25to45', percent: 30 },
+      { labelKey: 'age15to25', percent: 10 },
+      { labelKey: 'age0to15', percent: 10 },
+    ]);
+  });
+
+  it('re-derives household + origin shares from the reconstructed counts', () => {
+    expect(view.household?.segments.map((s) => [s.labelKey, s.percent])).toEqual([
+      ['singlePerson', 60],
+      ['withChildren', 25],
+      ['withoutChildren', 15],
+    ]);
+    expect(view.origin?.map((s) => [s.labelKey, s.percent])).toEqual([
+      ['originNL', 50],
+      ['originEurope', 20],
+      ['originOutsideEurope', 30],
+    ]);
+  });
+
+  it('keeps tenure/build-year percentages and lists energy + district heating', () => {
+    expect(view.tenure).toEqual([
+      { labelKey: 'ownerOccupied', weight: 40, percent: 40 },
+      { labelKey: 'corporation', weight: 45, percent: 45 },
+      { labelKey: 'otherRental', weight: 15, percent: 15 },
+    ]);
+    expect(view.energy).toEqual([
+      { labelKey: 'gas', value: 900, unit: 'm3' },
+      { labelKey: 'electricity', value: 2500, unit: 'kWh' },
+    ]);
+    expect(view.districtHeating).toBe(5);
   });
 });

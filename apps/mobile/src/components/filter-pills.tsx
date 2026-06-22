@@ -1,19 +1,11 @@
 import { useTranslation } from '@realty/i18n';
 import { Pressable, ScrollView, Text } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useEffectiveColorScheme } from '@/components/map-style';
 
 // Dummy filter categories for now — labels live in i18n under `filters.*`.
-const FILTERS = [
-  'favorites',
-  'shops',
-  'hotspots',
-  'noise',
-  'airQuality',
-  'restaurants',
-  'parks',
-] as const;
+const FILTERS = ['favorites', 'recent', 'popular', 'new', 'sold'] as const;
 
 type FilterKey = (typeof FILTERS)[number];
 
@@ -47,11 +39,12 @@ function HeartIcon({ size, color }: IconProps) {
   );
 }
 
-function ShopIcon({ size, color }: IconProps) {
+function ClockIcon({ size, color }: IconProps) {
   return (
     <StrokeSvg size={size}>
+      <Circle cx={12} cy={12} r={9} stroke={color} strokeWidth={2} />
       <Path
-        d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"
+        d="M12 7.5V12l3.5 2"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
@@ -61,11 +54,18 @@ function ShopIcon({ size, color }: IconProps) {
   );
 }
 
-function FlameIcon({ size, color }: IconProps) {
+function TrendingUpIcon({ size, color }: IconProps) {
   return (
     <StrokeSvg size={size}>
       <Path
-        d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
+        d="M22 7l-8.5 8.5-5-5L2 17"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M16 7h6v6"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
@@ -75,20 +75,20 @@ function FlameIcon({ size, color }: IconProps) {
   );
 }
 
-function VolumeIcon({ size, color }: IconProps) {
+function SparklesIcon({ size, color }: IconProps) {
   return (
     <StrokeSvg size={size}>
       <Path
-        d="M11 5L6 9H2v6h4l5 4V5z"
+        d="M11 3l2.8 5.2L19 11l-5.2 2.8L11 19l-2.8-5.2L3 11l5.2-2.8z"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <Path
-        d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"
+        d="M19.5 2.5l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z"
         stroke={color}
-        strokeWidth={2}
+        strokeWidth={1.6}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -96,46 +96,18 @@ function VolumeIcon({ size, color }: IconProps) {
   );
 }
 
-function WindIcon({ size, color }: IconProps) {
+function TagIcon({ size, color }: IconProps) {
   return (
     <StrokeSvg size={size}>
       <Path
-        d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </StrokeSvg>
-  );
-}
-
-function UtensilsIcon({ size, color }: IconProps) {
-  return (
-    <StrokeSvg size={size}>
-      <Path
-        d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </StrokeSvg>
-  );
-}
-
-function LeafIcon({ size, color }: IconProps) {
-  return (
-    <StrokeSvg size={size}>
-      <Path
-        d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"
+        d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <Path
-        d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"
+        d="M7 7h.01"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
@@ -147,25 +119,30 @@ function LeafIcon({ size, color }: IconProps) {
 
 const FILTER_ICONS: Record<FilterKey, (props: IconProps) => React.ReactElement> = {
   favorites: HeartIcon,
-  shops: ShopIcon,
-  hotspots: FlameIcon,
-  noise: VolumeIcon,
-  airQuality: WindIcon,
-  restaurants: UtensilsIcon,
-  parks: LeafIcon,
+  recent: ClockIcon,
+  popular: TrendingUpIcon,
+  new: SparklesIcon,
+  sold: TagIcon,
 };
 
+interface FilterPillsProps {
+  /** Keys of the currently-selected filters. */
+  selected?: ReadonlySet<string>;
+  /** Toggle a filter's selection. */
+  onToggle?: (key: FilterKey) => void;
+}
+
 /**
- * Horizontal, scrollable row of filter pills shown under the search bar. The
- * pills are placeholders for now (no behavior wired up) but read their labels
- * from i18n so they're translation-ready. Each pill carries a stroked SVG icon
- * matching the text color in both light and dark mode.
+ * Horizontal, scrollable row of filter pills shown under the search bar. Tapping
+ * a pill toggles its selection (a filled pill = active); the number selected
+ * feeds the count badge on the search bar's filters button. Labels read from
+ * i18n; each pill carries a stroked SVG icon matching its text color in both
+ * themes. Selection only tracks "configured" state for now — it doesn't yet
+ * filter the listings.
  */
-export function FilterPills() {
+export function FilterPills({ selected, onToggle }: FilterPillsProps = {}) {
   const { t } = useTranslation();
-  const scheme = useColorScheme();
-  // Match the pill text: neutral-900 in light, white in dark.
-  const iconColor = scheme === 'dark' ? '#ffffff' : '#171717';
+  const isDark = useEffectiveColorScheme() === 'dark';
   return (
     <ScrollView
       horizontal
@@ -174,13 +151,22 @@ export function FilterPills() {
       contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
       {FILTERS.map((key) => {
         const Icon = FILTER_ICONS[key];
+        const active = selected?.has(key) ?? false;
+        // Active pills invert: dark fill + light content (and the reverse in
+        // dark mode). Set inline so the fill never depends on an uncompiled
+        // class (a plain `bg-neutral-900` isn't in the generated stylesheet).
+        const pillBg = active ? (isDark ? '#ffffff' : '#171717') : isDark ? '#262626' : '#ffffff';
+        const fg = active ? (isDark ? '#171717' : '#ffffff') : isDark ? '#ffffff' : '#171717';
         return (
           <Pressable
             key={key}
             accessibilityRole="button"
-            className="flex-row items-center gap-2 rounded-full bg-white px-4 py-2 shadow-md shadow-black/20 active:bg-neutral-100 dark:bg-neutral-800 dark:active:bg-neutral-700">
-            <Icon color={iconColor} />
-            <Text className="text-lg font-medium text-neutral-900 dark:text-white">
+            accessibilityState={{ selected: active }}
+            onPress={() => onToggle?.(key)}
+            style={{ backgroundColor: pillBg }}
+            className="flex-row items-center gap-2 rounded-full px-4 py-2 shadow-md shadow-black/20 active:opacity-80">
+            <Icon color={fg} />
+            <Text style={{ color: fg }} className="text-lg font-medium">
               {t(`filters.${key}`)}
             </Text>
           </Pressable>

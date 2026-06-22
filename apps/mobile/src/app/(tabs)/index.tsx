@@ -16,6 +16,7 @@ import { Brand } from '@/constants/theme';
 import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
+import { normalizeStats } from '@/lib/neighborhood-stats';
 import { zoomForType } from '@/lib/pdok';
 import { recordRecentView } from '@/lib/recent-views';
 
@@ -28,6 +29,17 @@ export default function MapScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
   const [searchActive, setSearchActive] = useState(false);
+  // Quick-filter chips below the search bar. Tapping one toggles its selection;
+  // the number selected drives the badge on the search bar's filters button.
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(() => new Set());
+  const toggleFilter = useCallback((key: string) => {
+    setActiveFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
   // No city is selected until the user taps one. Until then the map shows no
   // neighborhoods; tapping a city loads + shows that city's neighborhoods.
   const [selectedCity, setSelectedCity] = useState<
@@ -52,7 +64,12 @@ export default function MapScreen() {
   );
 
   // Stats are a separate dataset matched to areas by code (=== the area's id).
-  const statsByCode = useMemo(() => new Map(stats.map((s) => [s.code, s])), [stats]);
+  // Normalize on the way in so 2024-vintage records (most neighborhoods outside
+  // Den Haag) speak the same field vocabulary as 2023 ones — see normalizeStats.
+  const statsByCode = useMemo(
+    () => new Map(stats.map((s) => [s.code, normalizeStats(s)])),
+    [stats],
+  );
   const selectedAreaStats = selectedArea ? statsByCode.get(selectedArea.id) ?? null : null;
 
   // Shade each neighborhood by its inhabitant count relative to the rest of the
@@ -148,6 +165,7 @@ export default function MapScreen() {
           ref={searchRef}
           onActiveChange={setSearchActive}
           placeholder={cityName}
+          activeFilterCount={activeFilters.size}
           onResult={(r) =>
             mapRef.current?.flyTo({
               longitude: r.longitude,
@@ -157,7 +175,7 @@ export default function MapScreen() {
           }
         />
         <View className="mt-2">
-          <FilterPills />
+          <FilterPills selected={activeFilters} onToggle={toggleFilter} />
         </View>
         {/* While a tapped city's neighborhoods download, show a spinner centered
             below the pills. Cached cities resolve instantly, so it rarely shows. */}

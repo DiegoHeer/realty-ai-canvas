@@ -36,6 +36,32 @@
     "help": "Help en ondersteuning",
     "about": "Over"
   },
+  "auth": {
+    "logInTitle": "Inloggen",
+    "registerTitle": "Account aanmaken",
+    "logInSubtitle": "Welkom terug. Log in om verder te gaan.",
+    "registerSubtitle": "Maak een account om woningen en zoekopdrachten op te slaan.",
+    "name": "Naam",
+    "namePlaceholder": "Je naam",
+    "email": "E-mailadres",
+    "emailPlaceholder": "jij@voorbeeld.nl",
+    "password": "Wachtwoord",
+    "passwordPlaceholder": "Voer je wachtwoord in",
+    "logInCta": "Inloggen",
+    "registerCta": "Account aanmaken",
+    "continueWithGoogle": "Doorgaan met Google",
+    "continueWithApple": "Doorgaan met Apple",
+    "orDivider": "of",
+    "noAccountPrompt": "Nog geen account?",
+    "haveAccountPrompt": "Heb je al een account?",
+    "goToRegister": "Registreren",
+    "goToLogin": "Inloggen",
+    "errorNameRequired": "Vul je naam in.",
+    "errorEmailRequired": "Vul je e-mailadres in.",
+    "errorEmailInvalid": "Vul een geldig e-mailadres in.",
+    "errorPasswordRequired": "Vul je wachtwoord in.",
+    "errorPasswordTooShort": "Wachtwoord moet minstens 8 tekens bevatten."
+  },
   "search": {
     "placeholder": "Zoeken",
     "focus": "Zoeken",
@@ -45,16 +71,15 @@
     "error": "Zoeken lukt nu niet. Probeer het opnieuw.",
     "recentTitle": "Recente zoekopdrachten",
     "clearRecent": "Wissen",
-    "removeRecent": "Verwijderen uit recente zoekopdrachten"
+    "removeRecent": "Verwijderen uit recente zoekopdrachten",
+    "filters": "Filters"
   },
   "filters": {
     "favorites": "Favorieten",
-    "shops": "Winkels",
-    "hotspots": "Hotspots",
-    "noise": "Geluid",
-    "airQuality": "Luchtkwaliteit",
-    "restaurants": "Restaurants",
-    "parks": "Parken"
+    "recent": "Recent",
+    "popular": "Populair",
+    "new": "Nieuw",
+    "sold": "Verkocht"
   },
   "listings": {
     "title": "Aanbod",
@@ -73,6 +98,30 @@
     "rooms": "Kamers",
     "constructionPeriod": "Bouwjaar",
     "energyLabel": "Energielabel",
+    "buildingType": "Woningtype",
+    "buildingTypes": {
+      "apartment": "Appartement",
+      "terraced": "Tussenwoning",
+      "corner": "Hoekwoning",
+      "semi_detached": "Twee-onder-één-kap",
+      "detached": "Vrijstaand"
+    },
+    "foundationRisk": {
+      "title": "Funderingsrisico",
+      "soilType": "Bodemtype",
+      "pre1970": "Gebouwd voor 1970"
+    },
+    "listedAgo": {
+      "today": "Vandaag geplaatst",
+      "day_one": "{{count}} dag geleden geplaatst",
+      "day_other": "{{count}} dagen geleden geplaatst",
+      "week_one": "{{count}} week geleden geplaatst",
+      "week_other": "{{count}} weken geleden geplaatst",
+      "month_one": "{{count}} maand geleden geplaatst",
+      "month_other": "{{count}} maanden geleden geplaatst",
+      "year_one": "{{count}} jaar geleden geplaatst",
+      "year_other": "{{count}} jaar geleden geplaatst"
+    },
     "visitRealtor": "Bekijk bij makelaar",
     "close": "Sluiten",
     "like": "Aan favorieten toevoegen",

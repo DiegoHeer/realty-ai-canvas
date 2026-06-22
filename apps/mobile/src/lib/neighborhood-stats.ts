@@ -62,6 +62,103 @@ export const RAW_FIELDS = {
   districtHeating: 'PercentageWoningenMetStadsverwarming_64', // %
 } as const;
 
+/**
+ * CBS reorganized the "Kerncijfers wijken en buurten" payload between its 2023
+ * and 2024 vintages, and the backend serves whichever vintage it has per
+ * neighborhood — so a single city's `/v1/stats/neighborhoods` response mixes
+ * both (e.g. Amsterdam is ~88% 2024). Two things changed:
+ *
+ *  1. Keys went from PascalCase-with-ordinal (`AantalInwoners_5`) to camelCase
+ *     (`aantalInwoners`).
+ *  2. Several breakdowns that were absolute counts in 2023 (age, household
+ *     composition, origin) are published as percentages in 2024.
+ *
+ * {@link RAW_FIELDS} only knows the 2023 keys, so without translation every
+ * 2024 neighborhood reads as all-`null` (blank choropleth + empty panel). The
+ * fix is {@link normalizeStats}, which maps a 2024 record onto the 2023 keys so
+ * the rest of the app speaks a single vocabulary.
+ */
+
+/** 2024 key → canonical (2023) key, for fields whose value means the same thing. */
+const RENAME_2024: Record<string, string> = {
+  aantalInwoners: RAW_FIELDS.inhabitants,
+  aantalHuishoudens: RAW_FIELDS.households,
+  woningvoorraad: RAW_FIELDS.dwellings,
+  gemiddeldeWoningwaarde: RAW_FIELDS.wozValue,
+  gemiddeldeHuishoudsgrootte: RAW_FIELDS.householdSize,
+  percentageKoopwoningen: RAW_FIELDS.tenureOwner,
+  percHuurwoningenInBezitWoningcorporaties: RAW_FIELDS.tenureCorporation,
+  percHuurwoningenInBezitOverigeVerhuurders: RAW_FIELDS.tenureOther,
+  percentageEengezinswoning: RAW_FIELDS.singleFamily,
+  percentageMeergezinswoning: RAW_FIELDS.multiFamily,
+  percentageBouwjaarklasseTot2000: RAW_FIELDS.before2000,
+  percentageBouwjaarklasseVanaf2000: RAW_FIELDS.from2000,
+  gemiddeldInkomenPerInwoner: RAW_FIELDS.incomePerInhabitant,
+  gemiddeldGestandaardiseerdInkomenVanHuishoudens: RAW_FIELDS.standardizedHouseholdIncome,
+  mediaanVermogenVanParticuliereHuish: RAW_FIELDS.medianWealth,
+  percentageHuishoudensOnderOfRondSociaalMinimum: RAW_FIELDS.belowSocialMinimum,
+  gemiddeldAardgasverbruik: RAW_FIELDS.gas,
+  gemiddeldeElektriciteitslevering: RAW_FIELDS.electricity,
+  percentageWoningenMetStadsverwarming: RAW_FIELDS.districtHeating,
+  // No 2024 equivalent: the lowest-40%/highest-20% income-bracket shares
+  // (`lowestIncomeShare`/`highestIncomeShare`) were redefined by CBS, so they
+  // stay absent for 2024 records rather than being mislabeled.
+};
+
+/**
+ * 2024 percentage key → canonical (2023) count key, reconstructed as
+ * `pct% × total` (total = inhabitants). The view layer re-derives shares from
+ * these counts, so the round-trip returns the original percentage — the
+ * synthesized count is never shown directly.
+ */
+const PCT_OF_INHABITANTS_2024: Record<string, string> = {
+  percentagePersonen0Tot15Jaar: RAW_FIELDS.age0to15,
+  percentagePersonen15Tot25Jaar: RAW_FIELDS.age15to25,
+  percentagePersonen25Tot45Jaar: RAW_FIELDS.age25to45,
+  percentagePersonen45Tot65Jaar: RAW_FIELDS.age45to65,
+  percentagePersonen65JaarEnOuder: RAW_FIELDS.age65plus,
+  percentageMetHerkomstlandNederland: RAW_FIELDS.originNL,
+  percentageMetHerkomstlandUitEuropaExclNl: RAW_FIELDS.originEurope,
+  percentageMetHerkomstlandBuitenEuropa: RAW_FIELDS.originOutsideEurope,
+};
+
+/** As {@link PCT_OF_INHABITANTS_2024}, but the total is the household count. */
+const PCT_OF_HOUSEHOLDS_2024: Record<string, string> = {
+  percentageEenpersoonshuishoudens: RAW_FIELDS.singlePerson,
+  percentageHuishoudensZonderKinderen: RAW_FIELDS.withoutChildren,
+  percentageHuishoudensMetKinderen: RAW_FIELDS.withChildren,
+};
+
+const isFiniteNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+/**
+ * Translate one neighborhood's raw stats to the canonical 2023 key set. 2023
+ * records (and anything already canonical) pass through unchanged; 2024 records
+ * are remapped, with their percentage breakdowns reconstructed as counts.
+ * Idempotent, so it is safe to apply more than once. A field with no 2024
+ * counterpart is simply absent, which the derivation already renders as "—".
+ */
+export function normalizeStats(entry: NeighborhoodStats): NeighborhoodStats {
+  const raw = entry.stats ?? {};
+  // The 2024 vintage is the one keyed `aantalInwoners`; 2023 uses `AantalInwoners_5`.
+  if (!('aantalInwoners' in raw)) return entry;
+
+  const out: Record<string, number> = {};
+  for (const [src, dest] of Object.entries(RENAME_2024)) {
+    if (isFiniteNum(raw[src])) out[dest] = raw[src];
+  }
+  const synthesize = (map: Record<string, string>, total: unknown) => {
+    if (!isFiniteNum(total)) return;
+    for (const [src, dest] of Object.entries(map)) {
+      if (isFiniteNum(raw[src])) out[dest] = (raw[src] / 100) * total;
+    }
+  };
+  synthesize(PCT_OF_INHABITANTS_2024, raw.aantalInwoners);
+  synthesize(PCT_OF_HOUSEHOLDS_2024, raw.aantalHuishoudens);
+
+  return { ...entry, stats: out };
+}
+
 /** Number formatting hint, resolved to a locale-aware string in the component. */
 export type StatFormat = 'count' | 'euroK' | 'euroKDec' | 'percent';
 

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { useEffectiveColorScheme } from '@/components/map-style';
 import { geocode, lookup, suggest, type GeocodeResult, type GeocodeSuggestion } from '@/lib/pdok';
 import { useRecentSearches } from '@/lib/recent-searches';
 
@@ -69,6 +70,30 @@ function ClockIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+// Sliders-horizontal — the filters affordance on the right of the bar. Two
+// rails with ring knobs (top one left-of-centre, bottom right-of-centre). Drawn
+// theme-aware (not the muted ICON_COLOR) so it reads as prominent as the
+// reference: `color` strokes the rails/rings, `knobFill` matches the bar's
+// background so each knob reads as a ring sitting on its rail.
+function FilterIcon({
+  size = 22,
+  color,
+  knobFill,
+}: {
+  size?: number;
+  color: string;
+  knobFill: string;
+}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 9h18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Path d="M3 15h18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Circle cx={9} cy={9} r={3} fill={knobFill} stroke={color} strokeWidth={2} />
+      <Circle cx={15} cy={15} r={3} fill={knobFill} stroke={color} strokeWidth={2} />
+    </Svg>
+  );
+}
+
 const SUGGEST_DEBOUNCE_MS = 200;
 const MIN_QUERY_LENGTH = 2;
 
@@ -87,6 +112,13 @@ export interface LocationSearchProps {
    * "Search" hint when omitted.
    */
   placeholder?: string;
+  /** Tapped the filters button on the right of the bar. */
+  onOpenFilters?: () => void;
+  /**
+   * Number of active filters. When > 0 it's shown as a bold count beside the
+   * filters icon (as in the Redfin reference); 0 hides the badge.
+   */
+  activeFilterCount?: number;
 }
 
 export interface LocationSearchRef {
@@ -102,8 +134,19 @@ export interface LocationSearchRef {
  * primitives so the single file serves web and native.
  */
 export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>(
-  function LocationSearch({ onResult, onActiveChange, placeholder }, ref) {
+  function LocationSearch(
+    { onResult, onActiveChange, placeholder, onOpenFilters, activeFilterCount = 0 },
+    ref,
+  ) {
   const { t } = useTranslation();
+  // The filters affordance is a grey pill, its colours set inline (not via
+  // NativeWind classes, so they can't fall foul of an uncompiled class) and
+  // driven by the effective theme. `filterColor` strokes the glyph and the
+  // count; `filterPillBg` fills the pill and each knob's ring centre, so the
+  // rings read as cut-outs in the pill.
+  const scheme = useEffectiveColorScheme();
+  const filterColor = scheme === 'dark' ? '#ffffff' : '#171717';
+  const filterPillBg = scheme === 'dark' ? '#404040' : '#e5e5e5';
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } =
     useRecentSearches();
   const [query, setQuery] = useState('');
@@ -265,7 +308,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
 
   return (
     <View>
-      <View className="flex-row items-center rounded-2xl bg-white px-4 py-1 shadow-md shadow-black/20 dark:bg-neutral-800">
+      <View className="flex-row items-center rounded-full bg-white py-1 pl-6 pr-1 shadow-md shadow-black/20 dark:bg-neutral-800">
         {/* Left affordance: a search glyph that focuses the field, swapping to a
             back arrow while focused that collapses the search (mirrors the
             backdrop-tap dismiss). */}
@@ -305,6 +348,22 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
             <Text className="ml-2 text-lg text-neutral-400">✕</Text>
           </Pressable>
         ) : null}
+        {/* Filters affordance: a grey pill inset from the bar, holding the
+            sliders glyph and — once any filter is configured — the count. */}
+        <Pressable
+          onPress={onOpenFilters}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('search.filters')}
+          style={{ backgroundColor: filterPillBg }}
+          className="ml-1.5 flex-row items-center gap-1.5 rounded-full px-3 py-3">
+          <FilterIcon color={filterColor} knobFill={filterPillBg} />
+          {activeFilterCount > 0 && (
+            <Text style={{ color: filterColor }} className="text-base font-bold">
+              {activeFilterCount}
+            </Text>
+          )}
+        </Pressable>
       </View>
 
       {focused && query.trim().length === 0 && recentSearches.length > 0 && (
