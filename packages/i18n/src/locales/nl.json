@@ -36,6 +36,15 @@
     "help": "Help en ondersteuning",
     "about": "Over"
   },
+  "feedback": {
+    "title": "Feedback",
+    "subtitle": "Laat ons weten wat je vindt of meld een probleem.",
+    "label": "Je feedback",
+    "placeholder": "Deel je gedachten…",
+    "submit": "Feedback verzenden",
+    "submitting": "Verzenden…",
+    "sent": "Feedback verzonden"
+  },
   "auth": {
     "logInTitle": "Inloggen",
     "registerTitle": "Account aanmaken",
