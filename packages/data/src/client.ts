@@ -140,29 +140,36 @@ interface CityShapeResponse {
   geometry: number[][][] | number[][][][];
 }
 
-/** The endpoint returns 50 per page by default and caps `limit` at 200. */
+/** Page size we request. The endpoint is documented as capping `limit` at 200. */
 const CITY_PAGE_SIZE = 200;
 
 /**
  * All Dutch municipality ("gemeente") boundaries, fetched from the shapes API
- * and transformed into {@link CityShape}. The endpoint is paginated (max 200 per
- * request), so this pages through every offset until a short page ends it.
- * Returns an empty array when no backend is configured (mock/offline builds).
- * Boundaries never change, so the app caches the result (see `loadCities`).
+ * and transformed into {@link CityShape}. Returns an empty array when no backend
+ * is configured (mock/offline builds). Boundaries never change, so the app caches
+ * the result (see `loadCities`).
+ *
+ * Pagination is defensive: we page through offsets, dedupe by `code`, and stop
+ * when a page is short (a real last page) **or** when a page adds no new cities.
+ * The second guard matters because the endpoint currently ignores `limit`/`offset`
+ * and returns the full set (342 municipalities) on every call — a naive
+ * "stop when page.length < limit" loop never terminates against it, which is what
+ * left a cold-started app (empty city cache) unable to load any neighborhoods.
  */
 export async function getCities(): Promise<CityShape[]> {
   if (!API_URL) return [];
-  const cities: CityShape[] = [];
+  const byCode = new Map<string, CityShape>();
   for (let offset = 0; ; offset += CITY_PAGE_SIZE) {
     const page = await request<CityShapeResponse[]>(
       `/v1/shapes/cities?limit=${CITY_PAGE_SIZE}&offset=${offset}`,
     );
+    const before = byCode.size;
     for (const c of page) {
-      cities.push({ code: c.code, name: c.name, geometry: toAreaGeometry(c.geometry) });
+      byCode.set(c.code, { code: c.code, name: c.name, geometry: toAreaGeometry(c.geometry) });
     }
-    if (page.length < CITY_PAGE_SIZE) break;
+    if (page.length < CITY_PAGE_SIZE || byCode.size === before) break;
   }
-  return cities;
+  return [...byCode.values()];
 }
 
 /** Raw stats entry from `/v1/stats/neighborhoods` (its `geometry` is dropped). */

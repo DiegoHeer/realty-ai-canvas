@@ -81,6 +81,30 @@
     "new": "Novos",
     "sold": "Vendidos"
   },
+  "filtersPage": {
+    "title": "Filtros",
+    "reset": "Limpar",
+    "showHomes_one": "Ver {{count}} imóvel",
+    "showHomes_other": "Ver {{count}} imóveis",
+    "mode": "Comprar ou arrendar",
+    "buy": "Comprar",
+    "rent": "Arrendar",
+    "price": "Preço",
+    "propertyType": "Tipo de imóvel",
+    "bedrooms": "Quartos",
+    "bathrooms": "Casas de banho",
+    "size": "Área",
+    "energyLabel": "Certificado energético",
+    "buildYear": "Construído após",
+    "any": "Qualquer",
+    "buildingTypes": {
+      "apartment": "Apartamento",
+      "terraced": "Casa em banda",
+      "corner": "Casa de gaveto",
+      "semi_detached": "Casa geminada",
+      "detached": "Casa isolada"
+    }
+  },
   "listings": {
     "title": "Imóveis",
     "count_one": "{{count}} imóvel",

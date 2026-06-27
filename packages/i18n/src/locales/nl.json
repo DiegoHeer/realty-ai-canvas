@@ -81,6 +81,30 @@
     "new": "Nieuw",
     "sold": "Verkocht"
   },
+  "filtersPage": {
+    "title": "Filters",
+    "reset": "Wissen",
+    "showHomes_one": "Toon {{count}} woning",
+    "showHomes_other": "Toon {{count}} woningen",
+    "mode": "Kopen of huren",
+    "buy": "Kopen",
+    "rent": "Huren",
+    "price": "Prijs",
+    "propertyType": "Woningtype",
+    "bedrooms": "Slaapkamers",
+    "bathrooms": "Badkamers",
+    "size": "Woonoppervlak",
+    "energyLabel": "Energielabel",
+    "buildYear": "Bouwjaar na",
+    "any": "Alle",
+    "buildingTypes": {
+      "apartment": "Appartement",
+      "terraced": "Tussenwoning",
+      "corner": "Hoekwoning",
+      "semi_detached": "Twee-onder-één-kap",
+      "detached": "Vrijstaand"
+    }
+  },
   "listings": {
     "title": "Aanbod",
     "count_one": "{{count}} woning",

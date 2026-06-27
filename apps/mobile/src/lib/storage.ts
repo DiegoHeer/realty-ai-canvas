@@ -21,6 +21,8 @@ export const StorageKeys = {
   stats: `${PREFIX}stats`,
   /** Cached municipality boundaries for the whole country (a single list). */
   cities: `${PREFIX}cities`,
+  /** The map search filters (buy/rent, price, type, …); see lib/filters.ts. */
+  filters: `${PREFIX}filters`,
 } as const;
 
 export async function loadJSON<T>(key: string): Promise<T | null> {

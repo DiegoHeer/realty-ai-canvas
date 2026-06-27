@@ -7,21 +7,19 @@ import {
   TabListProps,
 } from 'expo-router/ui';
 import { useTranslation } from '@realty/i18n';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, View, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
-import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
   const { t } = useTranslation();
+  // A full-width header bar pinned to the top, with the routed content filling
+  // the space below it (TabList rendered before TabSlot so it stacks on top).
   return (
-    <Tabs>
-      <TabSlot style={{ height: '100%' }} />
+    <Tabs style={styles.root}>
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="listings" href="/explore" asChild>
@@ -35,6 +33,7 @@ export default function AppTabs() {
           </TabTrigger>
         </CustomTabList>
       </TabList>
+      <TabSlot style={styles.slot} />
     </Tabs>
   );
 }
@@ -54,51 +53,34 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 }
 
 export function CustomTabList(props: TabListProps) {
-  const colors = useTheme();
   const { t } = useTranslation();
 
   return (
-    <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          {t('common.appName')}
-        </ThemedText>
+    <ThemedView {...props} type="backgroundElement" style={styles.bar}>
+      <ThemedText type="smallBold" style={styles.brandText}>
+        {t('common.appName')}
+      </ThemedText>
 
-        {props.children}
-
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">{t('common.docs')}</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
-      </ThemedView>
-    </View>
+      {props.children}
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  tabListContainer: {
-    position: 'absolute',
-    width: '100%',
-    padding: Spacing.three,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
+  root: {
+    flex: 1,
   },
-  innerContainer: {
+  slot: {
+    flex: 1,
+  },
+  // Full-width header bar across the top of the page.
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexGrow: 1,
     gap: Spacing.two,
-    maxWidth: MaxContentWidth,
   },
   brandText: {
     marginRight: 'auto',
@@ -110,12 +92,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
-  },
-  externalPressable: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
   },
 });

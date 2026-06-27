@@ -81,6 +81,30 @@
     "new": "New",
     "sold": "Sold"
   },
+  "filtersPage": {
+    "title": "Filters",
+    "reset": "Reset",
+    "showHomes_one": "Show {{count}} home",
+    "showHomes_other": "Show {{count}} homes",
+    "mode": "Buy or rent",
+    "buy": "Buy",
+    "rent": "Rent",
+    "price": "Price",
+    "propertyType": "Property type",
+    "bedrooms": "Bedrooms",
+    "bathrooms": "Bathrooms",
+    "size": "Living area",
+    "energyLabel": "Energy label",
+    "buildYear": "Built after",
+    "any": "Any",
+    "buildingTypes": {
+      "apartment": "Apartment",
+      "terraced": "Terraced house",
+      "corner": "Corner house",
+      "semi_detached": "Semi-detached",
+      "detached": "Detached"
+    }
+  },
   "listings": {
     "title": "Listings",
     "count_one": "{{count}} home",

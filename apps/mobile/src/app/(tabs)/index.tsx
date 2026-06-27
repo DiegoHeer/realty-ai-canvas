@@ -16,12 +16,14 @@ import { Brand } from '@/constants/theme';
 import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
+import { applyFilters, countActiveFilters, useFilters } from '@/lib/filters';
 import { normalizeStats } from '@/lib/neighborhood-stats';
 import { zoomForType } from '@/lib/pdok';
 import { recordRecentView } from '@/lib/recent-views';
 
 export default function MapScreen() {
   const { data: listings = [], isLoading } = useListings();
+  const { filters } = useFilters();
   const { data: cities = [] } = useCities(loadCities);
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ListingMapRef>(null);
@@ -29,8 +31,8 @@ export default function MapScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
   const [searchActive, setSearchActive] = useState(false);
-  // Quick-filter chips below the search bar. Tapping one toggles its selection;
-  // the number selected drives the badge on the search bar's filters button.
+  // Quick-filter chips below the search bar — their own toggle state, separate
+  // from the search filters (the filters page drives the map + the count badge).
   const [activeFilters, setActiveFilters] = useState<Set<string>>(() => new Set());
   const toggleFilter = useCallback((key: string) => {
     setActiveFilters((prev) => {
@@ -52,6 +54,10 @@ export default function MapScreen() {
   // Precompute city bounding boxes once so a tap ray-casts only the polygons
   // whose bbox contains it. Cities load once and are cached, so this is cheap.
   const cityIndex = useMemo(() => buildCityIndex(cities), [cities]);
+
+  // The map shows only listings passing the active search filters; the full
+  // list is kept for selection lookups (a still-open card mustn't vanish).
+  const filteredListings = useMemo(() => applyFilters(listings, filters), [listings, filters]);
 
   const selected = useMemo(
     () => listings.find((l) => l.id === selectedId) ?? null,
@@ -137,7 +143,7 @@ export default function MapScreen() {
     <View className="flex-1 bg-neutral-100 dark:bg-black">
       <ListingMap
         ref={mapRef}
-        listings={listings}
+        listings={filteredListings}
         polygons={coloredAreas}
         onSelect={handleSelect}
         onSelectPolygon={handleSelectPolygon}
@@ -165,7 +171,8 @@ export default function MapScreen() {
           ref={searchRef}
           onActiveChange={setSearchActive}
           placeholder={cityName}
-          activeFilterCount={activeFilters.size}
+          activeFilterCount={countActiveFilters(filters)}
+          onOpenFilters={() => router.push('/settings/filters')}
           onResult={(r) =>
             mapRef.current?.flyTo({
               longitude: r.longitude,
