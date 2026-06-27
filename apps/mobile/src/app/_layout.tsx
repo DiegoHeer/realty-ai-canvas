@@ -32,7 +32,14 @@ export default function RootLayout() {
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <StatusBar style={statusBarStyle} />
             <AnimatedSplashOverlay />
-            <Stack screenOptions={{ headerShown: false }}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                // iOS otherwise labels the back button with the previous route's
+                // title — here "(tabs)", which has no title set. 'minimal' shows
+                // just the chevron. Android/web ignore this and already behave.
+                headerBackButtonDisplayMode: 'minimal',
+              }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen
                 name="listing/[id]"

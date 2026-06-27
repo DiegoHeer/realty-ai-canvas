@@ -41,10 +41,16 @@ export function SelectPills({
   options,
   selected,
   onToggle,
+  stretch = false,
+  disabledKeys,
 }: {
   options: PillOption[];
   selected: string[];
   onToggle: (key: string) => void;
+  /** Stretch pills to share the row equally (full-width segmented look). */
+  stretch?: boolean;
+  /** Keys rendered dimmed and non-interactive (e.g. a not-yet-built option). */
+  disabledKeys?: string[];
 }) {
   const isDark = useEffectiveColorScheme() === 'dark';
   const borderColor = isDark ? '#404040' : '#d4d4d4';
@@ -52,15 +58,25 @@ export function SelectPills({
     <View className="flex-row flex-wrap gap-2">
       {options.map((opt) => {
         const active = selected.includes(opt.key);
+        const disabled = disabledKeys?.includes(opt.key) ?? false;
         const bg = active ? (isDark ? '#ffffff' : '#171717') : isDark ? '#262626' : '#ffffff';
         const fg = active ? (isDark ? '#171717' : '#ffffff') : isDark ? '#ffffff' : '#171717';
         return (
           <Pressable
             key={opt.key}
             accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            accessibilityState={{ selected: active, disabled }}
+            disabled={disabled}
             onPress={() => onToggle(opt.key)}
-            style={{ backgroundColor: bg, borderColor: active ? bg : borderColor, borderWidth: 1 }}
+            style={{
+              backgroundColor: bg,
+              borderColor: active ? bg : borderColor,
+              borderWidth: 1,
+              opacity: disabled ? 0.4 : undefined,
+              flexGrow: stretch ? 1 : 0,
+              flexBasis: stretch ? 0 : 'auto',
+              alignItems: stretch ? 'center' : undefined,
+            }}
             className="rounded-full px-4 py-2 active:opacity-80">
             <Text style={{ color: fg }} className="text-base font-medium">
               {opt.label}
@@ -72,7 +88,11 @@ export function SelectPills({
   );
 }
 
-/** A −/+ stepper. `formatValue` renders the current value (e.g. 0 → "Any"). */
+/**
+ * A −/+ stepper. `formatValue` renders the current value (e.g. 0 → "Any").
+ * With `buttonsOnly`, renders just the two buttons (no value text) — e.g. to sit
+ * beside a slider whose value is shown in the section header instead.
+ */
 export function Stepper({
   value,
   onChange,
@@ -80,6 +100,7 @@ export function Stepper({
   max = 99,
   step = 1,
   formatValue,
+  buttonsOnly = false,
 }: {
   value: number;
   onChange: (value: number) => void;
@@ -87,6 +108,7 @@ export function Stepper({
   max?: number;
   step?: number;
   formatValue?: (value: number) => string;
+  buttonsOnly?: boolean;
 }) {
   const isDark = useEffectiveColorScheme() === 'dark';
   const fg = isDark ? '#ffffff' : '#171717';
@@ -94,25 +116,29 @@ export function Stepper({
   const borderColor = isDark ? '#404040' : '#d4d4d4';
   const canDec = value > min;
   const canInc = value < max;
+  const buttons = (
+    <View className="flex-row items-center gap-3">
+      <StepButton
+        label="−"
+        color={canDec ? fg : disabledFg}
+        borderColor={borderColor}
+        onPress={() => canDec && onChange(value - step)}
+      />
+      <StepButton
+        label="+"
+        color={canInc ? fg : disabledFg}
+        borderColor={borderColor}
+        onPress={() => canInc && onChange(value + step)}
+      />
+    </View>
+  );
+  if (buttonsOnly) return buttons;
   return (
     <View className="flex-row items-center justify-between">
       <Text className="text-base text-neutral-700 dark:text-neutral-300">
         {formatValue ? formatValue(value) : String(value)}
       </Text>
-      <View className="flex-row items-center gap-3">
-        <StepButton
-          label="−"
-          color={canDec ? fg : disabledFg}
-          borderColor={borderColor}
-          onPress={() => canDec && onChange(value - step)}
-        />
-        <StepButton
-          label="+"
-          color={canInc ? fg : disabledFg}
-          borderColor={borderColor}
-          onPress={() => canInc && onChange(value + step)}
-        />
-      </View>
+      {buttons}
     </View>
   );
 }

@@ -2,7 +2,7 @@ import { useListings } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import type { BuildingType } from '@realty/types';
 import { useNavigation, useRouter } from 'expo-router';
-import { useLayoutEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -48,6 +48,18 @@ export default function FiltersScreen() {
   const [draft, setDraft] = useState<Filters>(filters);
   const update = (patch: Partial<Filters>) => setDraft((d) => ({ ...d, ...patch }));
 
+  // iOS reads a left-to-right thumb drag as the screen's back-swipe (most sliders
+  // sit at their minimum, hard against the left edge). Suspend the pop gesture for
+  // the duration of any thumb drag, then restore it. Spread onto every slider.
+  const setSwipeBack = useCallback(
+    (enabled: boolean) => navigation.setOptions({ gestureEnabled: enabled }),
+    [navigation],
+  );
+  const sliderDrag = {
+    onDragStart: () => setSwipeBack(false),
+    onDragEnd: () => setSwipeBack(true),
+  };
+
   // Reset lives in the native header, mirroring the pushed settings screens.
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -64,6 +76,9 @@ export default function FiltersScreen() {
   const matchCount = applyFilters(listings, draft).length;
   const anyLabel = t('filtersPage.any');
 
+  // Bedrooms/bathrooms render as discrete 0–6 sliders; 0 reads as "Any", n as "+n".
+  const roomCountLabel = (v: number) => (v === 0 ? anyLabel : `+${v}`);
+
   // Price — domain (and the availability histogram) depend on buy vs. rent.
   const price = priceDomain(draft.mode);
   const priceValues = [draft.minPrice ?? price.min, draft.maxPrice ?? price.max];
@@ -77,6 +92,13 @@ export default function FiltersScreen() {
     draft.minAreaSqm === null && draft.maxAreaSqm === null
       ? anyLabel
       : `${areaValues[0]} – ${areaValues[1]} m²`;
+
+  // Energy labels are a free multi-select; summarise them in canonical (best→worst)
+  // order regardless of the order they were toggled in.
+  const energyLabelSummary =
+    draft.energyLabels.length > 0
+      ? ENERGY_LABELS.filter((l) => draft.energyLabels.includes(l)).join(', ')
+      : anyLabel;
 
   function apply() {
     setFilters(draft);
@@ -95,6 +117,10 @@ export default function FiltersScreen() {
         showsVerticalScrollIndicator={false}>
         <FilterSection title={t('filtersPage.mode')}>
           <SelectPills
+            stretch
+            // Rent is a placeholder until the backend supports it (deal_type=rent);
+            // keep it visible but disabled so Buy stays the only, selected option.
+            disabledKeys={['rent']}
             options={[
               { key: 'buy', label: t('filtersPage.buy') },
               { key: 'rent', label: t('filtersPage.rent') },
@@ -117,6 +143,7 @@ export default function FiltersScreen() {
                 maxPrice: hi >= price.max ? null : hi,
               })
             }
+            {...sliderDrag}
           />
         </FilterSection>
 
@@ -137,24 +164,48 @@ export default function FiltersScreen() {
           />
         </FilterSection>
 
-        <FilterSection title={t('filtersPage.bedrooms')}>
-          <Stepper
-            value={draft.minBedrooms}
-            min={0}
-            max={6}
-            onChange={(v) => update({ minBedrooms: v })}
-            formatValue={(v) => (v === 0 ? anyLabel : `${v}+`)}
-          />
+        <FilterSection title={t('filtersPage.bedrooms')} value={roomCountLabel(draft.minBedrooms)}>
+          <View className="flex-row items-center gap-3">
+            <View className="flex-1">
+              <RangeSlider
+                min={0}
+                max={6}
+                step={1}
+                values={[draft.minBedrooms]}
+                onChange={([v]) => update({ minBedrooms: v })}
+                {...sliderDrag}
+              />
+            </View>
+            <Stepper
+              buttonsOnly
+              value={draft.minBedrooms}
+              min={0}
+              max={6}
+              onChange={(v) => update({ minBedrooms: v })}
+            />
+          </View>
         </FilterSection>
 
-        <FilterSection title={t('filtersPage.bathrooms')}>
-          <Stepper
-            value={draft.minBathrooms}
-            min={0}
-            max={6}
-            onChange={(v) => update({ minBathrooms: v })}
-            formatValue={(v) => (v === 0 ? anyLabel : `${v}+`)}
-          />
+        <FilterSection title={t('filtersPage.bathrooms')} value={roomCountLabel(draft.minBathrooms)}>
+          <View className="flex-row items-center gap-3">
+            <View className="flex-1">
+              <RangeSlider
+                min={0}
+                max={6}
+                step={1}
+                values={[draft.minBathrooms]}
+                onChange={([v]) => update({ minBathrooms: v })}
+                {...sliderDrag}
+              />
+            </View>
+            <Stepper
+              buttonsOnly
+              value={draft.minBathrooms}
+              min={0}
+              max={6}
+              onChange={(v) => update({ minBathrooms: v })}
+            />
+          </View>
         </FilterSection>
 
         <FilterSection title={t('filtersPage.size')} value={areaLabel}>
@@ -169,14 +220,21 @@ export default function FiltersScreen() {
                 maxAreaSqm: hi >= AREA_DOMAIN.max ? null : hi,
               })
             }
+            {...sliderDrag}
           />
         </FilterSection>
 
-        <FilterSection title={t('filtersPage.energyLabel')} value={draft.minEnergyLabel ?? anyLabel}>
+        <FilterSection title={t('filtersPage.energyLabel')} value={energyLabelSummary}>
           <SelectPills
             options={ENERGY_LABELS.map((label) => ({ key: label, label }))}
-            selected={draft.minEnergyLabel ? [draft.minEnergyLabel] : []}
-            onToggle={(key) => update({ minEnergyLabel: draft.minEnergyLabel === key ? null : key })}
+            selected={draft.energyLabels}
+            onToggle={(key) =>
+              update({
+                energyLabels: draft.energyLabels.includes(key)
+                  ? draft.energyLabels.filter((x) => x !== key)
+                  : [...draft.energyLabels, key],
+              })
+            }
           />
         </FilterSection>
 
@@ -189,6 +247,7 @@ export default function FiltersScreen() {
             step={YEAR_DOMAIN.step}
             values={[draft.minBuildYear ?? YEAR_DOMAIN.min]}
             onChange={([v]) => update({ minBuildYear: v <= YEAR_DOMAIN.min ? null : v })}
+            {...sliderDrag}
           />
         </FilterSection>
       </ScrollView>

@@ -22,8 +22,8 @@ export interface Filters {
   minBathrooms: number;
   minAreaSqm: number | null;
   maxAreaSqm: number | null;
-  /** Minimum acceptable energy label, e.g. "C" keeps A/B/C; null = any. */
-  minEnergyLabel: string | null;
+  /** Accepted energy labels; empty = any. */
+  energyLabels: string[];
   /** Keep listings built in/after this year; null = any. */
   minBuildYear: number | null;
 }
@@ -37,7 +37,7 @@ export const DEFAULT_FILTERS: Filters = {
   minBathrooms: 0,
   minAreaSqm: null,
   maxAreaSqm: null,
-  minEnergyLabel: null,
+  energyLabels: [],
   minBuildYear: null,
 };
 
@@ -73,13 +73,6 @@ export const PRICE_DISTRIBUTION_RENT = [
   3, 8, 15, 22, 28, 30, 27, 21, 16, 11, 8, 5, 4, 3, 2, 2, 1, 1, 1, 1,
 ];
 
-/** Rank of an energy label (0 = best). Unknown/absent ranks worst. */
-export function energyRank(label: string | null | undefined): number {
-  if (!label) return Number.POSITIVE_INFINITY;
-  const i = (ENERGY_LABELS as readonly string[]).indexOf(label);
-  return i === -1 ? Number.POSITIVE_INFINITY : i;
-}
-
 /** Parse a 4-digit year out of a free-form construction period ("1973"). */
 function parseYear(period: string | undefined): number | null {
   if (!period) return null;
@@ -100,7 +93,7 @@ export function countActiveFilters(f: Filters): number {
   if (f.minBedrooms > 0) n++;
   if (f.minBathrooms > 0) n++;
   if (f.minAreaSqm !== null || f.maxAreaSqm !== null) n++;
-  if (f.minEnergyLabel !== null) n++;
+  if (f.energyLabels.length > 0) n++;
   if (f.minBuildYear !== null) n++;
   return n;
 }
@@ -117,7 +110,7 @@ export function applyFilters(listings: Listing[], f: Filters): Listing[] {
     if (l.bathrooms < f.minBathrooms) return false;
     if (f.minAreaSqm !== null && l.areaSqm < f.minAreaSqm) return false;
     if (f.maxAreaSqm !== null && l.areaSqm > f.maxAreaSqm) return false;
-    if (f.minEnergyLabel !== null && energyRank(l.energyLabel) > energyRank(f.minEnergyLabel))
+    if (f.energyLabels.length > 0 && (!l.energyLabel || !f.energyLabels.includes(l.energyLabel)))
       return false;
     if (f.minBuildYear !== null) {
       const year = parseYear(l.constructionPeriod);
