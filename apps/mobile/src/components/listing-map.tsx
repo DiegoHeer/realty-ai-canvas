@@ -84,6 +84,12 @@ export interface ListingMapProps {
    */
   onMapPress?: (coord: { longitude: number; latitude: number }) => void;
   /**
+   * Fired once the camera settles after a pan/zoom, with the viewport centre
+   * and zoom. Lets the screen auto-load a city's neighborhoods once the user
+   * has zoomed in far enough — as if they'd tapped the middle of the map.
+   */
+  onCameraIdle?: (state: { longitude: number; latitude: number; zoom: number }) => void;
+  /**
    * The tapped city's outline, pulsing while its neighborhoods load. Null hides
    * it (data arrived, or no city is loading).
    */
@@ -106,7 +112,7 @@ export interface ListingMapRef {
  * The web implementation lives in `listing-map.web.tsx`.
  */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, loadingPolygon },
+  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, onCameraIdle, loadingPolygon },
   ref,
 ) {
   const cameraRef = useRef<CameraRef>(null);
@@ -161,6 +167,12 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
         const [longitude, latitude] = e.nativeEvent.lngLat;
         onMapPress?.({ longitude, latitude });
       }}
+      // Once a pan/zoom settles, report the viewport centre + zoom so the
+      // screen can auto-load a city's neighborhoods when zoomed in far enough.
+      onRegionDidChange={(e) => {
+        const [longitude, latitude] = e.nativeEvent.center;
+        onCameraIdle?.({ longitude, latitude, zoom: e.nativeEvent.zoom });
+      }}
       compassPosition={{
         bottom: insets.bottom + COMPASS_MARGIN,
         left: COMPASS_MARGIN,
@@ -205,34 +217,44 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
           )}
         </GeoJSONSource>
       )}
-      {listings.map((listing) => (
-        <Marker
-          key={listing.id}
-          id={listing.id}
-          lngLat={[listing.location.longitude, listing.location.latitude]}
-          // Use the Marker's own onPress rather than a nested Pressable: a
-          // Pressable inside a Marker (MarkerView) does not fire onPress
-          // reliably on Android. https://github.com/maplibre/maplibre-react-native/issues/1018
-          onPress={() => {
-            markerTapAtRef.current = Date.now();
-            onSelect?.(listing.id);
-          }}>
-          <View
-            style={[
-              styles.marker,
-              viewedIds.has(listing.id) && styles.markerViewed,
-            ]}>
-            <Text style={styles.markerText} numberOfLines={1}>
-              {priceLabel(listing)}
-            </Text>
-          </View>
-        </Marker>
-      ))}
+      {listings.map((listing) => {
+        const viewed = viewedIds.has(listing.id);
+        return (
+          <Marker
+            key={listing.id}
+            id={listing.id}
+            lngLat={[listing.location.longitude, listing.location.latitude]}
+            // Anchor the tip of the pin tail (the marker's bottom-centre) on the
+            // coordinate, so the bubble reads as a pin pointing at the listing.
+            anchor="bottom"
+            // Use the Marker's own onPress rather than a nested Pressable: a
+            // Pressable inside a Marker (MarkerView) does not fire onPress
+            // reliably on Android. https://github.com/maplibre/maplibre-react-native/issues/1018
+            onPress={() => {
+              markerTapAtRef.current = Date.now();
+              onSelect?.(listing.id);
+            }}>
+            <View style={styles.markerWrap}>
+              <View style={[styles.marker, viewed && styles.markerViewed]}>
+                <Text style={styles.markerText} numberOfLines={1}>
+                  {priceLabel(listing)}
+                </Text>
+              </View>
+              <View style={[styles.markerArrow, viewed && styles.markerArrowViewed]} />
+            </View>
+          </Marker>
+        );
+      })}
     </Map>
   );
 });
 
 const styles = StyleSheet.create({
+  // Stack the bubble over its tail and centre them, so the tail points straight
+  // down from the middle of the bubble.
+  markerWrap: {
+    alignItems: 'center',
+  },
   marker: {
     backgroundColor: Brand.blue,
     paddingHorizontal: 8,
@@ -243,6 +265,22 @@ const styles = StyleSheet.create({
   },
   markerViewed: {
     backgroundColor: Brand.blueLight,
+  },
+  // Downward triangle tail that turns the bubble into a pin. Pulled up 1px so it
+  // tucks under the bubble's white border, leaving no seam between the two.
+  markerArrow: {
+    width: 0,
+    height: 0,
+    marginTop: -1,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: Brand.blue,
+  },
+  markerArrowViewed: {
+    borderTopColor: Brand.blueLight,
   },
   markerText: {
     color: '#ffffff',
