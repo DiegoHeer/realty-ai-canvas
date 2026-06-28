@@ -36,6 +36,15 @@
     "help": "Help & support",
     "about": "About"
   },
+  "feedback": {
+    "title": "Feedback",
+    "subtitle": "Tell us what you think or report a problem.",
+    "label": "Your feedback",
+    "placeholder": "Share your thoughts…",
+    "submit": "Send feedback",
+    "submitting": "Sending…",
+    "sent": "Feedback sent"
+  },
   "auth": {
     "logInTitle": "Log in",
     "registerTitle": "Create account",
