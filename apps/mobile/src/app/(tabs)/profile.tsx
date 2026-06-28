@@ -41,27 +41,6 @@ function BellIcon({ size, color }: IconProps) {
   );
 }
 
-function HeartIcon({ size, color }: IconProps) {
-  return (
-    <StrokeSvg size={size}>
-      <Path
-        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"
-        stroke={color}
-        {...STROKE}
-      />
-    </StrokeSvg>
-  );
-}
-
-function SearchIcon({ size, color }: IconProps) {
-  return (
-    <StrokeSvg size={size}>
-      <Path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z" stroke={color} {...STROKE} />
-      <Path d="M21 21l-4.35-4.35" stroke={color} {...STROKE} />
-    </StrokeSvg>
-  );
-}
-
 function CreditCardIcon({ size, color }: IconProps) {
   return (
     <StrokeSvg size={size}>
@@ -215,11 +194,11 @@ function PreferencesCard() {
 }
 
 /**
- * Account section — a card of navigational rows. These are placeholders for now:
- * each row is a tappable target without a destination wired up yet.
+ * Account section — a card of navigational rows that push their settings pages.
  */
 function AccountCard() {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <View className="gap-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
@@ -227,19 +206,26 @@ function AccountCard() {
         {t('profile.account')}
       </Text>
 
-      <MenuRow icon={BellIcon} label={t('profile.notifications')} />
-      <MenuRow icon={HeartIcon} label={t('profile.savedHomes')} />
-      <MenuRow icon={SearchIcon} label={t('profile.savedSearches')} />
-      <MenuRow icon={CreditCardIcon} label={t('profile.paymentMethods')} />
+      <MenuRow
+        icon={BellIcon}
+        label={t('profile.notifications')}
+        onPress={() => router.push('/settings/notifications')}
+      />
+      <MenuRow
+        icon={CreditCardIcon}
+        label={t('profile.subscription')}
+        onPress={() => router.push('/settings/subscription')}
+      />
     </View>
   );
 }
 
 /**
- * Support section — a card of navigational rows. Placeholders, like {@link AccountCard}.
+ * Support section — a card of navigational rows that push their settings pages.
  */
 function SupportCard() {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <View className="gap-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
@@ -247,18 +233,29 @@ function SupportCard() {
         {t('profile.support')}
       </Text>
 
-      <MenuRow icon={LockIcon} label={t('profile.privacy')} />
-      <MenuRow icon={HelpIcon} label={t('profile.help')} />
-      <MenuRow icon={InfoIcon} label={t('profile.about')} />
+      <MenuRow
+        icon={LockIcon}
+        label={t('profile.privacy')}
+        onPress={() => router.push('/settings/privacy')}
+      />
+      <MenuRow
+        icon={HelpIcon}
+        label={t('profile.help')}
+        onPress={() => router.push('/settings/help')}
+      />
+      <MenuRow
+        icon={InfoIcon}
+        label={t('profile.about')}
+        onPress={() => router.push('/settings/about')}
+      />
     </View>
   );
 }
 
 /**
  * A tappable settings row: leading stroked SVG icon, label, and a trailing
- * chevron. `onPress` is optional — without it the row is a visual placeholder
- * that still gives press feedback, matching the dummy entries on the profile
- * screen.
+ * chevron. `onPress` is optional — without it the row is inert but still gives
+ * press feedback.
  */
 function MenuRow({
   icon: Icon,

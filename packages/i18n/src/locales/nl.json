@@ -28,13 +28,56 @@
     "appearance_dark": "Donker",
     "account": "Account",
     "notifications": "Meldingen",
-    "savedHomes": "Opgeslagen woningen",
-    "savedSearches": "Opgeslagen zoekopdrachten",
-    "paymentMethods": "Betaalmethoden",
+    "subscription": "Abonnement",
     "support": "Ondersteuning",
     "privacy": "Privacy en beveiliging",
     "help": "Help en ondersteuning",
     "about": "Over"
+  },
+  "privacyPage": {
+    "zeroDataTitle": "Een zero-data bedrijf",
+    "zeroDataBody": "We verzamelen nul gebruikersgegevens van onze klanten. We bouwen geen profiel van wie je bent en we verkopen of delen je gegevens nooit.",
+    "behaviorTitle": "Wat we wél meten",
+    "behaviorBody": "We meten alleen het gebruik in de app om je ervaring te verbeteren: welke functies worden gebruikt en welke zelden. We richten ons op het verbeteren van de functies die je echt gebruikt.",
+    "noResaleTitle": "Je zoekopdrachten blijven van jou",
+    "noResaleBody": "We verzamelen of verspreiden je zoekfilters en woningvoorkeuren niet. Waar je naar zoekt blijft privé."
+  },
+  "aboutPage": {
+    "intro": "Realty AI Canvas helpt je koopwoningen in heel Nederland te ontdekken op een snel, kaartgericht canvas — met rijke buurtinzichten binnen handbereik.",
+    "mission": "Bekijk woningen, vergelijk buurten met openbare statistieken over bewoners, inkomen en energieverbruik, en controleer details zoals energielabels en funderingsrisico voordat je een bezichtiging plant.",
+    "version": "Versie"
+  },
+  "helpPage": {
+    "faqTitle": "Veelgestelde vragen",
+    "comingSoon": "Meer ondersteuningsfuncties komen binnenkort.",
+    "faq": {
+      "search": {
+        "q": "Hoe zoek ik naar woningen?",
+        "a": "Zoek een stad of buurt vanaf de kaart en tik op een marker om de woning te openen. Gebruik Filters om te verfijnen op prijs, oppervlakte, type en meer."
+      },
+      "stats": {
+        "q": "Wat tonen de buurtstatistieken?",
+        "a": "Elke buurt toont openbare cijfers over bewoners, huishoudens, inkomen en energieverbruik, zodat je een buurt begrijpt voordat je er bent geweest."
+      },
+      "foundation": {
+        "q": "Wat is de funderingsrisico-indicator?",
+        "a": "Voor woningen van vóór 1970 op bepaalde grondsoorten markeren we een mogelijk funderingsrisico, zodat je weet dat je dit verder moet uitzoeken."
+      },
+      "preferences": {
+        "q": "Kan ik de taal of weergave wijzigen?",
+        "a": "Ja. Open Profiel en gebruik de opties Taal en Weergave onder Voorkeuren."
+      },
+      "realtor": {
+        "q": "Hoe neem ik contact op met de makelaar?",
+        "a": "Open een woning en tik op “Bekijk bij makelaar” om naar de oorspronkelijke advertentie met de makelaarsgegevens te gaan."
+      }
+    }
+  },
+  "subscriptionPage": {
+    "comingSoon": "Abonnement en betaalmethoden komen binnenkort."
+  },
+  "notificationsPage": {
+    "comingSoon": "Meldingsinstellingen komen binnenkort."
   },
   "auth": {
     "logInTitle": "Inloggen",

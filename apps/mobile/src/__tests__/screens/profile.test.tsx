@@ -1,5 +1,6 @@
 import { initI18n } from '@realty/i18n';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import { I18nextProvider } from 'react-i18next';
 import { Alert } from 'react-native';
 
@@ -36,6 +37,35 @@ describe('ProfileScreen', () => {
     const { getByText } = await renderScreen('nl');
     expect(getByText('Profiel')).toBeTruthy();
     expect(getByText('Beheer je account en voorkeuren')).toBeTruthy();
+  });
+
+  it('shows Subscription and drops the removed account rows', async () => {
+    const { getByText, queryByText } = await renderScreen('en');
+    expect(getByText('Subscription')).toBeTruthy();
+    expect(queryByText('Saved homes')).toBeNull();
+    expect(queryByText('Saved searches')).toBeNull();
+    expect(queryByText('Payment methods')).toBeNull();
+  });
+
+  it('navigates to the matching settings page from each row', async () => {
+    const cases: [label: string, path: string][] = [
+      ['Notifications', '/settings/notifications'],
+      ['Subscription', '/settings/subscription'],
+      ['Privacy & security', '/settings/privacy'],
+      ['Help & support', '/settings/help'],
+      ['About', '/settings/about'],
+    ];
+
+    const { getByText } = await renderScreen('en');
+
+    // Wrap each press in its own settled act() scope — React 19 + RNTL otherwise
+    // overlap the Pressable's re-renders across iterations (see login.test.tsx).
+    for (const [label, path] of cases) {
+      await act(async () => {
+        fireEvent.press(getByText(label));
+      });
+      expect(router.push).toHaveBeenCalledWith(path);
+    }
   });
 
   it('confirms with a native dialog before signing out, and signs out only after confirming', async () => {
