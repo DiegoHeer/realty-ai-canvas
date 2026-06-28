@@ -1,7 +1,7 @@
 import type { AreaPolygon, CityShape, Listing, ListingQuery, NeighborhoodStats } from '@realty/types';
 
 import { API_BASE, API_URL, USE_LISTING_MOCKS } from './env';
-import { mockListings } from './mocks';
+import { mockCityNames, mockListings } from './mocks';
 import {
   hasCoordinates,
   LISTING_TO_RESIDENCE_STATUS,
@@ -170,6 +170,26 @@ export async function getCities(): Promise<CityShape[]> {
     if (page.length < CITY_PAGE_SIZE || byCode.size === before) break;
   }
   return [...byCode.values()];
+}
+
+/** A municipality's code + display name, as returned by `/v1/cities`. */
+export interface CityName {
+  /** CBS municipality code, e.g. `0518` for Den Haag ('s-Gravenhage). */
+  code: string;
+  name: string;
+}
+
+/**
+ * All Dutch municipality names (code + name) from the lightweight `/v1/cities`
+ * endpoint — no geometry, unlike {@link getCities}, so it's cheap to fetch and
+ * search. Used by the onboarding city picker and its fuzzy search. Falls back to
+ * a bundled sample ({@link mockCityNames}) when no backend is configured
+ * (mock/offline builds and the deterministic web export), so the picker always
+ * has content. The list never changes, so callers cache it for the session.
+ */
+export async function getCityNames(): Promise<CityName[]> {
+  if (!API_URL) return mockCityNames;
+  return request<CityName[]>('/v1/cities');
 }
 
 /** Raw stats entry from `/v1/stats/neighborhoods` (its `geometry` is dropped). */

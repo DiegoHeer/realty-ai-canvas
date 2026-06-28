@@ -23,6 +23,8 @@ export const StorageKeys = {
   cities: `${PREFIX}cities`,
   /** The map search filters (buy/rent, price, type, …); see lib/filters.ts. */
   filters: `${PREFIX}filters`,
+  /** Intro tour progress (furthest page + done flag); see lib/onboarding.ts. */
+  onboarding: `${PREFIX}onboarding`,
 } as const;
 
 export async function loadJSON<T>(key: string): Promise<T | null> {

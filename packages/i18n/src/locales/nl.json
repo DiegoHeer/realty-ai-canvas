@@ -217,5 +217,49 @@
       "districtHeatingHint": "Aandeel woningen met stadsverwarming",
       "missing": "Niet bekendgemaakt voor deze buurt"
     }
+  },
+  "onboarding": {
+    "skipTour": "Tour overslaan",
+    "back": "Terug",
+    "continue": "Doorgaan",
+    "getStarted": "Aan de slag",
+    "stepOf": "Stap {{current}} van {{total}}",
+    "replay": "Introductie opnieuw bekijken",
+    "welcome": {
+      "title": "Welkom bij Realty AI Canvas",
+      "subtitle": "Vind je volgende woning op een kaart, opgebouwd rond de buurten die er voor jou toe doen."
+    },
+    "features": {
+      "title": "Alles om te ontdekken",
+      "subtitle": "Twee manieren waarop Realty AI je slimmer laat zoeken.",
+      "map": {
+        "title": "Kaart en buurtinzichten",
+        "description": "Bekijk woningen op een interactieve kaart en tik op een buurt voor actuele statistieken."
+      },
+      "filters": {
+        "title": "Krachtige filters",
+        "description": "Verfijn op prijs, woningtype, oppervlak, energielabel en meer."
+      }
+    },
+    "filtersStep": {
+      "title": "Waar ben je naar op zoek?",
+      "subtitle": "Stel een startpunt in — je kunt dit altijd aanpassen."
+    },
+    "cities": {
+      "title": "Kies je steden",
+      "subtitle": "Kies waar je wilt zoeken. Je kunt er meerdere selecteren.",
+      "searchPlaceholder": "Zoek een stad",
+      "popular": "Populaire steden",
+      "noResults": "Geen overeenkomende stad gevonden.",
+      "selectedCount_one": "{{count}} stad geselecteerd",
+      "selectedCount_other": "{{count}} steden geselecteerd"
+    },
+    "account": {
+      "title": "Bewaar je zoekopdracht",
+      "subtitle": "Maak een account om woningen, zoekopdrachten en je steden op te slaan — of sla dit voorlopig over.",
+      "createAccount": "Account aanmaken",
+      "logIn": "Inloggen",
+      "signedInAs": "Ingelogd als {{name}}"
+    }
   }
 }
