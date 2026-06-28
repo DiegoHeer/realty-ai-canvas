@@ -16,6 +16,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Screenshot baselines + app assets are stored in Git LFS; fetch the
+          # real PNGs (not pointer files) so the web export bundles real images
+          # and toHaveScreenshot() compares against the actual baselines.
+          lfs: true
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
