@@ -15,8 +15,8 @@
     "export:web": "bun --filter @realty/mobile export:web",
     "lint": "bun --filter @realty/mobile lint",
     "test": "bun --filter '*' test",
-    "test:e2e": "bunx playwright test",
-    "test:update-snapshots": "bunx playwright test --update-snapshots",
+    "test:e2e": "bunx playwright test --config e2e/playwright.config.ts",
+    "test:update-snapshots": "bunx playwright test --config e2e/playwright.config.ts --update-snapshots",
     "typecheck": "bun --filter '*' typecheck"
   },
   "devDependencies": {
