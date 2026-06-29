@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { BookmarkIcon } from './icons';
+import { HeartIcon } from './icons';
 import { Brand } from '../constants/theme';
 
 export interface ListingCardProps {
@@ -82,7 +82,7 @@ export function ListingCard({ listing, onPress, onClose }: ListingCardProps) {
           accessibilityLabel={t(liked ? 'listing.unlike' : 'listing.like')}
           hitSlop={8}
           className="h-11 w-11 items-center justify-center rounded-full bg-white shadow active:opacity-70">
-          <BookmarkIcon filled={liked} color={liked ? Brand.blue : '#404040'} />
+          <HeartIcon filled={liked} color={liked ? Brand.blue : '#404040'} />
         </Pressable>
         <Pressable
           onPress={onClose}

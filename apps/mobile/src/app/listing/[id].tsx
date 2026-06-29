@@ -18,7 +18,7 @@ import {
 
 import { recordRecentView } from '@/lib/recent-views';
 import { Brand } from '@/constants/theme';
-import { BookmarkIcon, ShareIcon } from '../../components/icons';
+import { HeartIcon, ShareIcon } from '../../components/icons';
 import { LocationMap } from '../../components/location-map';
 // maptiler-basic GL style, with its key-gated MapTiler source/glyphs rewritten
 // to keyless OpenFreeMap endpoints. https://github.com/openmaptiles/maptiler-basic-gl-style
@@ -57,10 +57,7 @@ export default function ListingDetailScreen() {
 
   const cover = listing.images[0];
 
-  // The header bookmark's notch is "cut out" by painting it in the header's
-  // background color, so it reads correctly in both light and dark mode.
   const isDark = scheme === 'dark';
-  const headerBg = isDark ? 'rgb(18, 18, 18)' : '#ffffff';
   const headerTint = isDark ? '#f5f5f5' : '#404040';
 
   // Native share sheet with a deep link back to this listing. `url` is honoured
@@ -121,11 +118,7 @@ export default function ListingDetailScreen() {
                 accessibilityLabel={t(liked ? 'listing.unlike' : 'listing.like')}
                 hitSlop={8}
                 className="h-9 w-9 items-center justify-center active:opacity-60">
-                <BookmarkIcon
-                  filled={liked}
-                  color={liked ? Brand.blue : headerTint}
-                  cutoutColor={headerBg}
-                />
+                <HeartIcon filled={liked} color={liked ? Brand.blue : headerTint} />
               </Pressable>
               <Pressable
                 onPress={onShare}
