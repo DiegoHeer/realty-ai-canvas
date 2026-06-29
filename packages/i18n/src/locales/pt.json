@@ -28,13 +28,56 @@
     "appearance_dark": "Escuro",
     "account": "Conta",
     "notifications": "Notificações",
-    "savedHomes": "Imóveis guardados",
-    "savedSearches": "Pesquisas guardadas",
-    "paymentMethods": "Métodos de pagamento",
+    "subscription": "Subscrição",
     "support": "Apoio",
     "privacy": "Privacidade e segurança",
     "help": "Ajuda e apoio",
     "about": "Sobre"
+  },
+  "privacyPage": {
+    "zeroDataTitle": "Uma empresa sem dados",
+    "zeroDataBody": "Recolhemos zero dados de utilizador dos nossos clientes. Não criamos um perfil sobre quem é e nunca vendemos nem partilhamos as suas informações.",
+    "behaviorTitle": "O que medimos",
+    "behaviorBody": "Apenas registamos o comportamento na aplicação para melhorar a sua experiência: que funcionalidades são usadas e quais raramente. Concentramo-nos em melhorar as funcionalidades que realmente usa.",
+    "noResaleTitle": "As suas pesquisas são suas",
+    "noResaleBody": "Não recolhemos nem redistribuímos os seus filtros de pesquisa e preferências de imóveis. Aquilo que procura permanece privado."
+  },
+  "aboutPage": {
+    "intro": "A Realty AI Canvas ajuda-o a explorar imóveis à venda em todos os Países Baixos numa tela rápida e centrada no mapa — com informações detalhadas sobre os bairros ao seu alcance.",
+    "mission": "Veja imóveis, compare bairros com estatísticas públicas sobre residentes, rendimento e consumo de energia, e verifique detalhes como o certificado energético e o risco de fundações antes de agendar uma visita.",
+    "version": "Versão"
+  },
+  "helpPage": {
+    "faqTitle": "Perguntas frequentes",
+    "comingSoon": "Mais funcionalidades de apoio em breve.",
+    "faq": {
+      "search": {
+        "q": "Como pesquiso imóveis?",
+        "a": "Pesquise uma cidade ou bairro a partir do mapa e toque num marcador para abrir o imóvel. Use os Filtros para refinar por preço, área, tipo e mais."
+      },
+      "stats": {
+        "q": "O que mostram as estatísticas do bairro?",
+        "a": "Cada zona mostra dados públicos sobre residentes, agregados familiares, rendimento e consumo de energia, para que compreenda um bairro antes de o visitar."
+      },
+      "foundation": {
+        "q": "O que é o indicador de risco de fundações?",
+        "a": "Para imóveis construídos antes de 1970 em certos tipos de solo, assinalamos um possível risco de fundações para que saiba que deve investigar melhor."
+      },
+      "preferences": {
+        "q": "Posso mudar o idioma ou o aspeto?",
+        "a": "Sim. Abra o Perfil e use as opções Idioma e Aparência em Preferências."
+      },
+      "realtor": {
+        "q": "Como contacto o agente imobiliário?",
+        "a": "Abra um imóvel e toque em “Ver no agente imobiliário” para ir à página original do anúncio com os respetivos dados."
+      }
+    }
+  },
+  "subscriptionPage": {
+    "comingSoon": "Subscrição e métodos de pagamento em breve."
+  },
+  "notificationsPage": {
+    "comingSoon": "Definições de notificações em breve."
   },
   "feedback": {
     "title": "Feedback",

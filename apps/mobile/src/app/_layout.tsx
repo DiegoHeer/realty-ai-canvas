@@ -58,6 +58,26 @@ export default function RootLayout() {
                 options={{ headerShown: true, title: t('filtersPage.title') }}
               />
               <Stack.Screen
+                name="settings/notifications"
+                options={{ headerShown: true, title: t('profile.notifications') }}
+              />
+              <Stack.Screen
+                name="settings/subscription"
+                options={{ headerShown: true, title: t('profile.subscription') }}
+              />
+              <Stack.Screen
+                name="settings/privacy"
+                options={{ headerShown: true, title: t('profile.privacy') }}
+              />
+              <Stack.Screen
+                name="settings/help"
+                options={{ headerShown: true, title: t('profile.help') }}
+              />
+              <Stack.Screen
+                name="settings/about"
+                options={{ headerShown: true, title: t('profile.about') }}
+              />
+              <Stack.Screen
                 name="settings/feedback"
                 options={{ headerShown: true, title: t('feedback.title') }}
               />
