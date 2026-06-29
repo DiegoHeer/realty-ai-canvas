@@ -47,6 +47,14 @@ export interface ListingAddress {
   country: string;
 }
 
+/** A realtor/source listing the residence can be viewed on. */
+export interface ListingSource {
+  /** URL of the original realtor/source listing. */
+  url: string;
+  /** Human-readable realtor name, e.g. "Funda". */
+  name: string;
+}
+
 export interface Listing {
   id: string;
   title: string;
@@ -77,6 +85,8 @@ export interface Listing {
   createdAt: string;
   /** URL of the original realtor/source listing, if known. */
   sourceUrl?: string;
+  /** Every realtor/source the residence is listed on, one entry per source. */
+  sources?: ListingSource[];
 }
 
 /**

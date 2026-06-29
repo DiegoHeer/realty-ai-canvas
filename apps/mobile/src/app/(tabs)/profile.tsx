@@ -9,6 +9,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useAuth, type AuthUser } from '@/hooks/use-auth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAppearance } from '@/lib/appearance';
+import { resetOnboarding } from '@/lib/onboarding';
 import { activeLanguage, APPEARANCE_OPTIONS, LANGUAGE_LABELS } from '@/lib/settings-options';
 
 interface IconProps {
@@ -37,27 +38,6 @@ function BellIcon({ size, color }: IconProps) {
     <StrokeSvg size={size}>
       <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke={color} {...STROKE} />
       <Path d="M13.73 21a2 2 0 0 1-3.46 0" stroke={color} {...STROKE} />
-    </StrokeSvg>
-  );
-}
-
-function HeartIcon({ size, color }: IconProps) {
-  return (
-    <StrokeSvg size={size}>
-      <Path
-        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"
-        stroke={color}
-        {...STROKE}
-      />
-    </StrokeSvg>
-  );
-}
-
-function SearchIcon({ size, color }: IconProps) {
-  return (
-    <StrokeSvg size={size}>
-      <Path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z" stroke={color} {...STROKE} />
-      <Path d="M21 21l-4.35-4.35" stroke={color} {...STROKE} />
     </StrokeSvg>
   );
 }
@@ -104,6 +84,15 @@ function InfoIcon({ size, color }: IconProps) {
       <Path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" stroke={color} {...STROKE} />
       <Path d="M12 16v-4" stroke={color} {...STROKE} />
       <Path d="M12 8h.01" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
+
+function ReplayIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path d="M3 12a9 9 0 1 0 2.5-6.25" stroke={color} {...STROKE} />
+      <Path d="M3 3v4h4" stroke={color} {...STROKE} />
     </StrokeSvg>
   );
 }
@@ -227,11 +216,11 @@ function PreferencesCard() {
 }
 
 /**
- * Account section — a card of navigational rows. These are placeholders for now:
- * each row is a tappable target without a destination wired up yet.
+ * Account section — a card of navigational rows that push their settings pages.
  */
 function AccountCard() {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <View className="gap-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
@@ -239,20 +228,34 @@ function AccountCard() {
         {t('profile.account')}
       </Text>
 
-      <MenuRow icon={BellIcon} label={t('profile.notifications')} />
-      <MenuRow icon={HeartIcon} label={t('profile.savedHomes')} />
-      <MenuRow icon={SearchIcon} label={t('profile.savedSearches')} />
-      <MenuRow icon={CreditCardIcon} label={t('profile.paymentMethods')} />
+      <MenuRow
+        icon={BellIcon}
+        label={t('profile.notifications')}
+        onPress={() => router.push('/settings/notifications')}
+      />
+      <MenuRow
+        icon={CreditCardIcon}
+        label={t('profile.subscription')}
+        onPress={() => router.push('/settings/subscription')}
+      />
     </View>
   );
 }
 
 /**
- * Support section — a card of navigational rows. Placeholders, like {@link AccountCard}.
+ * Support section — a card of navigational rows that push their settings pages.
  */
 function SupportCard() {
   const { t } = useTranslation();
   const router = useRouter();
+
+  // Re-arm the tour and jump straight into it. On native the root-layout gate
+  // would redirect on its own once the status flips, but navigating explicitly
+  // keeps it instant and also works on web (where the gate is disabled).
+  function replayIntro() {
+    resetOnboarding();
+    router.replace('/onboarding');
+  }
 
   return (
     <View className="gap-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
@@ -260,23 +263,35 @@ function SupportCard() {
         {t('profile.support')}
       </Text>
 
-      <MenuRow icon={LockIcon} label={t('profile.privacy')} />
-      <MenuRow icon={HelpIcon} label={t('profile.help')} />
+      <MenuRow
+        icon={LockIcon}
+        label={t('profile.privacy')}
+        onPress={() => router.push('/settings/privacy')}
+      />
+      <MenuRow
+        icon={HelpIcon}
+        label={t('profile.help')}
+        onPress={() => router.push('/settings/help')}
+      />
       <MenuRow
         icon={MessageIcon}
         label={t('feedback.title')}
         onPress={() => router.push('/settings/feedback')}
       />
-      <MenuRow icon={InfoIcon} label={t('profile.about')} />
+      <MenuRow
+        icon={InfoIcon}
+        label={t('profile.about')}
+        onPress={() => router.push('/settings/about')}
+      />
+      <MenuRow icon={ReplayIcon} label={t('onboarding.replay')} onPress={replayIntro} />
     </View>
   );
 }
 
 /**
  * A tappable settings row: leading stroked SVG icon, label, and a trailing
- * chevron. `onPress` is optional — without it the row is a visual placeholder
- * that still gives press feedback, matching the dummy entries on the profile
- * screen.
+ * chevron. `onPress` is optional — without it the row is inert but still gives
+ * press feedback.
  */
 function MenuRow({
   icon: Icon,

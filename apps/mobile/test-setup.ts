@@ -51,6 +51,14 @@ jest.mock('expo-splash-screen', () => ({
   hideAsync: jest.fn(),
 }));
 
+// --- expo-constants mock ---
+// The About screen reads the app version from `Constants.expoConfig`; pin it so
+// the rendered version is deterministic in tests.
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { version: '1.0.0' } },
+}));
+
 // --- AsyncStorage mock ---
 // The native module is null under Jest, so use the library's in-memory mock.
 // Screens reach it through `lib/storage` (appearance, recent views, area cache).
@@ -146,6 +154,7 @@ jest.mock('react-native-svg', () => {
     Svg: stub('svg'),
     Circle: stub('circle'),
     Path: stub('path'),
+    Rect: stub('rect'),
   };
 });
 

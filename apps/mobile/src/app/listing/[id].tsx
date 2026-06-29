@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { createURL } from 'expo-linking';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { openBrowserAsync } from 'expo-web-browser';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -16,9 +16,10 @@ import {
   View,
 } from 'react-native';
 
+import { toggleLike, useIsLiked } from '@/lib/likes';
 import { recordRecentView } from '@/lib/recent-views';
 import { Brand } from '@/constants/theme';
-import { BookmarkIcon, ShareIcon } from '../../components/icons';
+import { HeartIcon, ShareIcon } from '../../components/icons';
 import { LocationMap } from '../../components/location-map';
 // maptiler-basic GL style, with its key-gated MapTiler source/glyphs rewritten
 // to keyless OpenFreeMap endpoints. https://github.com/openmaptiles/maptiler-basic-gl-style
@@ -29,7 +30,7 @@ export default function ListingDetailScreen() {
   const { data: listing, isLoading, isError } = useListing(id);
   const { t, i18n } = useTranslation();
   const scheme = useColorScheme();
-  const [liked, setLiked] = useState(false);
+  const liked = useIsLiked(id);
 
   // Snapshot the listing as recently viewed once it loads. Re-runs (and so
   // refreshes the cached copy) whenever a different listing resolves.
@@ -57,10 +58,7 @@ export default function ListingDetailScreen() {
 
   const cover = listing.images[0];
 
-  // The header bookmark's notch is "cut out" by painting it in the header's
-  // background color, so it reads correctly in both light and dark mode.
   const isDark = scheme === 'dark';
-  const headerBg = isDark ? 'rgb(18, 18, 18)' : '#ffffff';
   const headerTint = isDark ? '#f5f5f5' : '#404040';
 
   // Native share sheet with a deep link back to this listing. `url` is honoured
@@ -115,17 +113,13 @@ export default function ListingDetailScreen() {
           headerRight: () => (
             <View className="flex-row items-center gap-4 pr-3">
               <Pressable
-                onPress={() => setLiked((v) => !v)}
+                onPress={() => toggleLike(listing)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: liked }}
                 accessibilityLabel={t(liked ? 'listing.unlike' : 'listing.like')}
                 hitSlop={8}
                 className="h-9 w-9 items-center justify-center active:opacity-60">
-                <BookmarkIcon
-                  filled={liked}
-                  color={liked ? Brand.blue : headerTint}
-                  cutoutColor={headerBg}
-                />
+                <HeartIcon filled={liked} color={liked ? Brand.blue : headerTint} />
               </Pressable>
               <Pressable
                 onPress={onShare}
@@ -207,15 +201,20 @@ export default function ListingDetailScreen() {
             </Text>
           ) : null}
 
-          {listing.sourceUrl ? (
-            <Pressable
-              accessibilityRole="link"
-              onPress={() => openBrowserAsync(listing.sourceUrl as string)}
-              className="mt-2 items-center rounded-xl bg-blue-600 py-3 active:opacity-80">
-              <Text className="text-base font-semibold text-white">
-                {t('listing.visitRealtor')}
-              </Text>
-            </Pressable>
+          {listing.sources?.length ? (
+            <View className="mt-2 flex-row gap-3">
+              {listing.sources.map((source, i) => (
+                <Pressable
+                  key={`${source.url}-${i}`}
+                  accessibilityRole="link"
+                  onPress={() => openBrowserAsync(source.url)}
+                  className="flex-1 items-center rounded-full bg-blue-600 py-3 active:opacity-80">
+                  <Text className="text-base font-semibold text-white text-center">
+                    {t('listing.visitRealtor', { name: source.name })}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           ) : null}
 
           <View className="mt-1 h-64 w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800">

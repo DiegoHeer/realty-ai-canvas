@@ -27,7 +27,7 @@ export const Colors = {
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 /**
- * Brand accent, used for map markers/pins, the bookmark "liked" state and other
+ * Brand accent, used for map markers/pins, the heart "liked" state and other
  * highlights. `blue` is Tailwind blue-600; `blueLight` is blue-400.
  */
 export const Brand = {

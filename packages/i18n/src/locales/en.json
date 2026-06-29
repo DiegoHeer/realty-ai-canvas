@@ -28,13 +28,56 @@
     "appearance_dark": "Dark",
     "account": "Account",
     "notifications": "Notifications",
-    "savedHomes": "Saved homes",
-    "savedSearches": "Saved searches",
-    "paymentMethods": "Payment methods",
+    "subscription": "Subscription",
     "support": "Support",
     "privacy": "Privacy & security",
     "help": "Help & support",
     "about": "About"
+  },
+  "privacyPage": {
+    "zeroDataTitle": "A zero-data company",
+    "zeroDataBody": "We collect zero user data from our customers. We don't build a profile of who you are, and we never sell or share your information.",
+    "behaviorTitle": "What we measure",
+    "behaviorBody": "We only track in-app behavior to improve your experience: which features are used and which are rarely used. We focus our effort on improving the features you actually use.",
+    "noResaleTitle": "Your searches stay yours",
+    "noResaleBody": "We don't collect or redistribute your search filters and house preferences. What you look for stays private to you."
+  },
+  "aboutPage": {
+    "intro": "Realty AI Canvas helps you explore homes for sale across the Netherlands on a fast, map-first canvas — with rich neighborhood insights at your fingertips.",
+    "mission": "Browse listings, compare neighborhoods with public statistics on residents, income and energy use, and check details like energy labels and foundation risk before you book a viewing.",
+    "version": "Version"
+  },
+  "helpPage": {
+    "faqTitle": "Frequently asked questions",
+    "comingSoon": "More support features coming soon.",
+    "faq": {
+      "search": {
+        "q": "How do I search for homes?",
+        "a": "Search for a city or neighborhood from the map, then tap any marker to open its listing. Use Filters to narrow results by price, size, type and more."
+      },
+      "stats": {
+        "q": "What do the neighborhood statistics show?",
+        "a": "Each area shows public figures on residents, households, income and energy use, so you can understand a neighborhood before you visit."
+      },
+      "foundation": {
+        "q": "What is the foundation risk indicator?",
+        "a": "For homes built before 1970 on certain soil types, we flag a possible foundation risk so you know to look into it further."
+      },
+      "preferences": {
+        "q": "Can I change the language or theme?",
+        "a": "Yes. Open Profile and use the Language and Appearance options under Preferences."
+      },
+      "realtor": {
+        "q": "How do I contact the realtor?",
+        "a": "Open a listing and tap “Visit realtor” to go to the original listing page with the realtor's details."
+      }
+    }
+  },
+  "subscriptionPage": {
+    "comingSoon": "Subscription and payment methods coming soon."
+  },
+  "notificationsPage": {
+    "comingSoon": "Notification settings coming soon."
   },
   "feedback": {
     "title": "Feedback",
@@ -155,7 +198,7 @@
       "year_one": "Listed {{count}} year ago",
       "year_other": "Listed {{count}} years ago"
     },
-    "visitRealtor": "Visit realtor",
+    "visitRealtor": "Visit {{name}}",
     "close": "Close",
     "like": "Save to favorites",
     "unlike": "Remove from favorites",
@@ -225,6 +268,50 @@
       "districtHeatingTitle": "District heating",
       "districtHeatingHint": "Share of dwellings on district heating",
       "missing": "Not disclosed for this neighborhood"
+    }
+  },
+  "onboarding": {
+    "skipTour": "Skip tour",
+    "back": "Back",
+    "continue": "Continue",
+    "getStarted": "Get started",
+    "stepOf": "Step {{current}} of {{total}}",
+    "replay": "Replay intro",
+    "welcome": {
+      "title": "Welcome to Realty AI Canvas",
+      "subtitle": "Find your next home on a map built around the neighborhoods you care about."
+    },
+    "features": {
+      "title": "Everything you need to explore",
+      "subtitle": "Two ways Realty AI helps you search smarter.",
+      "map": {
+        "title": "Map & neighborhood insights",
+        "description": "Browse homes on an interactive map and tap any neighborhood for live statistics."
+      },
+      "filters": {
+        "title": "Powerful filters",
+        "description": "Narrow results by price, property type, size, energy label and more."
+      }
+    },
+    "filtersStep": {
+      "title": "What are you looking for?",
+      "subtitle": "Set a starting point — you can change this anytime."
+    },
+    "cities": {
+      "title": "Pick your cities",
+      "subtitle": "Choose where you'd like to search. You can select more than one.",
+      "searchPlaceholder": "Search for a city",
+      "popular": "Popular cities",
+      "noResults": "No matching city found.",
+      "selectedCount_one": "{{count}} city selected",
+      "selectedCount_other": "{{count}} cities selected"
+    },
+    "account": {
+      "title": "Save your search",
+      "subtitle": "Create an account to save homes, searches and your cities — or skip for now.",
+      "createAccount": "Create account",
+      "logIn": "Log in",
+      "signedInAs": "Signed in as {{name}}"
     }
   }
 }

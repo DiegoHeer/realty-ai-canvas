@@ -1,7 +1,15 @@
 import type { AreaPolygon, CityShape, ListingQuery, NeighborhoodStats } from '@realty/types';
 import { useQuery } from '@tanstack/react-query';
 
-import { getAreas, getCities, getStats, getListing, getListings } from './client';
+import {
+  getAreas,
+  getCities,
+  getCityNames,
+  getStats,
+  getListing,
+  getListings,
+  type CityName,
+} from './client';
 
 /** Centralised query keys so caches invalidate consistently. */
 export const listingKeys = {
@@ -78,6 +86,24 @@ export const cityKeys = {
 export function useCities(loader: () => Promise<CityShape[]> = getCities) {
   return useQuery({
     queryKey: cityKeys.all,
+    queryFn: loader,
+    staleTime: Infinity,
+  });
+}
+
+export const cityNameKeys = {
+  all: ['city-names'] as const,
+};
+
+/**
+ * All Dutch municipality names (code + name), used by the onboarding city picker
+ * and its fuzzy search. `loader` defaults to the network `getCityNames` (which
+ * falls back to a bundled sample offline). The list never changes, so it never
+ * refetches within a session.
+ */
+export function useCityNames(loader: () => Promise<CityName[]> = getCityNames) {
+  return useQuery({
+    queryKey: cityNameKeys.all,
     queryFn: loader,
     staleTime: Infinity,
   });
