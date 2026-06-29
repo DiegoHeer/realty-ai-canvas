@@ -1,56 +1,35 @@
 import { View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 /**
- * Hand-drawn glyphs built from plain Views so they render identically on iOS,
- * Android and web without an icon-font dependency.
+ * Hand-drawn glyphs that render identically on iOS, Android and web without an
+ * icon-font dependency.
  */
 
 /**
- * A bookmark glyph: a rounded body with a V-notch cut from the bottom. `filled`
- * toggles the saved state. The notch is painted in `cutoutColor` (the color of
- * the surface behind the icon) so it reads as a cut-out on both the filled and
- * outlined variants.
+ * A heart glyph used for the "save"/favorite affordance. `filled` toggles the
+ * saved state: outlined when unsaved, painted solid in `color` when saved.
  */
-export function BookmarkIcon({
+export function HeartIcon({
   filled,
   color,
-  cutoutColor = '#ffffff',
+  size = 20,
 }: {
   filled: boolean;
   color: string;
-  cutoutColor?: string;
+  size?: number;
 }) {
-  const WIDTH = 13;
-  const HEIGHT = 17;
-  const NOTCH = 6;
   return (
-    <View style={{ width: WIDTH, height: HEIGHT }}>
-      <View
-        style={{
-          width: WIDTH,
-          height: HEIGHT,
-          borderRadius: 2,
-          borderWidth: 2,
-          borderColor: color,
-          backgroundColor: filled ? color : 'transparent',
-        }}
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"
+        fill={filled ? color : 'none'}
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: 0,
-          height: 0,
-          borderLeftWidth: WIDTH / 2,
-          borderRightWidth: WIDTH / 2,
-          borderBottomWidth: NOTCH,
-          borderLeftColor: 'transparent',
-          borderRightColor: 'transparent',
-          borderBottomColor: cutoutColor,
-        }}
-      />
-    </View>
+    </Svg>
   );
 }
 

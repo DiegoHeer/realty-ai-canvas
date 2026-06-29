@@ -15,6 +15,8 @@ export const StorageKeys = {
   session: `${PREFIX}session`,
   recentSearches: `${PREFIX}recent-searches`,
   recentViews: `${PREFIX}recent-views`,
+  /** Listings the user liked via the heart toggle ("favorites" in the UI). */
+  likes: `${PREFIX}likes`,
   /** Cached neighborhood boundaries; suffixed with `:<cityCode>` per city. */
   areas: `${PREFIX}areas`,
   /** Cached neighborhood statistics; suffixed with `:<cityCode>` per city. */
@@ -23,6 +25,8 @@ export const StorageKeys = {
   cities: `${PREFIX}cities`,
   /** The map search filters (buy/rent, price, type, …); see lib/filters.ts. */
   filters: `${PREFIX}filters`,
+  /** Intro tour progress (furthest page + done flag); see lib/onboarding.ts. */
+  onboarding: `${PREFIX}onboarding`,
 } as const;
 
 export async function loadJSON<T>(key: string): Promise<T | null> {

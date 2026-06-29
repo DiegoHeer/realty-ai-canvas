@@ -14,6 +14,8 @@ import { loadJSON, saveJSON } from './storage';
 export interface PersistedListStore<T> {
   /** React hook returning the current list (re-renders on change). */
   use: () => T[];
+  /** Whether an item with this id is currently in the list (non-reactive). */
+  has: (id: string) => boolean;
   /** Insert/refresh an item at the front. */
   add: (item: T) => void;
   /** Drop the item whose id matches. */
@@ -46,6 +48,10 @@ export function createPersistedListStore<T>(opts: {
 
   function persist() {
     void saveJSON(opts.key, items);
+  }
+
+  function has(id: string) {
+    return items.some((existing) => opts.idOf(existing) === id);
   }
 
   function add(item: T) {
@@ -83,6 +89,7 @@ export function createPersistedListStore<T>(opts: {
 
   return {
     use: () => useSyncExternalStore(subscribe, getSnapshot, getSnapshot),
+    has,
     add,
     remove,
     clear,
