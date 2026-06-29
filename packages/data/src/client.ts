@@ -13,13 +13,33 @@ import {
 const RESIDENCE_PAGE_SIZE = 100;
 
 /**
+ * Auth hook for `request()`. The app (which owns token storage) registers a
+ * config at boot via `configureAuthInterceptor`; the data package stays free of
+ * native storage deps. `getAccessToken` is read synchronously per request;
+ * `refresh` is awaited once on a 401 (see Task 5).
+ */
+export interface AuthInterceptorConfig {
+  getAccessToken: () => string | null;
+  refresh: () => Promise<string | null>;
+}
+
+let authInterceptor: AuthInterceptorConfig | null = null;
+
+export function configureAuthInterceptor(config: AuthInterceptorConfig | null): void {
+  authInterceptor = config;
+}
+
+/**
  * Thin typed wrapper around `fetch`. Swap `USE_MOCKS` off (by setting
  * `EXPO_PUBLIC_API_URL`) and these functions hit the real backend instead.
  */
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = authInterceptor?.getAccessToken() ?? null;
+  const baseHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) baseHeaders['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: { ...baseHeaders, ...init?.headers },
   });
   if (!res.ok) {
     throw new Error(`Request to ${path} failed: ${res.status} ${res.statusText}`);
