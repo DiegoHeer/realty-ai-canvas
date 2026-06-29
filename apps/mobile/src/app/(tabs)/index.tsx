@@ -1,7 +1,7 @@
 import { useAreas, useCities, useListings, useStats } from '@realty/data';
 import type { AreaPolygon } from '@realty/types';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,6 +17,7 @@ import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
 import { applyFilters, countActiveFilters, useFilters } from '@/lib/filters';
+import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
 import { normalizeStats } from '@/lib/neighborhood-stats';
 import { type GeocodeResult, zoomForType } from '@/lib/pdok';
 import { recordRecentView } from '@/lib/recent-views';
@@ -56,6 +57,30 @@ export default function MapScreen() {
 
   const { data: areas = [], isFetching: areasFetching } = useAreas(selectedCity?.code, loadAreas);
   const { data: stats = [] } = useStats(selectedCity?.code, loadStats);
+
+  // A city chosen during the intro tour: once the city shapes are loaded, focus
+  // the map on it (fly + select, so its neighborhoods load) and clear the
+  // request so it fires only once. Needs the geometry from `cities`, which is
+  // empty in mock/offline builds — there the request is simply left unconsumed.
+  const pendingFocus = useMapFocus();
+  // Consume a one-shot external signal (set when the tour finishes, before the
+  // map mounts) and reflect it into local selection + an imperative camera move.
+  // This is the "subscribe to an external system" effect the rule is meant to
+  // allow; it just can't see that through the store indirection, so disable it
+  // here (cf. hooks/use-color-scheme.web.ts).
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!pendingFocus || cities.length === 0) return;
+    const city = cities.find((c) => c.code === pendingFocus.code);
+    clearMapFocus();
+    if (!city) return;
+    setSelectedCity({ code: city.code, name: pendingFocus.name, geometry: city.geometry });
+    setSelectedAreaId(null);
+    setSelectedId(null);
+    const center = areasCenter([{ id: city.code, color: Brand.blue, geometry: city.geometry }]);
+    if (center) mapRef.current?.flyTo({ ...center, zoom: 11 });
+  }, [pendingFocus, cities]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Precompute city bounding boxes once so a tap ray-casts only the polygons
   // whose bbox contains it. Cities load once and are cached, so this is cheap.

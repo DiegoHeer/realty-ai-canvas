@@ -1,5 +1,5 @@
-import { getAreas, getListing, getListings } from '../client';
-import { mockListings } from '../mocks';
+import { getAreas, getCityNames, getListing, getListings } from '../client';
+import { mockCityNames, mockListings } from '../mocks';
 
 // ---- Mock-mode tests ----
 // By default USE_MOCKS is true when EXPO_PUBLIC_API_URL is empty.
@@ -70,6 +70,16 @@ describe('client (mock mode)', () => {
       expect(areas).toEqual([]);
     });
   });
+
+  describe('getCityNames', () => {
+    it('returns the bundled sample list when no backend is configured', async () => {
+      const cities = await getCityNames();
+      expect(cities).toEqual(mockCityNames);
+      // The largest cities back the onboarding picker's pills, so they must be present.
+      expect(cities.some((c) => c.name === 'Amsterdam')).toBe(true);
+      expect(cities.some((c) => c.name === 'Rotterdam')).toBe(true);
+    });
+  });
 });
 
 // ---- API-mode tests ----
@@ -127,6 +137,7 @@ describe('client (API mode)', () => {
   let getAreasApi: typeof getAreas;
   let getStatsApi: typeof import('../client').getStats;
   let getCitiesApi: typeof import('../client').getCities;
+  let getCityNamesApi: typeof getCityNames;
 
   beforeEach(() => {
     jest.resetModules();
@@ -143,6 +154,7 @@ describe('client (API mode)', () => {
     getAreasApi = client.getAreas;
     getStatsApi = client.getStats;
     getCitiesApi = client.getCities;
+    getCityNamesApi = client.getCityNames;
   });
 
   afterEach(() => {
@@ -260,6 +272,27 @@ describe('client (API mode)', () => {
     expect(cities).toHaveLength(201);
     expect(cities[0]).toMatchObject({ code: '0000', name: 'City 0', geometry: { type: 'Polygon' } });
     expect(cities[200]).toMatchObject({ code: '9999', geometry: { type: 'MultiPolygon' } });
+  });
+
+  it('getCityNames fetches the lightweight /v1/cities list', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        { code: '0518', name: "'s-Gravenhage" },
+        { code: '0363', name: 'Amsterdam' },
+      ],
+    });
+
+    const cities = await getCityNamesApi();
+
+    const url = (global.fetch as jest.Mock).mock.calls[0]![0] as string;
+    expect(url).toContain('/v1/cities');
+    // The lightweight endpoint carries no geometry — unlike /v1/shapes/cities.
+    expect(url).not.toContain('/shapes/');
+    expect(cities).toEqual([
+      { code: '0518', name: "'s-Gravenhage" },
+      { code: '0363', name: 'Amsterdam' },
+    ]);
   });
 
   it('getStats fetches neighborhood stats and maps stats_year → statsYear', async () => {

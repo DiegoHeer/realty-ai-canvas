@@ -269,5 +269,49 @@
       "districtHeatingHint": "Proporção de habitações com aquecimento urbano",
       "missing": "Não divulgado para este bairro"
     }
+  },
+  "onboarding": {
+    "skipTour": "Ignorar tour",
+    "back": "Voltar",
+    "continue": "Continuar",
+    "getStarted": "Começar",
+    "stepOf": "Passo {{current}} de {{total}}",
+    "replay": "Rever introdução",
+    "welcome": {
+      "title": "Bem-vindo ao Realty AI Canvas",
+      "subtitle": "Encontre a sua próxima casa num mapa construído em torno dos bairros que lhe interessam."
+    },
+    "features": {
+      "title": "Tudo o que precisa para explorar",
+      "subtitle": "Duas formas de o Realty AI o ajudar a pesquisar de forma mais inteligente.",
+      "map": {
+        "title": "Mapa e estatísticas do bairro",
+        "description": "Veja imóveis num mapa interativo e toque num bairro para ver estatísticas atuais."
+      },
+      "filters": {
+        "title": "Filtros poderosos",
+        "description": "Refine por preço, tipo de imóvel, área, certificado energético e mais."
+      }
+    },
+    "filtersStep": {
+      "title": "O que procura?",
+      "subtitle": "Defina um ponto de partida — pode alterá-lo a qualquer momento."
+    },
+    "cities": {
+      "title": "Escolha as suas cidades",
+      "subtitle": "Escolha onde pretende pesquisar. Pode selecionar mais do que uma.",
+      "searchPlaceholder": "Pesquisar uma cidade",
+      "popular": "Cidades populares",
+      "noResults": "Nenhuma cidade correspondente encontrada.",
+      "selectedCount_one": "{{count}} cidade selecionada",
+      "selectedCount_other": "{{count}} cidades selecionadas"
+    },
+    "account": {
+      "title": "Guarde a sua pesquisa",
+      "subtitle": "Crie uma conta para guardar imóveis, pesquisas e as suas cidades — ou ignore por agora.",
+      "createAccount": "Criar conta",
+      "logIn": "Iniciar sessão",
+      "signedInAs": "Sessão iniciada como {{name}}"
+    }
   }
 }

@@ -1,5 +1,7 @@
 import type { Listing } from '@realty/types';
 
+import type { CityName } from './client';
+
 /**
  * Bundled sample listings (around Amsterdam) used until the real API is wired
  * up. Coordinates are roughly correct so the map looks sensible in dev.
@@ -113,4 +115,34 @@ export const mockListings: Listing[] = [
     images: [{ id: 'img_006', url: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800' }],
     createdAt: '2026-03-30T11:20:00.000Z',
   },
+];
+
+/**
+ * Sample municipality names used by the onboarding city picker when no backend
+ * is configured (mock/offline builds and the deterministic web export the visual
+ * tests screenshot). Codes are real CBS municipality codes so they line up with
+ * the live `/v1/cities` data; the live endpoint returns all ~342 municipalities,
+ * of which these are a representative subset (the largest cities plus a few more
+ * so fuzzy search has something to match). Den Haag is listed under its formal
+ * name '`s-Gravenhage`', exactly as the API returns it.
+ */
+export const mockCityNames: CityName[] = [
+  { code: '0518', name: "'s-Gravenhage" },
+  { code: '0796', name: "'s-Hertogenbosch" },
+  { code: '0361', name: 'Alkmaar' },
+  { code: '0034', name: 'Almere' },
+  { code: '0307', name: 'Amersfoort' },
+  { code: '0362', name: 'Amstelveen' },
+  { code: '0363', name: 'Amsterdam' },
+  { code: '0200', name: 'Apeldoorn' },
+  { code: '0202', name: 'Arnhem' },
+  { code: '0758', name: 'Breda' },
+  { code: '0772', name: 'Eindhoven' },
+  { code: '0153', name: 'Enschede' },
+  { code: '0014', name: 'Groningen' },
+  { code: '0392', name: 'Haarlem' },
+  { code: '0268', name: 'Nijmegen' },
+  { code: '0599', name: 'Rotterdam' },
+  { code: '0855', name: 'Tilburg' },
+  { code: '0344', name: 'Utrecht' },
 ];

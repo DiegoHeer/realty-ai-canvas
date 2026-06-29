@@ -9,6 +9,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useAuth, type AuthUser } from '@/hooks/use-auth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAppearance } from '@/lib/appearance';
+import { resetOnboarding } from '@/lib/onboarding';
 import { activeLanguage, APPEARANCE_OPTIONS, LANGUAGE_LABELS } from '@/lib/settings-options';
 
 interface IconProps {
@@ -83,6 +84,15 @@ function InfoIcon({ size, color }: IconProps) {
       <Path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" stroke={color} {...STROKE} />
       <Path d="M12 16v-4" stroke={color} {...STROKE} />
       <Path d="M12 8h.01" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
+
+function ReplayIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path d="M3 12a9 9 0 1 0 2.5-6.25" stroke={color} {...STROKE} />
+      <Path d="M3 3v4h4" stroke={color} {...STROKE} />
     </StrokeSvg>
   );
 }
@@ -239,6 +249,14 @@ function SupportCard() {
   const { t } = useTranslation();
   const router = useRouter();
 
+  // Re-arm the tour and jump straight into it. On native the root-layout gate
+  // would redirect on its own once the status flips, but navigating explicitly
+  // keeps it instant and also works on web (where the gate is disabled).
+  function replayIntro() {
+    resetOnboarding();
+    router.replace('/onboarding');
+  }
+
   return (
     <View className="gap-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
       <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
@@ -265,6 +283,7 @@ function SupportCard() {
         label={t('profile.about')}
         onPress={() => router.push('/settings/about')}
       />
+      <MenuRow icon={ReplayIcon} label={t('onboarding.replay')} onPress={replayIntro} />
     </View>
   );
 }
