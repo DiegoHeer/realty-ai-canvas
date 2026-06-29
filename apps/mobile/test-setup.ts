@@ -7,12 +7,18 @@ require('@testing-library/react-native/dist/matchers/extend-expect');
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
+const mockDismissAll = jest.fn();
 
 jest.mock('expo-router', () => {
   const React = require('react');
   return {
-    router: { push: mockPush, replace: mockReplace, back: mockBack },
-    useRouter: () => ({ push: mockPush, replace: mockReplace, back: mockBack }),
+    router: { push: mockPush, replace: mockReplace, back: mockBack, dismissAll: mockDismissAll },
+    useRouter: () => ({
+      push: mockPush,
+      replace: mockReplace,
+      back: mockBack,
+      dismissAll: mockDismissAll,
+    }),
     useLocalSearchParams: jest.fn(() => ({})),
     useGlobalSearchParams: jest.fn(() => ({})),
     Link: ({ children }: { children: React.ReactNode }) => children,
@@ -169,4 +175,4 @@ jest.mock('react-native-svg', () => {
 });
 
 // Export mocks for use in tests
-export { mockPush, mockReplace, mockBack, mockOpenBrowserAsync };
+export { mockPush, mockReplace, mockBack, mockDismissAll, mockOpenBrowserAsync };

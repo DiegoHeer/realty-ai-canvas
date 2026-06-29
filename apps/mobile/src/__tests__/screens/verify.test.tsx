@@ -33,7 +33,7 @@ async function tap(element: ReactTestInstance) {
 
 beforeEach(async () => {
   jest.clearAllMocks();
-  signOut();
+  await signOut();
 });
 
 afterEach(() => jest.restoreAllMocks());
@@ -45,11 +45,11 @@ describe('VerifyScreen', () => {
     await tap(getByTestId('auth-submit'));
 
     expect(getByText('Please enter the code.')).toBeTruthy();
-    expect(router.back).not.toHaveBeenCalled();
+    expect(router.dismissAll).not.toHaveBeenCalled();
   });
 
-  it('verifies the code and pops back on success', async () => {
-    const { mockBack } = require('../../../test-setup');
+  it('verifies the code and dismisses the auth stack on success', async () => {
+    const { mockDismissAll } = require('../../../test-setup');
     const verifyEmail = jest.fn().mockResolvedValue({ ok: true });
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({ verifyEmail });
 
@@ -59,14 +59,12 @@ describe('VerifyScreen', () => {
     await tap(getByTestId('auth-submit'));
 
     await waitFor(() => expect(verifyEmail).toHaveBeenCalledWith('123456'));
-    await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    await waitFor(() => expect(mockDismissAll).toHaveBeenCalled());
   });
 
-  it('shows an error for an invalid code', async () => {
+  it('shows a localized error for an invalid code', async () => {
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
-      verifyEmail: jest
-        .fn()
-        .mockResolvedValue({ ok: false, error: 'That code is invalid or expired.' }),
+      verifyEmail: jest.fn().mockResolvedValue({ ok: false, code: 'invalid_code' }),
     });
 
     const { getByTestId, getByPlaceholderText, findByText } = await renderScreen('en');

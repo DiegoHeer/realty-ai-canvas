@@ -3,13 +3,16 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { AuthField, AuthScaffold, PrimaryButton } from '@/components/auth-ui';
+import { authErrorKey, AuthField, AuthScaffold, PrimaryButton } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
 
 /**
  * Email-verification step (pushed from the register screen). The backend
  * mandates verification by code before a session is issued; the user enters the
- * code we emailed and, on success, the session becomes active and we pop back.
+ * code we emailed and, on success, the session becomes active. Verify sits two
+ * pushes deep (profile → register → verify), so on success we dismiss the whole
+ * auth stack back to the tabs rather than a single `back()` (which would land
+ * on the register form).
  */
 export default function VerifyScreen() {
   const { t } = useTranslation();
@@ -30,13 +33,14 @@ export default function VerifyScreen() {
     const outcome = await verifyEmail(code.trim());
     setSubmitting(false);
     if (outcome.ok === true) {
-      // Defer the pop to avoid the "Cannot update a component from inside the
-      // function body of a different component" crash on Android when a global
-      // state change and the navigation happen in the same frame (same reason
-      // the other auth screens defer their `router.back()`).
-      requestAnimationFrame(() => router.back());
+      // Defer the dismissal to avoid the "recycled bitmap" / cross-component
+      // update crash on Android when a global state change and the navigation
+      // happen in the same frame. dismissAll() unwinds the whole auth stack
+      // (register + verify) back to the tabs, where the now-authenticated
+      // profile is shown — a single back() would stop on the register form.
+      requestAnimationFrame(() => router.dismissAll());
     } else if (outcome.ok === false) {
-      setError(outcome.error);
+      setError(t(authErrorKey(outcome.code)));
     }
   }
 
