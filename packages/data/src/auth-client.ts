@@ -106,7 +106,10 @@ export async function signup(input: {
 
 export async function login(input: { email: string; password: string }): Promise<AuthSession> {
   const env = await call('/auth/login', { method: 'POST', body: JSON.stringify(input) });
-  if (!env.meta?.is_authenticated) throw firstError(env, 'Invalid email or password.');
+  // Stable code so the UI can localize this case; the message is dev-facing.
+  if (!env.meta?.is_authenticated) {
+    throw new AuthError(env.errors?.[0]?.message ?? 'Invalid email or password.', 'invalid_credentials');
+  }
   return toSession(env);
 }
 
@@ -119,7 +122,10 @@ export async function verifyEmail(input: {
     headers: { 'X-Session-Token': input.sessionToken },
     body: JSON.stringify({ key: input.code }),
   });
-  if (!env.meta?.is_authenticated) throw firstError(env, 'That code is invalid or expired.');
+  // Stable code so the UI can localize this case; the message is dev-facing.
+  if (!env.meta?.is_authenticated) {
+    throw new AuthError(env.errors?.[0]?.message ?? 'That code is invalid or expired.', 'invalid_code');
+  }
   return toSession(env);
 }
 
