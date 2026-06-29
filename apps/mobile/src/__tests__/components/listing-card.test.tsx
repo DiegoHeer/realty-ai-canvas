@@ -1,6 +1,6 @@
 import { initI18n } from '@realty/i18n';
 import type { Listing } from '@realty/types';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { I18nextProvider } from 'react-i18next';
 
 import { ListingCard } from '@/components/listing-card';
@@ -29,12 +29,21 @@ function makeListing(id: string, title: string): Listing {
 
 const i18n = initI18n('en');
 
-function renderCard(listing: Listing) {
+async function renderCard(listing: Listing) {
   return render(
     <I18nextProvider i18n={i18n}>
       <ListingCard listing={listing} />
     </I18nextProvider>,
   );
+}
+
+// React 19 + RNTL flush an interaction's re-render only when it has its own
+// settled act() scope; without it the next query reads pre-update state. So
+// wrap the press here (mirrors the `tap` helper in screens/login.test.tsx).
+async function tap(element: Parameters<typeof fireEvent.press>[0]) {
+  await act(async () => {
+    fireEvent.press(element);
+  });
 }
 
 // The likes store is a module singleton; reset it so each test starts clean.
@@ -43,28 +52,28 @@ beforeEach(() => {
 });
 
 describe('ListingCard like button', () => {
-  it('starts unliked and toggles when pressed', () => {
-    const { getByLabelText } = renderCard(makeListing('lst_a', 'Apartment A'));
+  it('starts unliked and toggles when pressed', async () => {
+    const { getByLabelText } = await renderCard(makeListing('lst_a', 'Apartment A'));
 
     expect(getByLabelText(LIKE)).toBeTruthy();
-    fireEvent.press(getByLabelText(LIKE));
+    await tap(getByLabelText(LIKE));
     expect(getByLabelText(UNLIKE)).toBeTruthy();
   });
 
   // The card stays mounted while the user browses markers — only the `listing`
   // prop changes. The heart must track the listing under it, not carry over.
-  it('reflects each listing as the user browses between them', () => {
+  it('reflects each listing as the user browses between them', async () => {
     const a = makeListing('lst_a', 'Apartment A');
     const b = makeListing('lst_b', 'House B');
 
-    const { getByLabelText, rerender } = renderCard(a);
+    const { getByLabelText, rerender } = await renderCard(a);
 
     // Like A.
-    fireEvent.press(getByLabelText(LIKE));
+    await tap(getByLabelText(LIKE));
     expect(getByLabelText(UNLIKE)).toBeTruthy();
 
     // Browse to B — it was never liked, so the heart resets to empty.
-    rerender(
+    await rerender(
       <I18nextProvider i18n={i18n}>
         <ListingCard listing={b} />
       </I18nextProvider>,
@@ -72,7 +81,7 @@ describe('ListingCard like button', () => {
     expect(getByLabelText(LIKE)).toBeTruthy();
 
     // Browse back to A — still liked (the store remembers it).
-    rerender(
+    await rerender(
       <I18nextProvider i18n={i18n}>
         <ListingCard listing={a} />
       </I18nextProvider>,
