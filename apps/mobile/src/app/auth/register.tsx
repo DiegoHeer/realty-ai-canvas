@@ -1,4 +1,5 @@
 import { useTranslation } from '@realty/i18n';
+import { AUTH_ENABLED } from '@realty/data';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
@@ -110,16 +111,19 @@ export default function RegisterScreen() {
         />
       </View>
 
-      <OrDivider />
-
-      <OAuthButton
-        provider={provider}
-        onPress={() => {
-          const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
-          action();
-          requestAnimationFrame(() => router.back());
-        }}
-      />
+      {!AUTH_ENABLED ? (
+        <>
+          <OrDivider />
+          <OAuthButton
+            provider={provider}
+            onPress={() => {
+              const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
+              action();
+              requestAnimationFrame(() => router.back());
+            }}
+          />
+        </>
+      ) : null}
 
       <AuthSwitchLink
         prompt={t('auth.haveAccountPrompt')}

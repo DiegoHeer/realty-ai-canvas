@@ -9,6 +9,14 @@ import LoginScreen from '@/app/auth/login';
 import { signOut } from '@/hooks/use-auth';
 import { StorageKeys } from '@/lib/storage';
 
+// Default: AUTH_ENABLED=false so mock-mode tests work with social buttons visible.
+// Real-mode tests use jest.isolateModulesAsync + Object.defineProperty (same as
+// use-auth.test.ts) to override AUTH_ENABLED on the plain module object.
+jest.mock('@realty/data', () => {
+  const actual = jest.requireActual('@realty/data');
+  return { ...actual, AUTH_ENABLED: false };
+});
+
 async function renderScreen(language: 'en' | 'nl' = 'en') {
   const i18n = initI18n(language);
   // Apply the language before rendering so assertions see the localized copy
@@ -119,5 +127,17 @@ describe('LoginScreen', () => {
     await typeInto(getByPlaceholderText('Enter your password'), 'bad');
     fireEvent.press(getByTestId('auth-submit'));
     expect(await findByText('Invalid email or password.')).toBeOnTheScreen();
+  });
+
+  it('hides the social button in real-auth mode', async () => {
+    // Babel compiles named imports as live property reads (_data.AUTH_ENABLED),
+    // so updating the plain mock object is seen by the component at render time
+    // without needing to reload modules (which would break React context).
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const authData = require('@realty/data');
+    jest.replaceProperty(authData, 'AUTH_ENABLED', true);
+
+    const { queryByTestId } = await renderScreen('en');
+    expect(queryByTestId('oauth-button')).toBeNull();
   });
 });
