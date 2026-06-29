@@ -19,8 +19,14 @@ import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
 import { applyFilters, countActiveFilters, useFilters } from '@/lib/filters';
 import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
 import { normalizeStats } from '@/lib/neighborhood-stats';
-import { zoomForType } from '@/lib/pdok';
+import { type GeocodeResult, zoomForType } from '@/lib/pdok';
 import { recordRecentView } from '@/lib/recent-views';
+
+// Zoom level at or above which the map auto-loads the neighborhoods under its
+// centre. The initial framing sits at zoom 11 (no city selected yet); zooming
+// past this — roughly a single municipality filling the screen, matching the
+// `woonplaats` search zoom in `zoomForType` — loads that city's overlays.
+const AUTO_LOAD_AREAS_ZOOM = 12;
 
 export default function MapScreen() {
   const { data: listings = [], isLoading } = useListings();
@@ -150,10 +156,10 @@ export default function MapScreen() {
     [areas],
   );
 
-  // A tap that isn't on a neighborhood overlay: find which city it lands in and
-  // switch to it. A hit on the already-selected city is a no-op (its own
+  // Find which city a coordinate lands in and switch to it (loading its
+  // neighborhoods). A hit on the already-selected city is a no-op (its own
   // overlays handle taps); cities don't overlap, so at most one matches.
-  const handleMapPress = useCallback(
+  const selectCityAt = useCallback(
     (coord: { longitude: number; latitude: number }) => {
       const hit = findCityAt([coord.longitude, coord.latitude], cityIndex);
       if (!hit || hit.code === selectedCity?.code) return;
@@ -162,6 +168,34 @@ export default function MapScreen() {
       setSelectedId(null);
     },
     [cityIndex, selectedCity],
+  );
+
+  // A tap that isn't on a neighborhood overlay falls through to here.
+  const handleMapPress = selectCityAt;
+
+  // Once the camera settles, auto-load the neighborhoods under the viewport
+  // centre — but only when zoomed in far enough that the user is clearly
+  // looking at a single city, as if they'd tapped the middle of the map. Below
+  // that zoom we leave it to an explicit tap, so panning the country at a
+  // glance doesn't keep swapping cities underfoot.
+  const handleCameraIdle = useCallback(
+    ({ longitude, latitude, zoom }: { longitude: number; latitude: number; zoom: number }) => {
+      if (zoom < AUTO_LOAD_AREAS_ZOOM) return;
+      selectCityAt({ longitude, latitude });
+    },
+    [selectCityAt],
+  );
+
+  // Picking a search result flies the camera there and loads the surrounding
+  // city's neighborhoods. The hit-test handles every result type — including a
+  // municipality (gemeente), which flies to a zoom below the auto-load
+  // threshold and so wouldn't otherwise trigger the camera-idle load.
+  const handleSearchResult = useCallback(
+    (r: GeocodeResult) => {
+      mapRef.current?.flyTo({ longitude: r.longitude, latitude: r.latitude, zoom: zoomForType(r.type) });
+      selectCityAt({ longitude: r.longitude, latitude: r.latitude });
+    },
+    [selectCityAt],
   );
 
   return (
@@ -173,6 +207,7 @@ export default function MapScreen() {
         onSelect={handleSelect}
         onSelectPolygon={handleSelectPolygon}
         onMapPress={handleMapPress}
+        onCameraIdle={handleCameraIdle}
         loadingPolygon={loadingCityPolygon}
         selectedPolygonId={selectedAreaId}
       />
@@ -198,13 +233,7 @@ export default function MapScreen() {
           placeholder={cityName}
           activeFilterCount={countActiveFilters(filters)}
           onOpenFilters={() => router.push('/settings/filters')}
-          onResult={(r) =>
-            mapRef.current?.flyTo({
-              longitude: r.longitude,
-              latitude: r.latitude,
-              zoom: zoomForType(r.type),
-            })
-          }
+          onResult={handleSearchResult}
         />
         <View className="mt-2">
           <FilterPills selected={activeFilters} onToggle={toggleFilter} />

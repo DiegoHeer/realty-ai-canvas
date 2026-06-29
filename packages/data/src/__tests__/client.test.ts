@@ -230,6 +230,9 @@ describe('client (API mode)', () => {
 
     const url = (global.fetch as jest.Mock).mock.calls[0]![0] as string;
     expect(url).toContain('/v1/shapes/neighborhoods?city=0518');
+    // Pin the geom format explicitly so a future server-side `topojson` default
+    // can't change what this client receives.
+    expect(url).toContain('format=geojson');
     expect(areas).toHaveLength(2);
     expect(areas[0]).toMatchObject({
       id: 'BU05180546',
@@ -264,6 +267,8 @@ describe('client (API mode)', () => {
     const urls = (global.fetch as jest.Mock).mock.calls.map((c) => c[0] as string);
     expect(urls[0]).toContain('/v1/shapes/cities?limit=200&offset=0');
     expect(urls[1]).toContain('offset=200');
+    // Every page pins the geom format (see getAreas test for the rationale).
+    expect(urls.every((u) => u.includes('format=geojson'))).toBe(true);
     expect(cities).toHaveLength(201);
     expect(cities[0]).toMatchObject({ code: '0000', name: 'City 0', geometry: { type: 'Polygon' } });
     expect(cities[200]).toMatchObject({ code: '9999', geometry: { type: 'MultiPolygon' } });

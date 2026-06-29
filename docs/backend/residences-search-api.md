@@ -4,7 +4,9 @@
 **Scope:** extend `GET /v1/residences` so the mobile app can drive map + list search
 entirely server-side: full filtering, geographic (bbox) queries, sorting, and
 paginated results with a total count. The `/v1/shapes/*` and `/v1/stats/*`
-endpoints are **unchanged**.
+endpoints are **unchanged** by this work — except an additive, optional `format`
+query param on the shapes list endpoints, specified separately in
+[`shapes-geom-format.md`](./shapes-geom-format.md).
 
 ---
 

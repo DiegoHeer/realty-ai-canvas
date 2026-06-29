@@ -57,6 +57,17 @@ export async function getListings(query: ListingQuery = {}): Promise<Listing[]> 
   return query.search ? listings.filter((l) => matchesQuery(l, { search: query.search })) : listings;
 }
 
+// --- Geographic shapes (cities & neighborhoods) -----------------------------
+
+/**
+ * Geometry encoding requested from every `/v1/shapes/*` endpoint. The client only
+ * decodes GeoJSON today (see {@link toAreaGeometry}), so we send `geojson`
+ * explicitly: it pins the wire contract for forward-compatibility, so adding a
+ * server-side `topojson` option later can't change what already-shipped clients
+ * receive. Widen to a typed union once the client can parse TopoJSON.
+ */
+const GEOM_FORMAT = 'geojson';
+
 // --- Neighborhood area polygons ----------------------------------------------
 
 /** CBS municipality code for Den Haag ('s-Gravenhage) — the default city. */
@@ -125,7 +136,7 @@ function shapesToAreas(shapes: NeighborhoodShape[]): AreaPolygon[] {
 export async function getAreas(city: string = DEN_HAAG_CITY_CODE): Promise<AreaPolygon[]> {
   if (!API_URL) return [];
   const shapes = await request<NeighborhoodShape[]>(
-    `/v1/shapes/neighborhoods?city=${encodeURIComponent(city)}`,
+    `/v1/shapes/neighborhoods?city=${encodeURIComponent(city)}&format=${GEOM_FORMAT}`,
   );
   return shapesToAreas(shapes);
 }
@@ -161,7 +172,7 @@ export async function getCities(): Promise<CityShape[]> {
   const byCode = new Map<string, CityShape>();
   for (let offset = 0; ; offset += CITY_PAGE_SIZE) {
     const page = await request<CityShapeResponse[]>(
-      `/v1/shapes/cities?limit=${CITY_PAGE_SIZE}&offset=${offset}`,
+      `/v1/shapes/cities?limit=${CITY_PAGE_SIZE}&offset=${offset}&format=${GEOM_FORMAT}`,
     );
     const before = byCode.size;
     for (const c of page) {

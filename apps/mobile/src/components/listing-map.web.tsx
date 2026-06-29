@@ -52,7 +52,7 @@ function PulsingCityOverlay({ polygon, beforeId }: { polygon: AreaPolygon; befor
 
 /** Web map via react-map-gl (MapLibre GL JS). Selected by Metro on web. */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, loadingPolygon },
+  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, onCameraIdle, loadingPolygon },
   ref,
 ) {
   const mapRef = useRef<MapRef>(null);
@@ -92,6 +92,12 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
       mapStyle={mapStyle}
       style={{ width: '100%', height: '100%' }}
       interactiveLayerIds={polygons && polygons.length > 0 ? ['area-polygons-fill'] : []}
+      // Once a pan/zoom settles, report the viewport centre + zoom so the
+      // screen can auto-load a city's neighborhoods when zoomed in far enough.
+      onMoveEnd={(e) => {
+        const { longitude, latitude, zoom } = e.viewState;
+        onCameraIdle?.({ longitude, latitude, zoom });
+      }}
       onClick={(e) => {
         const id = e.features?.[0]?.properties?.id;
         if (typeof id === 'string') {
@@ -131,45 +137,70 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
           )}
         </Source>
       )}
-      {listings.map((listing: Listing) => (
-        <Marker
-          key={listing.id}
-          longitude={listing.location.longitude}
-          latitude={listing.location.latitude}
-          onClick={(e) => {
-            // A marker click otherwise bubbles up to the map's onClick, which
-            // hit-tests the point to a city and switches municipality. Stop it
-            // so tapping a marker only selects the listing. (Native suppresses
-            // the map press for marker taps itself; this is the web equivalent.)
-            e.originalEvent.stopPropagation();
-            onSelect?.(listing.id);
-          }}>
-          <div
-            // Touch devices don't reliably fire the Marker's click handler;
-            // handle the tap explicitly. stopPropagation keeps it off the map's
-            // press handler (so no municipality switch); preventDefault stops the
-            // follow-up synthetic click from double-selecting the listing.
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
+      {listings.map((listing: Listing) => {
+        const viewed = viewedIds.has(listing.id);
+        return (
+          <Marker
+            key={listing.id}
+            longitude={listing.location.longitude}
+            latitude={listing.location.latitude}
+            // Anchor the marker's bottom-centre (the pin tail's tip) on the
+            // coordinate, so the bubble reads as a pin pointing at the listing.
+            anchor="bottom"
+            onClick={(e) => {
+              // A marker click otherwise bubbles up to the map's onClick, which
+              // hit-tests the point to a city and switches municipality. Stop it
+              // so tapping a marker only selects the listing. (Native suppresses
+              // the map press for marker taps itself; this is the web equivalent.)
+              e.originalEvent.stopPropagation();
               onSelect?.(listing.id);
-            }}
-            style={{
-              background: viewedIds.has(listing.id) ? Brand.blueLight : Brand.blue,
-              color: '#fff',
-              fontSize: 12,
-              fontWeight: 700,
-              padding: '4px 8px',
-              borderRadius: 999,
-              border: '1px solid #fff',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              touchAction: 'manipulation',
             }}>
-            {priceLabel(listing)}
-          </div>
-        </Marker>
-      ))}
+            <div
+              // Touch devices don't reliably fire the Marker's click handler;
+              // handle the tap explicitly. stopPropagation keeps it off the map's
+              // press handler (so no municipality switch); preventDefault stops the
+              // follow-up synthetic click from double-selecting the listing.
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onSelect?.(listing.id);
+              }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer',
+                touchAction: 'manipulation',
+              }}>
+              <div
+                style={{
+                  background: viewed ? Brand.blueLight : Brand.blue,
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '4px 8px',
+                  borderRadius: 999,
+                  border: '1px solid #fff',
+                  whiteSpace: 'nowrap',
+                }}>
+                {priceLabel(listing)}
+              </div>
+              {/* Downward triangle tail that turns the bubble into a pin. Pulled
+                  up 1px so it tucks under the bubble's white border seam. */}
+              <div
+                style={{
+                  width: 0,
+                  height: 0,
+                  marginTop: -1,
+                  borderLeft: '5px solid transparent',
+                  borderRight: '5px solid transparent',
+                  borderTop: `6px solid ${viewed ? Brand.blueLight : Brand.blue}`,
+                }}
+              />
+            </div>
+          </Marker>
+        );
+      })}
     </Map>
   );
 });
