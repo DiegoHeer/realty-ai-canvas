@@ -71,7 +71,13 @@
     "errorPasswordRequired": "Please enter your password.",
     "errorPasswordTooShort": "Password must be at least 8 characters.",
     "errorGeneric": "Something went wrong. Please try again.",
-    "submitting": "Please wait…"
+    "submitting": "Please wait…",
+    "verifyTitle": "Verify your email",
+    "verifySubtitle": "Enter the code we emailed you to finish creating your account.",
+    "verifyCode": "Verification code",
+    "verifyCodePlaceholder": "6-digit code",
+    "verifyCta": "Verify",
+    "errorCodeRequired": "Please enter the code."
   },
   "search": {
     "placeholder": "Search",

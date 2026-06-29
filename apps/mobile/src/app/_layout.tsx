@@ -69,6 +69,10 @@ export default function RootLayout() {
                 name="auth/register"
                 options={{ headerShown: true, title: t('auth.registerTitle') }}
               />
+              <Stack.Screen
+                name="auth/verify"
+                options={{ headerShown: true, title: t('auth.verifyTitle') }}
+              />
             </Stack>
           </ThemeProvider>
         </DataProvider>

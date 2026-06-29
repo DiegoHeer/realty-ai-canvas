@@ -71,7 +71,13 @@
     "errorPasswordRequired": "Introduza a sua palavra-passe.",
     "errorPasswordTooShort": "A palavra-passe deve ter pelo menos 8 caracteres.",
     "errorGeneric": "Algo correu mal. Tente novamente.",
-    "submitting": "Aguarde…"
+    "submitting": "Aguarde…",
+    "verifyTitle": "Verifique o seu e-mail",
+    "verifySubtitle": "Introduza o código que lhe enviámos para concluir a criação da conta.",
+    "verifyCode": "Código de verificação",
+    "verifyCodePlaceholder": "Código de 6 dígitos",
+    "verifyCta": "Verificar",
+    "errorCodeRequired": "Introduza o código."
   },
   "search": {
     "placeholder": "Pesquisar",
