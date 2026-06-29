@@ -79,6 +79,15 @@
   "notificationsPage": {
     "comingSoon": "Definições de notificações em breve."
   },
+  "feedback": {
+    "title": "Feedback",
+    "subtitle": "Diga-nos o que pensa ou comunique um problema.",
+    "label": "O seu feedback",
+    "placeholder": "Partilhe a sua opinião…",
+    "submit": "Enviar feedback",
+    "submitting": "A enviar…",
+    "sent": "Feedback enviado"
+  },
   "auth": {
     "logInTitle": "Iniciar sessão",
     "registerTitle": "Criar conta",

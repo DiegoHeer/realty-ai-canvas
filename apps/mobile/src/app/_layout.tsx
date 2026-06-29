@@ -78,6 +78,10 @@ export default function RootLayout() {
                 options={{ headerShown: true, title: t('profile.about') }}
               />
               <Stack.Screen
+                name="settings/feedback"
+                options={{ headerShown: true, title: t('feedback.title') }}
+              />
+              <Stack.Screen
                 name="auth/login"
                 options={{ headerShown: true, title: t('auth.logInTitle') }}
               />

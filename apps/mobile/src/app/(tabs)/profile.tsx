@@ -87,6 +87,18 @@ function InfoIcon({ size, color }: IconProps) {
   );
 }
 
+function MessageIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path
+        d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+        stroke={color}
+        {...STROKE}
+      />
+    </StrokeSvg>
+  );
+}
+
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const { user, isAuthenticated, signOut } = useAuth();
@@ -242,6 +254,11 @@ function SupportCard() {
         icon={HelpIcon}
         label={t('profile.help')}
         onPress={() => router.push('/settings/help')}
+      />
+      <MenuRow
+        icon={MessageIcon}
+        label={t('feedback.title')}
+        onPress={() => router.push('/settings/feedback')}
       />
       <MenuRow
         icon={InfoIcon}
