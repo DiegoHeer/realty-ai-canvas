@@ -200,11 +200,16 @@ let hydrated = false;
 async function realHydrate() {
   if (hydrated) return;
   hydrated = true;
-  configureAuthInterceptor({ getAccessToken: () => accessToken, refresh: realRefresh });
+  // Load persisted tokens and set them BEFORE wiring the interceptor, so a /v1
+  // request firing during hydration sees the access token rather than null
+  // (which would cause a spurious 401 → refresh with a null refresh token).
   const tokens = await loadTokens();
+  if (tokens) {
+    accessToken = tokens.accessToken;
+    refreshToken = tokens.refreshToken;
+  }
+  configureAuthInterceptor({ getAccessToken: () => accessToken, refresh: realRefresh });
   if (!tokens) return;
-  accessToken = tokens.accessToken;
-  refreshToken = tokens.refreshToken;
   const cached = await loadJSON<AuthUser>(StorageKeys.session);
   if (cached) {
     currentUser = cached;
