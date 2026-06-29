@@ -64,8 +64,15 @@ async function call(
     headers: { 'Content-Type': 'application/json', ...init.headers },
   });
   // allauth mirrors the HTTP status in the body and uses non-2xx for valid
-  // pending states (e.g. verification), so always read the JSON body.
-  return (await res.json()) as AllauthEnvelope;
+  // pending states (e.g. verification), so always read the JSON body. A
+  // non-JSON body (5xx page, HTML, or empty) would otherwise throw a
+  // SyntaxError outside the AuthError channel, so map a parse failure to a
+  // typed AuthError and keep the failure contract explicit.
+  try {
+    return (await res.json()) as AllauthEnvelope;
+  } catch {
+    throw new AuthError('Unexpected response from the server.');
+  }
 }
 
 function firstError(env: AllauthEnvelope, fallback: string): AuthError {
