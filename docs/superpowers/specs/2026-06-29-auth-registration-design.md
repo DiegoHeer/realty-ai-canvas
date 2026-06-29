@@ -1,8 +1,14 @@
 # Authentication & Registration — Design
 
 **Date:** 2026-06-29
-**Status:** Approved (brainstorming) — pending implementation plan
+**Status:** Approved (brainstorming) — backend prerequisite merged; pending mobile implementation plan
 **Repos involved:** `realty-ai-canvas` (mobile, this repo) + `realty-alerts` (backend API)
+
+> **Update 2026-06-29:** Backend Workstream A landed — PR #189 is **merged** with
+> display-name support and a **live-verified** endpoint contract (see the
+> [Verified backend contract](#verified-backend-contract-pr-189) appendix). One
+> correction propagated into this spec: headless signup uses a **single
+> `password`** field (not `password1`/`password2`).
 
 ## Goal
 
@@ -43,18 +49,27 @@ per-user features (favorites, saved searches, alerts) in this round.
 | 3 | Email verification UI | Build the verify-by-code screen, **feature-flagged**. |
 | 4 | Token storage | **SecureStore** (expo-secure-store) — intentional exception to the AsyncStorage-only rule for sensitive credentials. |
 | 5 | Social login buttons | Hide behind the same feature flag until backend OAuth exists. |
-| 6 | Registration `name` field | **Keep it** — extend the backend PR to accept, persist, and return `name`. |
+| 6 | Registration `name` field | **Kept** — backend PR #189 (merged) accepts a required `name`, stores it on `User.first_name`, and returns it as `name` on the user object. |
 | 7 | Password reset | Out of scope (follow-up PR). |
-| 8 | Endpoint contract | Build against the allauth-headless 65.18 docs **and** payloads captured from the running PR branch. |
+| 8 | Endpoint contract | signup / login / session **verified live** (PR #189 body). verify-email + token-refresh paths to be confirmed against the running backend during implementation (allauth 65.18 docs as the reference). |
+| 9 | Confirm-password field | **Dropped** — headless signup takes a single `password`; the original `password1`/`password2` rationale was wrong. Register stays name + email + password. (A purely client-side confirm field could be added later for UX; not required.) |
 
 ## Workstreams
 
 This effort spans two repos. The backend workstream is a **prerequisite** for
 the mobile registration flow to round-trip a display name.
 
-### Workstream A — Backend (`realty-alerts`, extends PR #189)
+### Workstream A — Backend (`realty-alerts`, PR #189) — ✅ DONE (merged 2026-06-29)
 
-Add display-name support to headless signup.
+Display-name support landed in headless signup. Implemented via
+`ACCOUNT_SIGNUP_FORM_CLASS = "scraping.forms.SignupForm"` (adds the required
+`name` field, writes it to `User.first_name`) and
+`HEADLESS_ADAPTER = "scraping.adapters.HeadlessAdapter"` (adds `name` to the
+serialized user object + OpenAPI spec). Tests in `tests/test_signup.py`. The
+verified request/response shapes are in the
+[Verified backend contract](#verified-backend-contract-pr-189) appendix.
+
+Original requirements (for the record):
 
 1. **Accept `name` on signup.** Add a custom signup form/adapter so the
    headless signup endpoint accepts a `name` field and persists it onto the
@@ -81,10 +96,14 @@ A standalone prompt for this workstream lives at
 
 - **`auth-client.ts`** — typed functions hitting the allauth headless
   app-client endpoints: `signup`, `login`, `verifyEmail`, `getSession`,
-  `logout`, `refresh`. Exact paths/payloads confirmed in the first
-  implementation step (e.g. `POST /_allauth/app/v1/auth/signup`,
-  `/auth/login`, `/auth/session`, email verify, token refresh). The client
-  interface is written to be contract-agnostic so the verified shapes slot in.
+  `logout`, `refresh`. Verified paths/shapes (see appendix): signup, login,
+  session. Tokens live in `meta.access_token` / `meta.refresh_token`; the user
+  object is `data.user` and the app displays its **`name`** field (not
+  `display`/`username`, which auto-derive from the email local-part). `signup`
+  returns **401** with a pending `verify_email` flow and a `meta.session_token`
+  — no tokens until the email is verified. verify-email + refresh payloads are
+  confirmed in the first implementation step. The client interface is
+  contract-agnostic so verified shapes slot in.
 - **Token-aware `request<T>()`** (`client.ts`) — attaches
   `Authorization: Bearer <access>` to `/v1` calls when a token exists. On
   `401`: run a **single-flight refresh** (one shared in-flight promise so
@@ -131,8 +150,10 @@ A standalone prompt for this workstream lives at
 
 - **Login** — real `signInWithEmail`; surface server errors (bad credentials,
   unverified account).
-- **Register** — keep the Name field (maps to backend `name` per Workstream A);
-  **add a confirm-password field** (backend wants `password1` + `password2`).
+- **Register** — keep the Name field (maps to backend `name`); a **single
+  password** field (backend takes one `password`, no confirm). On success the
+  backend returns 401 + pending `verify_email`; the app advances to the
+  verify-email screen carrying the `session_token`.
 - **Verify-email** — *new* screen: "enter the code we emailed you" → calls the
   verify endpoint → session becomes active. Flag-gated.
 - **Logout** — wired to the real `signOut()`.
@@ -151,12 +172,11 @@ A standalone prompt for this workstream lives at
 
 ## First implementation step
 
-Before writing the mobile `auth-client`: read the django-allauth headless
-65.18 docs for the documented app-client contract **and** run the PR #189
-branch locally to capture the real request/response payloads from
-`/_allauth/app/v1/auth/*` (token location, verify-by-code payload, user-object
-shape — including the new `name` field once Workstream A lands). Build against
-verified shapes.
+signup / login / session are already verified (appendix). The remaining
+unknowns are the **email-verify-by-code** and **token-refresh** payloads —
+confirm these against the running merged backend before writing those parts of
+`auth-client.ts` (allauth 65.18 docs as the reference; candidate paths noted in
+the appendix are from-docs, not yet repo-verified).
 
 ## Out of scope (follow-ups)
 
@@ -175,4 +195,47 @@ verified shapes.
   round-trip end-to-end for real users until SMTP lands; the feature flag
   prevents shipping that dead-end.
 - **Cross-repo ordering:** mobile registration depends on Workstream A
-  (backend `name` support) being merged first.
+  (backend `name` support) being merged first. ✅ Resolved — merged.
+
+## Verified backend contract (PR #189)
+
+Base path: `/_allauth/app/v1`. Tokens are in `meta`; the user is in `data.user`.
+Display the user's **`name`** (not `display`/`username`).
+
+**Signup** — `POST /auth/signup` — `name` is **required**, single `password`:
+```jsonc
+// request
+{ "email": "ada@example.com", "name": "Ada Lovelace", "password": "sup3rs3cret!" }
+// response 401 — user created, email verification pending (mandatory), no tokens yet
+{ "status": 401,
+  "data": { "flows": [ { "id": "login" }, { "id": "signup" },
+                       { "id": "verify_email", "is_pending": true } ] },
+  "meta": { "is_authenticated": false, "session_token": "…" } }
+```
+
+**Login** — `POST /auth/login`:
+```jsonc
+// request
+{ "email": "ada@example.com", "password": "sup3rs3cret!" }
+// response 200
+{ "status": 200,
+  "data": { "user": { "id": 1, "display": "ada", "email": "ada@example.com",
+                      "has_usable_password": true, "username": "ada",
+                      "name": "Ada Lovelace" },
+            "methods": [ … ] },
+  "meta": { "is_authenticated": true, "access_token": "<JWT>",
+            "refresh_token": "<JWT>", "session_token": "…" } }
+```
+
+**Session** — `GET /auth/session` with `Authorization: Bearer <access_token>`
+→ same `data.user` (including `name`).
+
+**To confirm during implementation (from-docs, not yet repo-verified):**
+- **Email verify by code** — candidate `POST /auth/email/verify` with the code
+  as the body field; carries the signup `session_token`. On success returns an
+  authenticated session with `meta.access_token` / `meta.refresh_token`. Verify
+  the exact path and field name against allauth 65.18 + the running backend.
+- **Token refresh** — candidate `POST /auth/token/refresh` with the
+  `refresh_token`; returns new `access_token` (+ rotated `refresh_token`, since
+  `HEADLESS_JWT_ROTATE_REFRESH_TOKEN=True`). Confirm before building the
+  refresh interceptor.
