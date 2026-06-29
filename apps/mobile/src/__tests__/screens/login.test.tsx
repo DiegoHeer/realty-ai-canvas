@@ -10,8 +10,8 @@ import { signOut } from '@/hooks/use-auth';
 import { StorageKeys } from '@/lib/storage';
 
 // Default: AUTH_ENABLED=false so mock-mode tests work with social buttons visible.
-// Real-mode tests use jest.isolateModulesAsync + Object.defineProperty (same as
-// use-auth.test.ts) to override AUTH_ENABLED on the plain module object.
+// Real-mode tests use jest.replaceProperty (same pattern as use-auth.test.ts) to
+// override AUTH_ENABLED on the plain module object without reloading modules.
 jest.mock('@realty/data', () => {
   const actual = jest.requireActual('@realty/data');
   return { ...actual, AUTH_ENABLED: false };
