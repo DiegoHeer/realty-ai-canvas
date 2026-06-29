@@ -43,9 +43,20 @@ describe('auth-client', () => {
     expect(result).toEqual({ kind: 'verifyPending', sessionToken: 'ST' });
   });
 
-  it('login throws AuthError on invalid credentials (400/401 without verify flow)', async () => {
+  it('login throws AuthError with code "invalid_credentials" on a rejected login', async () => {
     mockFetch(400, { status: 400, errors: [{ message: 'Invalid credentials.' }] });
-    await expect(login({ email: 'x@y.z', password: 'bad' })).rejects.toBeInstanceOf(AuthError);
+    await expect(login({ email: 'x@y.z', password: 'bad' })).rejects.toMatchObject({
+      name: 'AuthError',
+      code: 'invalid_credentials',
+    });
+  });
+
+  it('verifyEmail throws AuthError with code "invalid_code" on a rejected code', async () => {
+    mockFetch(400, { status: 400, errors: [{ message: 'Incorrect code.' }] });
+    await expect(verifyEmail({ code: '000000', sessionToken: 'ST' })).rejects.toMatchObject({
+      name: 'AuthError',
+      code: 'invalid_code',
+    });
   });
 
   it('verifyEmail sends the code + session token and returns an authenticated session', async () => {
