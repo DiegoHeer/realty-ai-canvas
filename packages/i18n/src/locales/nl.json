@@ -198,7 +198,7 @@
       "year_one": "{{count}} jaar geleden geplaatst",
       "year_other": "{{count}} jaar geleden geplaatst"
     },
-    "visitRealtor": "Bekijk bij makelaar",
+    "visitRealtor": "Bekijk op {{name}}",
     "close": "Sluiten",
     "like": "Aan favorieten toevoegen",
     "unlike": "Uit favorieten verwijderen",

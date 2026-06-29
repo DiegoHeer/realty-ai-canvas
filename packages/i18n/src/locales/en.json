@@ -198,7 +198,7 @@
       "year_one": "Listed {{count}} year ago",
       "year_other": "Listed {{count}} years ago"
     },
-    "visitRealtor": "Visit realtor",
+    "visitRealtor": "Visit {{name}}",
     "close": "Close",
     "like": "Save to favorites",
     "unlike": "Remove from favorites",

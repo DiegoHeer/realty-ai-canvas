@@ -200,15 +200,20 @@ export default function ListingDetailScreen() {
             </Text>
           ) : null}
 
-          {listing.sourceUrl ? (
-            <Pressable
-              accessibilityRole="link"
-              onPress={() => openBrowserAsync(listing.sourceUrl as string)}
-              className="mt-2 items-center rounded-xl bg-blue-600 py-3 active:opacity-80">
-              <Text className="text-base font-semibold text-white">
-                {t('listing.visitRealtor')}
-              </Text>
-            </Pressable>
+          {listing.sources?.length ? (
+            <View className="mt-2 flex-row gap-3">
+              {listing.sources.map((source, i) => (
+                <Pressable
+                  key={`${source.url}-${i}`}
+                  accessibilityRole="link"
+                  onPress={() => openBrowserAsync(source.url)}
+                  className="flex-1 items-center rounded-full bg-blue-600 py-3 active:opacity-80">
+                  <Text className="text-base font-semibold text-white text-center">
+                    {t('listing.visitRealtor', { name: source.name })}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           ) : null}
 
           <View className="mt-1 h-64 w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800">

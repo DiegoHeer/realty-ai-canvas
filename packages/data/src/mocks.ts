@@ -28,6 +28,10 @@ export const mockListings: Listing[] = [
     location: { latitude: 52.3676, longitude: 4.884 },
     images: [{ id: 'img_001', url: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800' }],
     createdAt: '2026-05-02T09:00:00.000Z',
+    sources: [
+      { url: 'https://funda.nl/koop/amsterdam/lst_001', name: 'Funda' },
+      { url: 'https://pararius.nl/koop/amsterdam/lst_001', name: 'Pararius' },
+    ],
   },
   {
     id: 'lst_002',
@@ -47,6 +51,7 @@ export const mockListings: Listing[] = [
     location: { latitude: 52.3584, longitude: 4.8686 },
     images: [{ id: 'img_002', url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' }],
     createdAt: '2026-05-10T12:30:00.000Z',
+    sources: [{ url: 'https://vastgoed.nl/koop/amsterdam/lst_002', name: 'Vastgoed NL' }],
   },
   {
     id: 'lst_003',

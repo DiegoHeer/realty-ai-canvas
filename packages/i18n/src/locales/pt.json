@@ -198,7 +198,7 @@
       "year_one": "Publicado há {{count}} ano",
       "year_other": "Publicado há {{count}} anos"
     },
-    "visitRealtor": "Ver no agente imobiliário",
+    "visitRealtor": "Ver em {{name}}",
     "close": "Fechar",
     "like": "Guardar nos favoritos",
     "unlike": "Remover dos favoritos",
