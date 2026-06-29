@@ -11,6 +11,17 @@ function mockFetch(status: number, body: unknown) {
 describe('auth-client', () => {
   afterEach(() => jest.restoreAllMocks());
 
+  it('throws AuthError when the response body is not JSON (5xx/HTML/empty)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      status: 502,
+      ok: false,
+      json: async () => {
+        throw new SyntaxError('Unexpected token < in JSON at position 0');
+      },
+    }) as unknown as typeof fetch;
+    await expect(login({ email: 'ada@example.com', password: 'pw' })).rejects.toBeInstanceOf(AuthError);
+  });
+
   it('login returns the user (with name) and tokens from meta', async () => {
     mockFetch(200, {
       status: 200,
@@ -32,9 +43,20 @@ describe('auth-client', () => {
     expect(result).toEqual({ kind: 'verifyPending', sessionToken: 'ST' });
   });
 
-  it('login throws AuthError on invalid credentials (400/401 without verify flow)', async () => {
+  it('login throws AuthError with code "invalid_credentials" on a rejected login', async () => {
     mockFetch(400, { status: 400, errors: [{ message: 'Invalid credentials.' }] });
-    await expect(login({ email: 'x@y.z', password: 'bad' })).rejects.toBeInstanceOf(AuthError);
+    await expect(login({ email: 'x@y.z', password: 'bad' })).rejects.toMatchObject({
+      name: 'AuthError',
+      code: 'invalid_credentials',
+    });
+  });
+
+  it('verifyEmail throws AuthError with code "invalid_code" on a rejected code', async () => {
+    mockFetch(400, { status: 400, errors: [{ message: 'Incorrect code.' }] });
+    await expect(verifyEmail({ code: '000000', sessionToken: 'ST' })).rejects.toMatchObject({
+      name: 'AuthError',
+      code: 'invalid_code',
+    });
   });
 
   it('verifyEmail sends the code + session token and returns an authenticated session', async () => {

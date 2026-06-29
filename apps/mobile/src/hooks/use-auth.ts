@@ -31,7 +31,15 @@ export interface AuthUser {
   avatarUrl?: string;
 }
 
-export type AuthOutcome = { ok: true } | { ok: false; error: string } | { ok: 'verifyPending' };
+/**
+ * Result of an auth action. A failure carries a stable `code` (not a message),
+ * so the UI can localize it; `'generic'` covers unexpected/unmapped failures.
+ */
+export type AuthErrorCode = 'invalid_credentials' | 'invalid_code' | 'generic';
+export type AuthOutcome =
+  | { ok: true }
+  | { ok: false; code: AuthErrorCode }
+  | { ok: 'verifyPending' };
 
 interface UseAuthReturn {
   user: AuthUser | null;
@@ -97,8 +105,16 @@ async function applySession(
   emit();
 }
 
-function messageFor(error: unknown): string {
-  return error instanceof AuthError ? error.message : 'Something went wrong. Please try again.';
+/**
+ * Map a thrown auth error to a stable {@link AuthErrorCode}. auth-client tags
+ * the recognized cases (`invalid_credentials`, `invalid_code`); anything else
+ * (server error, network failure, unexpected shape) collapses to `'generic'`.
+ */
+function codeFor(error: unknown): AuthErrorCode {
+  if (error instanceof AuthError && (error.code === 'invalid_credentials' || error.code === 'invalid_code')) {
+    return error.code;
+  }
+  return 'generic';
 }
 
 async function realSignIn(email: string, password: string): Promise<AuthOutcome> {
@@ -107,7 +123,7 @@ async function realSignIn(email: string, password: string): Promise<AuthOutcome>
     await applySession(toAuthUser(session.user), session.tokens);
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return { ok: false, code: codeFor(error) };
   }
 }
 
@@ -129,12 +145,12 @@ async function realRegister(p: {
     pendingSessionToken = result.sessionToken;
     return { ok: 'verifyPending' };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return { ok: false, code: codeFor(error) };
   }
 }
 
 async function realVerify(code: string): Promise<AuthOutcome> {
-  if (!pendingSessionToken) return { ok: false, error: 'Please register again.' };
+  if (!pendingSessionToken) return { ok: false, code: 'generic' };
   try {
     const session = await authVerifyEmail({
       code: code.trim(),
@@ -143,7 +159,7 @@ async function realVerify(code: string): Promise<AuthOutcome> {
     await applySession(toAuthUser(session.user), session.tokens);
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return { ok: false, code: codeFor(error) };
   }
 }
 

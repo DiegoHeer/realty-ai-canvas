@@ -64,8 +64,15 @@ async function call(
     headers: { 'Content-Type': 'application/json', ...init.headers },
   });
   // allauth mirrors the HTTP status in the body and uses non-2xx for valid
-  // pending states (e.g. verification), so always read the JSON body.
-  return (await res.json()) as AllauthEnvelope;
+  // pending states (e.g. verification), so always read the JSON body. A
+  // non-JSON body (5xx page, HTML, or empty) would otherwise throw a
+  // SyntaxError outside the AuthError channel, so map a parse failure to a
+  // typed AuthError and keep the failure contract explicit.
+  try {
+    return (await res.json()) as AllauthEnvelope;
+  } catch {
+    throw new AuthError('Unexpected response from the server.');
+  }
 }
 
 function firstError(env: AllauthEnvelope, fallback: string): AuthError {
@@ -99,7 +106,10 @@ export async function signup(input: {
 
 export async function login(input: { email: string; password: string }): Promise<AuthSession> {
   const env = await call('/auth/login', { method: 'POST', body: JSON.stringify(input) });
-  if (!env.meta?.is_authenticated) throw firstError(env, 'Invalid email or password.');
+  // Stable code so the UI can localize this case; the message is dev-facing.
+  if (!env.meta?.is_authenticated) {
+    throw new AuthError(env.errors?.[0]?.message ?? 'Invalid email or password.', 'invalid_credentials');
+  }
   return toSession(env);
 }
 
@@ -112,7 +122,10 @@ export async function verifyEmail(input: {
     headers: { 'X-Session-Token': input.sessionToken },
     body: JSON.stringify({ key: input.code }),
   });
-  if (!env.meta?.is_authenticated) throw firstError(env, 'That code is invalid or expired.');
+  // Stable code so the UI can localize this case; the message is dev-facing.
+  if (!env.meta?.is_authenticated) {
+    throw new AuthError(env.errors?.[0]?.message ?? 'That code is invalid or expired.', 'invalid_code');
+  }
   return toSession(env);
 }
 
