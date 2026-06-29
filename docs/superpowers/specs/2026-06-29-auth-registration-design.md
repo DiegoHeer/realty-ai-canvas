@@ -235,12 +235,38 @@ Display the user's **`name`** (not `display`/`username`).
 **Session** — `GET /auth/session` with `Authorization: Bearer <access_token>`
 → same `data.user` (including `name`).
 
-**To confirm during implementation (from-docs, not yet repo-verified):**
-- **Email verify by code** — candidate `POST /auth/email/verify` with the code
-  as the body field; carries the signup `session_token`. On success returns an
-  authenticated session with `meta.access_token` / `meta.refresh_token`. Verify
-  the exact path and field name against allauth 65.18 + the running backend.
-- **Token refresh** — candidate `POST /auth/token/refresh` with the
-  `refresh_token`; returns new `access_token` (+ rotated `refresh_token`, since
-  `HEADLESS_JWT_ROTATE_REFRESH_TOKEN=True`). Confirm before building the
-  refresh interceptor.
+**Verified live (2026-06-29, allauth 65.18, PR #189):**
+
+**Email verify by code** — `POST /auth/email/verify` — body field `key`,
+session token in `X-Session-Token` header (not `Authorization`):
+```jsonc
+// request
+POST /_allauth/app/v1/auth/email/verify
+X-Session-Token: <session_token-from-signup>
+{ "key": "KJGT-QJDN" }   // code printed to console email backend
+// response 200 — email verified, session now authenticated
+{ "status": 200,
+  "data": { "user": { "id": 1, "display": "ada", "email": "ada@example.com",
+                      "has_usable_password": true, "username": "ada",
+                      "name": "Ada Lovelace" },
+            "methods": [] },
+  "meta": { "is_authenticated": true, "session_token": "…",
+            "access_token": "<JWT>", "refresh_token": "<JWT>" } }
+```
+Path and field name match the candidate. Session token rides `X-Session-Token`
+(confirmed). Tokens are in `meta` (same as login).
+
+**Token refresh** — `POST /tokens/refresh` (**not** `/auth/token/refresh`) —
+body field `refresh_token`; rotated tokens returned in **`data`** (not `meta`):
+```jsonc
+// request
+POST /_allauth/app/v1/tokens/refresh
+{ "refresh_token": "<JWT>" }
+// response 200 — new rotated tokens
+{ "status": 200,
+  "data": { "access_token": "<new-JWT>", "refresh_token": "<new-JWT>" } }
+```
+⚠️ **Two deviations from the candidate shape:**
+1. Path is `/_allauth/app/v1/tokens/refresh` — **not** `/_allauth/app/v1/auth/token/refresh`.
+2. Tokens in response are in **`data`**, not `meta`. Use `response.data.access_token` /
+   `response.data.refresh_token` in the refresh interceptor.
