@@ -11,6 +11,17 @@ function mockFetch(status: number, body: unknown) {
 describe('auth-client', () => {
   afterEach(() => jest.restoreAllMocks());
 
+  it('throws AuthError when the response body is not JSON (5xx/HTML/empty)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      status: 502,
+      ok: false,
+      json: async () => {
+        throw new SyntaxError('Unexpected token < in JSON at position 0');
+      },
+    }) as unknown as typeof fetch;
+    await expect(login({ email: 'ada@example.com', password: 'pw' })).rejects.toBeInstanceOf(AuthError);
+  });
+
   it('login returns the user (with name) and tokens from meta', async () => {
     mockFetch(200, {
       status: 200,
