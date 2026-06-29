@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { createURL } from 'expo-linking';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { openBrowserAsync } from 'expo-web-browser';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 
+import { toggleLike, useIsLiked } from '@/lib/likes';
 import { recordRecentView } from '@/lib/recent-views';
 import { Brand } from '@/constants/theme';
 import { HeartIcon, ShareIcon } from '../../components/icons';
@@ -29,7 +30,7 @@ export default function ListingDetailScreen() {
   const { data: listing, isLoading, isError } = useListing(id);
   const { t, i18n } = useTranslation();
   const scheme = useColorScheme();
-  const [liked, setLiked] = useState(false);
+  const liked = useIsLiked(id);
 
   // Snapshot the listing as recently viewed once it loads. Re-runs (and so
   // refreshes the cached copy) whenever a different listing resolves.
@@ -112,7 +113,7 @@ export default function ListingDetailScreen() {
           headerRight: () => (
             <View className="flex-row items-center gap-4 pr-3">
               <Pressable
-                onPress={() => setLiked((v) => !v)}
+                onPress={() => toggleLike(listing)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: liked }}
                 accessibilityLabel={t(liked ? 'listing.unlike' : 'listing.like')}

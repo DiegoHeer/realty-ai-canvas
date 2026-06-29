@@ -2,11 +2,11 @@ import { formatPrice } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import type { Listing } from '@realty/types';
 import { Image } from 'expo-image';
-import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { HeartIcon } from './icons';
 import { Brand } from '../constants/theme';
+import { toggleLike, useIsLiked } from '../lib/likes';
 
 export interface ListingCardProps {
   listing: Listing;
@@ -24,7 +24,7 @@ export interface ListingCardProps {
  */
 export function ListingCard({ listing, onPress, onClose }: ListingCardProps) {
   const { t, i18n } = useTranslation();
-  const [liked, setLiked] = useState(false);
+  const liked = useIsLiked(listing.id);
   const cover = listing.images[0];
 
   const facts = [
@@ -76,7 +76,7 @@ export function ListingCard({ listing, onPress, onClose }: ListingCardProps) {
         className="absolute inset-x-0 top-0 flex-row justify-end gap-3 p-5"
         pointerEvents="box-none">
         <Pressable
-          onPress={() => setLiked((v) => !v)}
+          onPress={() => toggleLike(listing)}
           accessibilityRole="button"
           accessibilityState={{ selected: liked }}
           accessibilityLabel={t(liked ? 'listing.unlike' : 'listing.like')}

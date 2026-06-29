@@ -15,6 +15,8 @@ export const StorageKeys = {
   session: `${PREFIX}session`,
   recentSearches: `${PREFIX}recent-searches`,
   recentViews: `${PREFIX}recent-views`,
+  /** Listings the user liked via the heart toggle ("favorites" in the UI). */
+  likes: `${PREFIX}likes`,
   /** Cached neighborhood boundaries; suffixed with `:<cityCode>` per city. */
   areas: `${PREFIX}areas`,
   /** Cached neighborhood statistics; suffixed with `:<cityCode>` per city. */
