@@ -29,18 +29,42 @@ export function configureAuthInterceptor(config: AuthInterceptorConfig | null): 
   authInterceptor = config;
 }
 
+let refreshInFlight: Promise<string | null> | null = null;
+
+/** Coalesce concurrent refreshes into one network call. */
+function refreshOnce(): Promise<string | null> {
+  if (!authInterceptor) return Promise.resolve(null);
+  if (!refreshInFlight) {
+    refreshInFlight = authInterceptor.refresh().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
 /**
  * Thin typed wrapper around `fetch`. Swap `USE_MOCKS` off (by setting
  * `EXPO_PUBLIC_API_URL`) and these functions hit the real backend instead.
  */
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = authInterceptor?.getAccessToken() ?? null;
-  const baseHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) baseHeaders['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: { ...baseHeaders, ...init?.headers },
-  });
+  const send = (token: string | null) => {
+    const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    return fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...authHeader, ...init?.headers },
+    });
+  };
+
+  let res = await send(authInterceptor?.getAccessToken() ?? null);
+
+  if (res.status === 401 && authInterceptor) {
+    const newToken = await refreshOnce();
+    if (!newToken) {
+      throw new Error(`Request to ${path} failed: 401 (refresh failed)`);
+    }
+    res = await send(newToken);
+  }
+
   if (!res.ok) {
     throw new Error(`Request to ${path} failed: ${res.status} ${res.statusText}`);
   }
