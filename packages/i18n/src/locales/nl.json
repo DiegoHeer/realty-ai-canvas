@@ -69,7 +69,15 @@
     "errorEmailRequired": "Vul je e-mailadres in.",
     "errorEmailInvalid": "Vul een geldig e-mailadres in.",
     "errorPasswordRequired": "Vul je wachtwoord in.",
-    "errorPasswordTooShort": "Wachtwoord moet minstens 8 tekens bevatten."
+    "errorPasswordTooShort": "Wachtwoord moet minstens 8 tekens bevatten.",
+    "errorGeneric": "Er is iets misgegaan. Probeer het opnieuw.",
+    "submitting": "Even geduld…",
+    "verifyTitle": "Verifieer je e-mailadres",
+    "verifySubtitle": "Voer de code in die we je hebben gemaild om je account aan te maken.",
+    "verifyCode": "Verificatiecode",
+    "verifyCodePlaceholder": "6-cijferige code",
+    "verifyCta": "Verifiëren",
+    "errorCodeRequired": "Voer de code in."
   },
   "search": {
     "placeholder": "Zoeken",
