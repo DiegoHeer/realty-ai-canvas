@@ -64,6 +64,13 @@ export interface ResidenceOut {
   listings: ResidenceSource[];
 }
 
+/** Human-readable realtor names for the source `website` values. */
+const WEBSITE_NAMES: Record<ResidenceSource['website'], string> = {
+  funda: 'Funda',
+  pararius: 'Pararius',
+  vastgoed_nl: 'Vastgoed NL',
+};
+
 /** Map the API's residence status onto our app-facing listing status. */
 const STATUS_TO_LISTING: Record<ResidenceStatus, ListingStatus> = {
   new: 'for_sale',
@@ -138,5 +145,9 @@ export function residenceToListing(
     createdAt: r.created_at,
     // First source listing is the realtor page we link out to.
     sourceUrl: r.listings[0]?.url,
+    // One entry per source listing, so the UI can link out to each realtor.
+    sources: r.listings
+      .filter((l) => l.url)
+      .map((l) => ({ url: l.url, name: WEBSITE_NAMES[l.website] ?? l.website })),
   };
 }

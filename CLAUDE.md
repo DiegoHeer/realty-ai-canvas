@@ -1,6 +1,12 @@
 use `bun` or `bunx`. dont use `npx` or `npm`.
 This project implements i18n for all texts visible to user (except for data fields), see `packages/i18n/src/`.
 
+## Workflow
+
+- New feature → create a worktree; develop and test there (Playwright for UI).
+- At milestones / on completion → push to GitHub with `gh`.
+- Front-end changes → spawn `bun run web -p <PORT>` and share the URL so the owner can see it live.
+
 ## Storage
 
 Persistent storage is AsyncStorage only, wrapped in `apps/mobile/src/lib/storage.ts`. All reads/writes are best-effort (failures resolve to a safe default, never throw). Keys live under the `realty:` namespace — add new ones to `StorageKeys`.

@@ -5,9 +5,11 @@ import type { ReactNode } from 'react';
 import {
   areaKeys,
   cityKeys,
+  cityNameKeys,
   listingKeys,
   useAreas,
   useCities,
+  useCityNames,
   useListing,
   useListings,
 } from '../queries';
@@ -81,6 +83,14 @@ describe('useCities', () => {
   });
 });
 
+describe('useCityNames', () => {
+  it('returns the city-names list', async () => {
+    const { result } = await renderHook(() => useCityNames(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data!.some((c) => c.name === 'Amsterdam')).toBe(true);
+  });
+});
+
 describe('query keys', () => {
   it('listingKeys.list produces stable keys', () => {
     const key1 = listingKeys.list({ status: 'for_sale' });
@@ -99,5 +109,10 @@ describe('query keys', () => {
 
   it('cityKeys.all is stable', () => {
     expect(cityKeys.all).toEqual(['cities']);
+  });
+
+  it('cityNameKeys.all is stable and distinct from cityKeys', () => {
+    expect(cityNameKeys.all).toEqual(['city-names']);
+    expect(cityNameKeys.all).not.toEqual(cityKeys.all);
   });
 });

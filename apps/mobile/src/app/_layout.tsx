@@ -4,13 +4,22 @@ import '@/i18n';
 import { DataProvider } from '@realty/data';
 import { i18n, I18nextProvider, useTranslation } from '@realty/i18n';
 import { StatusBar } from 'expo-status-bar';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import {
+  DarkTheme,
+  DefaultTheme,
+  router,
+  Stack,
+  ThemeProvider,
+  useRootNavigationState,
+} from 'expo-router';
+import { useEffect } from 'react';
+import { Platform, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Importing the hook also runs the module side-effect that applies any saved
 // appearance override at boot.
 import { useAppearance } from '@/lib/appearance';
+import { useOnboarding } from '@/lib/onboarding';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 
 export default function RootLayout() {
@@ -22,6 +31,19 @@ export default function RootLayout() {
   // OS), then invert it for the status bar: dark icons on light, light on dark.
   const effectiveScheme = appearance === 'system' ? colorScheme : appearance;
   const statusBarStyle = effectiveScheme === 'dark' ? 'light' : 'dark';
+
+  // First-run gate: once we know (post-hydration) the intro tour hasn't been
+  // completed, send the user into it. Native only — the web export is the
+  // demo/test surface and is never force-redirected (so the tour is reachable
+  // there only by navigating to /onboarding directly). Waits for the root
+  // navigator to mount before navigating.
+  const { status: onboardingStatus, hydrated: onboardingHydrated } = useOnboarding();
+  const rootNavState = useRootNavigationState();
+  const needsOnboarding =
+    Platform.OS !== 'web' && onboardingHydrated && onboardingStatus !== 'done';
+  useEffect(() => {
+    if (rootNavState?.key && needsOnboarding) router.replace('/onboarding');
+  }, [rootNavState?.key, needsOnboarding]);
 
   return (
     // Roots the gesture system for react-native-gesture-handler (the area sheet's
@@ -42,6 +64,13 @@ export default function RootLayout() {
               }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen
+                name="onboarding"
+                // Full-screen takeover: no header, and the iOS back-swipe is
+                // disabled so the tour can't be partially dragged away (its own
+                // Skip/Continue controls drive it instead).
+                options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+              />
+              <Stack.Screen
                 name="listing/[id]"
                 options={{ headerShown: true, title: t('tabs.listings') }}
               />
@@ -56,6 +85,26 @@ export default function RootLayout() {
               <Stack.Screen
                 name="settings/filters"
                 options={{ headerShown: true, title: t('filtersPage.title') }}
+              />
+              <Stack.Screen
+                name="settings/notifications"
+                options={{ headerShown: true, title: t('profile.notifications') }}
+              />
+              <Stack.Screen
+                name="settings/subscription"
+                options={{ headerShown: true, title: t('profile.subscription') }}
+              />
+              <Stack.Screen
+                name="settings/privacy"
+                options={{ headerShown: true, title: t('profile.privacy') }}
+              />
+              <Stack.Screen
+                name="settings/help"
+                options={{ headerShown: true, title: t('profile.help') }}
+              />
+              <Stack.Screen
+                name="settings/about"
+                options={{ headerShown: true, title: t('profile.about') }}
               />
               <Stack.Screen
                 name="settings/feedback"
