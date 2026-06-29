@@ -142,9 +142,14 @@ A standalone prompt for this workstream lives at
     `EXPO_PUBLIC_USE_MOCKS=true`).
   - **On** (when backend SMTP + OAuth are ready): full real flow —
     register → email-verify → login — and the social buttons become visible.
-- Per decisions 3 & 5, the email-verify screen and the social buttons both
-  ride this single flag. Splitting into two flags later (if SMTP and OAuth
-  land at different times) is trivial.
+- **Mock mode (flag off)** = today's behavior, unchanged, including the mock
+  social buttons — this is the safe shipping default and the visual-regression
+  path.
+- **Real mode (flag on)** = real backend login/register/verify. The
+  Google/Apple **social buttons are hidden in real mode** (the backend has no
+  OAuth yet); a future OAuth PR re-enables them. The verify-email screen is
+  part of the real register flow. This is the pragmatic reading of decisions
+  3 & 5; splitting social onto its own flag later is trivial.
 
 #### B5. Screens & i18n
 
