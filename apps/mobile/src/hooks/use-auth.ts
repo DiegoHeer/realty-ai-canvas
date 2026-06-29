@@ -173,11 +173,9 @@ async function realSignOut(): Promise<void> {
   await removeKey(StorageKeys.session);
   queryClient.clear();
   if (token) {
-    try {
-      await authLogout(token);
-    } catch {
-      // Best-effort server-side logout.
-    }
+    // Fire-and-forget: never block sign-out (or a refresh-triggered teardown)
+    // on the network round-trip.
+    void authLogout(token).catch(() => {});
   }
 }
 
@@ -202,7 +200,20 @@ async function realHydrate() {
     await saveJSON(StorageKeys.session, currentUser);
     emit();
   } catch {
-    // Interceptor already tore down the session if refresh failed.
+    // Access token likely expired. getSession bypasses the /v1 interceptor, so
+    // refresh manually: realRefresh() rotates tokens (and tears the session
+    // down + returns null on its own failure). If it succeeds, retry once.
+    const newAccess = await realRefresh();
+    if (newAccess) {
+      try {
+        const dto = await authGetSession(newAccess);
+        currentUser = toAuthUser(dto);
+        await saveJSON(StorageKeys.session, currentUser);
+        emit();
+      } catch {
+        await realSignOut();
+      }
+    }
   }
 }
 

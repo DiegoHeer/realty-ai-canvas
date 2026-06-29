@@ -176,4 +176,106 @@ describe('use-auth (real mode)', () => {
       expect(outcome).toEqual({ ok: false, error: 'Invalid email or password.' });
     });
   });
+
+  it('hydrate-expired: getSession rejects → refresh succeeds → user populated and tokens rotated', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+
+      // Seed keychain tokens so realHydrate proceeds past the early-return.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { saveTokens } = require('@/lib/secure-tokens');
+      await saveTokens({ accessToken: 'EXPIRED-AT', refreshToken: 'RT' });
+
+      // Seed persisted session so the cached path runs (coverage of the cache branch).
+      await AsyncStorage.setItem(
+        StorageKeys.session,
+        JSON.stringify({ name: 'Cached User', email: 'cached@example.com' }),
+      );
+
+      // getSession rejects once (expired), then resolves after refresh.
+      jest
+        .spyOn(authData, 'getSession')
+        .mockRejectedValueOnce(new Error('401'))
+        .mockResolvedValueOnce({ id: 1, email: 'ada@example.com', name: 'Ada Lovelace' });
+
+      // refresh resolves with rotated tokens.
+      jest.spyOn(authData, 'refresh').mockResolvedValue({
+        accessToken: 'NEW-AT',
+        refreshToken: 'NEW-RT',
+      });
+
+      // logout is fire-and-forget; stub to avoid noise.
+      jest.spyOn(authData, 'logout').mockResolvedValue(undefined);
+
+      // Loading the module triggers boot hydration at module load time.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getCurrentUser } = require('@/hooks/use-auth');
+
+      // Let the microtask queue drain so realHydrate's async chain completes.
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(getCurrentUser()).toMatchObject({ name: 'Ada Lovelace', email: 'ada@example.com' });
+      expect(await loadTokens()).toEqual({ accessToken: 'NEW-AT', refreshToken: 'NEW-RT' });
+    });
+  });
+
+  it('hydrate-expired: getSession rejects and refresh rejects → session torn down', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+
+      // Seed keychain tokens.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { saveTokens } = require('@/lib/secure-tokens');
+      await saveTokens({ accessToken: 'EXPIRED-AT', refreshToken: 'RT' });
+
+      // getSession always rejects.
+      jest.spyOn(authData, 'getSession').mockRejectedValue(new Error('401'));
+
+      // refresh also rejects → realSignOut will run inside realRefresh.
+      jest.spyOn(authData, 'refresh').mockRejectedValue(new Error('refresh failed'));
+
+      // logout is fire-and-forget; stub to avoid noise.
+      jest.spyOn(authData, 'logout').mockResolvedValue(undefined);
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getCurrentUser } = require('@/hooks/use-auth');
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(getCurrentUser()).toBeNull();
+      expect(await loadTokens()).toBeNull();
+    });
+  });
+
+  it('signOut clears user, tokens and calls queryClient.clear', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+
+      jest.spyOn(authData, 'login').mockResolvedValue({
+        user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' },
+        tokens: { accessToken: 'AT', refreshToken: 'RT' },
+      });
+      jest.spyOn(authData, 'logout').mockResolvedValue(undefined);
+      const clearSpy = jest.spyOn(authData.queryClient, 'clear');
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithEmail, signOut: realSignOut, getCurrentUser } = require('@/hooks/use-auth');
+
+      await signInWithEmail('ada@example.com', 'pw');
+      expect(getCurrentUser()).not.toBeNull();
+      expect(await loadTokens()).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
+
+      await realSignOut();
+
+      expect(getCurrentUser()).toBeNull();
+      expect(await loadTokens()).toBeNull();
+      expect(clearSpy).toHaveBeenCalledTimes(1);
+    });
+  });
 });
