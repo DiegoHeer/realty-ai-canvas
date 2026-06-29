@@ -116,9 +116,9 @@ describe('LoginScreen', () => {
     expect(getAllByText('Inloggen').length).toBeGreaterThan(0);
   });
 
-  it('shows a server error when sign-in fails', async () => {
+  it('shows a localized server error when sign-in fails', async () => {
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
-      signInWithEmail: jest.fn().mockResolvedValue({ ok: false, error: 'Invalid email or password.' }),
+      signInWithEmail: jest.fn().mockResolvedValue({ ok: false, code: 'invalid_credentials' }),
       signInWithGoogle: jest.fn(),
       signInWithApple: jest.fn(),
     });

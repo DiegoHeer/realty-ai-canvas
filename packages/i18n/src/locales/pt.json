@@ -114,6 +114,8 @@
     "errorPasswordRequired": "Introduza a sua palavra-passe.",
     "errorPasswordTooShort": "A palavra-passe deve ter pelo menos 8 caracteres.",
     "errorGeneric": "Algo correu mal. Tente novamente.",
+    "errorInvalidCredentials": "E-mail ou palavra-passe inválidos.",
+    "errorCodeInvalid": "Esse código é inválido ou expirou.",
     "submitting": "Aguarde…",
     "verifyTitle": "Verifique o seu e-mail",
     "verifySubtitle": "Introduza o código que lhe enviámos para concluir a criação da conta.",

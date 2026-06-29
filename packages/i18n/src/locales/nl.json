@@ -114,6 +114,8 @@
     "errorPasswordRequired": "Vul je wachtwoord in.",
     "errorPasswordTooShort": "Wachtwoord moet minstens 8 tekens bevatten.",
     "errorGeneric": "Er is iets misgegaan. Probeer het opnieuw.",
+    "errorInvalidCredentials": "Ongeldig e-mailadres of wachtwoord.",
+    "errorCodeInvalid": "Die code is ongeldig of verlopen.",
     "submitting": "Even geduld…",
     "verifyTitle": "Verifieer je e-mailadres",
     "verifySubtitle": "Voer de code in die we je hebben gemaild om je account aan te maken.",

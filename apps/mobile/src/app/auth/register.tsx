@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import {
+  authErrorKey,
   AuthField,
   AuthScaffold,
   AuthSwitchLink,
@@ -61,7 +62,7 @@ export default function RegisterScreen() {
       // frame (same reason the settings screens defer their `router.back()`).
       requestAnimationFrame(() => router.back());
     } else {
-      setFormError(outcome.error);
+      setFormError(t(authErrorKey(outcome.code)));
     }
   }
 
