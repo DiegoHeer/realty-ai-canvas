@@ -37,3 +37,11 @@ export const USE_MOCKS =
  * listings only when no API URL is set, so the app still renders out of the box.
  */
 export const USE_LISTING_MOCKS = API_URL === '';
+
+/**
+ * Turn on real backend authentication (allauth headless JWT). Off by default,
+ * so the app keeps the mock auth path — which is also the deterministic
+ * visual-regression path. Set EXPO_PUBLIC_AUTH_ENABLED=true to use the real
+ * signup/login/verify flow and attach Bearer tokens to /v1 requests.
+ */
+export const AUTH_ENABLED = process.env.EXPO_PUBLIC_AUTH_ENABLED === 'true';
