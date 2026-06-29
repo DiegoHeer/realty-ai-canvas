@@ -160,20 +160,35 @@ describe('use-auth (real mode)', () => {
     });
   });
 
-  it('login surfaces a friendly error on AuthError', async () => {
+  it('login surfaces the invalid_credentials code from a coded AuthError', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const authData = require('@realty/data');
       Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
       jest
         .spyOn(authData, 'login')
-        .mockRejectedValue(new authData.AuthError('Invalid email or password.'));
+        .mockRejectedValue(new authData.AuthError('Invalid email or password.', 'invalid_credentials'));
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { signInWithEmail } = require('@/hooks/use-auth');
 
       const outcome = await signInWithEmail('ada@example.com', 'bad-pw');
 
-      expect(outcome).toEqual({ ok: false, error: 'Invalid email or password.' });
+      expect(outcome).toEqual({ ok: false, code: 'invalid_credentials' });
+    });
+  });
+
+  it('login collapses an unexpected (non-coded) failure to the generic code', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      jest.spyOn(authData, 'login').mockRejectedValue(new Error('network down'));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithEmail } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithEmail('ada@example.com', 'pw');
+
+      expect(outcome).toEqual({ ok: false, code: 'generic' });
     });
   });
 });
