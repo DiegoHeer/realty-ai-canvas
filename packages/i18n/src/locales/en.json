@@ -69,7 +69,9 @@
     "errorEmailRequired": "Please enter your email.",
     "errorEmailInvalid": "Please enter a valid email address.",
     "errorPasswordRequired": "Please enter your password.",
-    "errorPasswordTooShort": "Password must be at least 8 characters."
+    "errorPasswordTooShort": "Password must be at least 8 characters.",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "submitting": "Please wait…"
   },
   "search": {
     "placeholder": "Search",

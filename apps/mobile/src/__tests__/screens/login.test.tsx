@@ -107,4 +107,17 @@ describe('LoginScreen', () => {
     // Title and CTA both read "Inloggen".
     expect(getAllByText('Inloggen').length).toBeGreaterThan(0);
   });
+
+  it('shows a server error when sign-in fails', async () => {
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      signInWithEmail: jest.fn().mockResolvedValue({ ok: false, error: 'Invalid email or password.' }),
+      signInWithGoogle: jest.fn(),
+      signInWithApple: jest.fn(),
+    });
+    const { getByPlaceholderText, getByTestId, findByText } = await renderScreen('en');
+    await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
+    await typeInto(getByPlaceholderText('Enter your password'), 'bad');
+    fireEvent.press(getByTestId('auth-submit'));
+    expect(await findByText('Invalid email or password.')).toBeOnTheScreen();
+  });
 });
