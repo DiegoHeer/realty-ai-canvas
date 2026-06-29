@@ -1,3 +1,4 @@
+export * from './auth-client';
 export * from './client';
 export * from './residences';
 export * from './queries';
