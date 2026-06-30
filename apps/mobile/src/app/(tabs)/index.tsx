@@ -14,7 +14,7 @@ import { LocationSearch, type LocationSearchRef } from '@/components/location-se
 import { useEffectiveColorScheme } from '@/components/map-style';
 import { Brand } from '@/constants/theme';
 import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
-import { colorAreasByStat } from '@/lib/area-choropleth';
+import { colorAreasByStat, rampFor, selectInhabitants, statDomain } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
 import { countActiveFilters, filtersToQuery, useFilters } from '@/lib/filters';
 import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
@@ -116,6 +116,18 @@ export default function MapScreen() {
     () => colorAreasByStat(areas, statsByCode, { scheme }),
     [areas, statsByCode, scheme],
   );
+
+  // Scale legend shown above the area sheet at peek: the municipality-wide
+  // inhabitant range the map colors span, plus the ramp for the active theme.
+  // Null when there's no spread (single neighborhood or all equal).
+  const areaLegend = useMemo(() => {
+    const domain = statDomain(areas, statsByCode);
+    return domain ? { min: domain.min, max: domain.max, ramp: rampFor(scheme) } : null;
+  }, [areas, statsByCode, scheme]);
+
+  // The selected neighborhood's inhabitant count, marked on the legend — read
+  // with the same selector the choropleth uses so the marker matches its fill.
+  const selectedInhabitants = selectedAreaStats ? selectInhabitants(selectedAreaStats) : null;
 
   // Once a city's neighborhoods are visible, surface its name in the search
   // placeholder; otherwise the field keeps its default "Search" hint.
@@ -270,6 +282,7 @@ export default function MapScreen() {
         area={selectedArea}
         stats={selectedAreaStats}
         municipality={selectedCity?.name ?? ''}
+        legend={areaLegend ? { ...areaLegend, value: selectedInhabitants } : null}
         onClose={() => setSelectedAreaId(null)}
       />
     </View>

@@ -2,7 +2,7 @@ import { useTranslation } from '@realty/i18n';
 import { AUTH_ENABLED } from '@realty/data';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import {
   authErrorKey,
@@ -69,6 +69,15 @@ export default function LoginScreen() {
     }
   }
 
+  // Carry the typed email to the reset flow so it lands prefilled; omit the param
+  // when blank so the reset screen just starts empty.
+  function goToForgotPassword() {
+    const trimmed = email.trim();
+    router.push(
+      trimmed ? { pathname: '/auth/forgot-password', params: { email: trimmed } } : '/auth/forgot-password',
+    );
+  }
+
   return (
     <AuthScaffold title={t('auth.logInTitle')} subtitle={t('auth.logInSubtitle')}>
       <View className="gap-4">
@@ -96,6 +105,17 @@ export default function LoginScreen() {
           onSubmitEditing={submit}
           returnKeyType="go"
         />
+        <View className="-mt-1 items-end">
+          <Pressable
+            onPress={goToForgotPassword}
+            accessibilityRole="link"
+            hitSlop={8}
+            className="active:opacity-60">
+            <Text className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+              {t('auth.forgotLink')}
+            </Text>
+          </Pressable>
+        </View>
         {formError ? (
           <Text className="text-sm text-red-600 dark:text-red-400">{formError}</Text>
         ) : null}

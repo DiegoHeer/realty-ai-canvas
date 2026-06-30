@@ -110,6 +110,26 @@ describe('LoginScreen', () => {
     expect(router.replace).toHaveBeenCalledWith('/auth/register');
   });
 
+  it('navigates to the forgot-password screen, carrying the typed email', async () => {
+    const { getByText, getByPlaceholderText } = await renderScreen('en');
+
+    await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
+    await tap(getByText('Forgot password?'));
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/auth/forgot-password',
+      params: { email: 'ada@example.com' },
+    });
+  });
+
+  it('navigates to forgot-password without a param when the email is blank', async () => {
+    const { getByText } = await renderScreen('en');
+
+    await tap(getByText('Forgot password?'));
+
+    expect(router.push).toHaveBeenCalledWith('/auth/forgot-password');
+  });
+
   it('localizes its copy (Dutch)', async () => {
     const { getAllByText } = await renderScreen('nl');
     // Title and CTA both read "Inloggen".

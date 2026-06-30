@@ -2,7 +2,7 @@ import { useTranslation } from '@realty/i18n';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { type ReactElement, type ReactNode } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -114,8 +114,17 @@ export default function ProfileScreen() {
   const { user, isAuthenticated, signOut } = useAuth();
 
   // Signing out is destructive (it drops back to the guest state), so confirm
-  // with a native dialog instead of acting on the first tap.
+  // instead of acting on the first tap. react-native-web's Alert.alert is a
+  // no-op (it never renders), so on web we fall back to the browser's native
+  // confirm dialog; native keeps the OS Alert.
   function confirmSignOut() {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        `${t('profile.signOutConfirmTitle')}\n\n${t('profile.signOutConfirmMessage')}`,
+      );
+      if (confirmed) void signOut();
+      return;
+    }
     Alert.alert(t('profile.signOutConfirmTitle'), t('profile.signOutConfirmMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('profile.signOut'), style: 'destructive', onPress: signOut },
