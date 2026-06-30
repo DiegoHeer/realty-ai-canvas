@@ -116,6 +116,7 @@
     "errorGeneric": "Something went wrong. Please try again.",
     "errorInvalidCredentials": "Invalid email or password.",
     "errorCodeInvalid": "That code is invalid or expired.",
+    "errorEmailTaken": "That email is already registered.",
     "submitting": "Please wait…",
     "verifyTitle": "Verify your email",
     "verifySubtitle": "Enter the code we emailed you to finish creating your account.",

@@ -130,6 +130,17 @@ export async function signup(input: {
   if (pending && env.meta?.session_token) {
     return { kind: 'verifyPending', sessionToken: env.meta.session_token };
   }
+  // Duplicate email: allauth tags this with the stable code `email_taken`
+  // (verified live against django-allauth headless 65.18 with enumeration
+  // prevention off). Surface a dedicated code so the UI can localize it.
+  const taken = env.errors?.find((e) => e.code === 'email_taken');
+  if (taken) {
+    throw new AuthError(
+      taken.message ?? 'That email is already registered.',
+      'email_taken',
+      parseAllauthErrors(env),
+    );
+  }
   throw firstError(env, 'Could not create the account.');
 }
 

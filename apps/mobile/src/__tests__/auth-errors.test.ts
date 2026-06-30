@@ -7,6 +7,7 @@ const t = (key: string): string =>
   (({
     'auth.errorInvalidCredentials': 'Invalid email or password.',
     'auth.errorCodeInvalid': 'That code is invalid or expired.',
+    'auth.errorEmailTaken': 'That email is already registered.',
     'auth.errorGeneric': 'Something went wrong. Please try again.',
   }) as Record<string, string>)[key] ?? key;
 
@@ -30,6 +31,15 @@ describe('resolveAuthErrorMessage', () => {
     expect(
       resolveAuthErrorMessage({ message: 'Invalid or expired key.', code: 'invalid', param: 'key' }, t),
     ).toBe('That code is invalid or expired.');
+  });
+
+  it('localizes the email_taken code to the localized copy, not the backend message', () => {
+    expect(
+      resolveAuthErrorMessage(
+        { message: 'A user is already registered with this email address.', code: 'email_taken', param: 'email' },
+        t,
+      ),
+    ).toBe('That email is already registered.');
   });
 
   it('falls back to the raw backend message for an unmapped password-validator code', () => {

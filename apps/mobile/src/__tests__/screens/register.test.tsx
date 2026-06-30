@@ -129,6 +129,24 @@ describe('RegisterScreen', () => {
     expect(queryByText('Something went wrong. Please try again.')).toBeNull();
   });
 
+  it('shows the localized email-taken error when registration reports email_taken', async () => {
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      registerWithEmail: jest.fn().mockResolvedValue({ ok: false, code: 'email_taken' }),
+      signInWithGoogle: jest.fn(),
+      signInWithApple: jest.fn(),
+    });
+
+    const { getByText, getByTestId, getByPlaceholderText } = await renderScreen('en');
+
+    await typeInto(getByPlaceholderText('Your name'), 'Ada Lovelace');
+    await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
+    await typeInto(getByPlaceholderText('Enter your password'), 'sup3rs3cret!');
+    await tap(getByTestId('auth-submit'));
+
+    await waitFor(() => expect(getByText('That email is already registered.')).toBeTruthy());
+    expect(router.back).not.toHaveBeenCalled();
+  });
+
   it('navigates to verify when registration is pending', async () => {
     const { mockPush } = require('../../../test-setup');
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({

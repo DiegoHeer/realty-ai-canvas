@@ -20,6 +20,7 @@ export interface MappedAuthErrors {
  */
 const CODE_I18N_KEY: Record<string, string> = {
   email_password_mismatch: 'auth.errorInvalidCredentials',
+  email_taken: 'auth.errorEmailTaken',
   incorrect_code: 'auth.errorCodeInvalid',
   token_invalid: 'auth.errorCodeInvalid',
 };

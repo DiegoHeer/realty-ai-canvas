@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 
 import { SettingsOptionsScreen } from '@/components/settings-options-screen';
 import { useAppearance, type Appearance } from '@/lib/appearance';
+import { deferNavigation } from '@/lib/navigation';
 import { APPEARANCE_OPTIONS } from '@/lib/settings-options';
 
 /**
@@ -28,7 +29,7 @@ export default function AppearanceSettingsScreen() {
         // react-native-screens' transition draw and crashes Android with
         // "trying to use a recycled bitmap". One frame of separation lets the
         // re-render commit before the pop animation starts.
-        requestAnimationFrame(() => router.back());
+        deferNavigation(() => router.back());
       }}
     />
   );

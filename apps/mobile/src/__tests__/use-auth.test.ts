@@ -12,7 +12,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
-import { clearTokens, loadTokens } from '@/lib/secure-tokens';
+import { clearPendingSession, clearTokens, loadTokens } from '@/lib/secure-tokens';
 import { useAuth } from '@/hooks/use-auth';
 import { StorageKeys } from '@/lib/storage';
 
@@ -114,6 +114,7 @@ describe('useAuth (mock mode)', () => {
 describe('use-auth (real mode)', () => {
   afterEach(async () => {
     await clearTokens();
+    await clearPendingSession();
     await AsyncStorage.clear();
     jest.restoreAllMocks();
   });
@@ -156,6 +157,24 @@ describe('use-auth (real mode)', () => {
       const outcome = await registerWithEmail({ name: 'Ada', email: 'ada@example.com', password: 'pw' });
 
       expect(outcome).toEqual({ ok: 'verifyPending' });
+      expect(getCurrentUser()).toBeNull();
+    });
+  });
+
+  it('register surfaces the email_taken code from a coded AuthError', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      jest
+        .spyOn(authData, 'signup')
+        .mockRejectedValue(new authData.AuthError('That email is already registered.', 'email_taken'));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { registerWithEmail, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await registerWithEmail({ name: 'Ada', email: 'ada@example.com', password: 'pw' });
+
+      expect(outcome).toEqual({ ok: false, code: 'email_taken' });
       expect(getCurrentUser()).toBeNull();
     });
   });
@@ -317,6 +336,51 @@ describe('use-auth (real mode)', () => {
       expect(getCurrentUser()).toBeNull();
       expect(await loadTokens()).toBeNull();
       expect(clearSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('register persists the pending session token for cross-restart verification', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      jest.spyOn(authData, 'signup').mockResolvedValue({ kind: 'verifyPending', sessionToken: 'ST-123' });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { registerWithEmail } = require('@/hooks/use-auth');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { loadPendingSession } = require('@/lib/secure-tokens');
+
+      const outcome = await registerWithEmail({ name: 'Ada', email: 'ada@example.com', password: 'pw' });
+
+      expect(outcome).toEqual({ ok: 'verifyPending' });
+      expect(await loadPendingSession()).toBe('ST-123');
+    });
+  });
+
+  it('verify recovers the pending session token from storage after eviction', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+
+      // Simulate a process restart: token persisted previously, in-memory state empty.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { savePendingSession } = require('@/lib/secure-tokens');
+      await savePendingSession('ST-evicted');
+
+      jest.spyOn(authData, 'verifyEmail').mockResolvedValue({
+        user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' },
+        tokens: { accessToken: 'AT', refreshToken: 'RT' },
+      });
+      jest.spyOn(authData, 'logout').mockResolvedValue(undefined);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { verifyEmail: doVerify, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await doVerify('123456');
+
+      expect(outcome).toEqual({ ok: true });
+      expect(authData.verifyEmail).toHaveBeenCalledWith({ code: '123456', sessionToken: 'ST-evicted' });
+      expect(getCurrentUser()).toMatchObject({ email: 'ada@example.com' });
     });
   });
 });

@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 import {
   AUTH_ENABLED,
   AuthError,
+  coalescedRefresh,
   configureAuthInterceptor,
   getSession as authGetSession,
   login as authLogin,
@@ -14,7 +15,14 @@ import {
   type AllauthFieldError,
   type AuthUserDto,
 } from '@realty/data';
-import { clearTokens, loadTokens, saveTokens } from '@/lib/secure-tokens';
+import {
+  clearPendingSession,
+  clearTokens,
+  loadPendingSession,
+  loadTokens,
+  savePendingSession,
+  saveTokens,
+} from '@/lib/secure-tokens';
 import { loadJSON, removeKey, saveJSON, StorageKeys } from '@/lib/storage';
 
 /**
@@ -39,7 +47,7 @@ export interface AuthUser {
  * `fieldErrors` array is carried through so screens can render each message
  * under its `param`'s input (see `lib/auth-errors`).
  */
-export type AuthErrorCode = 'invalid_credentials' | 'invalid_code' | 'generic';
+export type AuthErrorCode = 'invalid_credentials' | 'invalid_code' | 'email_taken' | 'generic';
 export type AuthOutcome =
   | { ok: true }
   | { ok: false; code: AuthErrorCode; fieldErrors?: AllauthFieldError[] }
@@ -105,17 +113,22 @@ async function applySession(
   refreshToken = tokens.refreshToken;
   pendingSessionToken = null;
   await saveTokens(tokens);
+  await clearPendingSession();
   await saveJSON(StorageKeys.session, user);
   emit();
 }
 
 /**
  * Map a thrown auth error to a stable {@link AuthErrorCode}. auth-client tags
- * the recognized cases (`invalid_credentials`, `invalid_code`); anything else
- * (server error, network failure, unexpected shape) collapses to `'generic'`.
+ * the recognized cases (`invalid_credentials`, `invalid_code`, `email_taken`);
+ * anything else (server error, network failure, unexpected shape) collapses to
+ * `'generic'`.
  */
 function codeFor(error: unknown): AuthErrorCode {
-  if (error instanceof AuthError && (error.code === 'invalid_credentials' || error.code === 'invalid_code')) {
+  if (
+    error instanceof AuthError &&
+    (error.code === 'invalid_credentials' || error.code === 'invalid_code' || error.code === 'email_taken')
+  ) {
     return error.code;
   }
   return 'generic';
@@ -157,6 +170,9 @@ async function realRegister(p: {
       return { ok: true };
     }
     pendingSessionToken = result.sessionToken;
+    // Persist so verification survives the app being backgrounded/evicted while
+    // the user fetches the emailed code.
+    await savePendingSession(result.sessionToken);
     return { ok: 'verifyPending' };
   } catch (error) {
     return failure(error);
@@ -164,11 +180,14 @@ async function realRegister(p: {
 }
 
 async function realVerify(code: string): Promise<AuthOutcome> {
-  if (!pendingSessionToken) return { ok: false, code: 'generic' };
+  // Fall back to the persisted token if the process was evicted since register.
+  const sessionToken = pendingSessionToken ?? (await loadPendingSession());
+  if (!sessionToken) return { ok: false, code: 'generic' };
+  pendingSessionToken = sessionToken;
   try {
     const session = await authVerifyEmail({
       code: code.trim(),
-      sessionToken: pendingSessionToken,
+      sessionToken,
     });
     await applySession(toAuthUser(session.user), session.tokens);
     return { ok: true };
@@ -200,6 +219,7 @@ async function realSignOut(): Promise<void> {
   pendingSessionToken = null;
   emit();
   await clearTokens();
+  await clearPendingSession();
   await removeKey(StorageKeys.session);
   queryClient.clear();
   if (token) {
@@ -214,16 +234,10 @@ let hydrated = false;
 async function realHydrate() {
   if (hydrated) return;
   hydrated = true;
-  // Load persisted tokens and set them BEFORE wiring the interceptor, so a /v1
-  // request firing during hydration sees the access token rather than null
-  // (which would cause a spurious 401 → refresh with a null refresh token).
   const tokens = await loadTokens();
-  if (tokens) {
-    accessToken = tokens.accessToken;
-    refreshToken = tokens.refreshToken;
-  }
-  configureAuthInterceptor({ getAccessToken: () => accessToken, refresh: realRefresh });
   if (!tokens) return;
+  accessToken = tokens.accessToken;
+  refreshToken = tokens.refreshToken;
   const cached = await loadJSON<AuthUser>(StorageKeys.session);
   if (cached) {
     currentUser = cached;
@@ -236,9 +250,12 @@ async function realHydrate() {
     emit();
   } catch {
     // Access token likely expired. getSession bypasses the /v1 interceptor, so
-    // refresh manually: realRefresh() rotates tokens (and tears the session
-    // down + returns null on its own failure). If it succeeds, retry once.
-    const newAccess = await realRefresh();
+    // refresh manually — but through the SAME single-flight as the interceptor
+    // (coalescedRefresh), so a concurrent /v1 401 and this boot refresh don't
+    // both consume the rotating refresh token and sign out a healthy session.
+    // On success retry once (which also repopulates currentUser when the cached
+    // session was absent); realRefresh tears the session down on its own failure.
+    const newAccess = await coalescedRefresh();
     if (newAccess) {
       try {
         const dto = await authGetSession(newAccess);
@@ -386,6 +403,14 @@ export function useAuth(): UseAuthReturn {
     signInWithGoogle: AUTH_ENABLED ? () => {} : mockSignInWithGoogle,
     signInWithApple: AUTH_ENABLED ? () => {} : mockSignInWithApple,
   };
+}
+
+// Wire the auth interceptor SYNCHRONOUSLY at module load (before the async
+// token read in realHydrate), so a /v1 request mounting during boot always
+// finds an interceptor — it sends the Bearer once tokens load and can refresh
+// on 401, instead of silently going unauthenticated in that window.
+if (AUTH_ENABLED) {
+  configureAuthInterceptor({ getAccessToken: () => accessToken, refresh: realRefresh });
 }
 
 // Boot hydration: real or mock.

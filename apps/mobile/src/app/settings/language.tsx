@@ -2,6 +2,7 @@ import { supportedLanguages, useTranslation, type SupportedLanguage } from '@rea
 import { useRouter } from 'expo-router';
 
 import { SettingsOptionsScreen } from '@/components/settings-options-screen';
+import { deferNavigation } from '@/lib/navigation';
 import { activeLanguage, LANGUAGE_LABELS } from '@/lib/settings-options';
 
 /**
@@ -23,7 +24,7 @@ export default function LanguageSettingsScreen() {
         // react-native-screens' transition draw and crashes Android with
         // "trying to use a recycled bitmap". One frame of separation lets the
         // re-render commit before the pop animation starts.
-        requestAnimationFrame(() => router.back());
+        deferNavigation(() => router.back());
       }}
     />
   );

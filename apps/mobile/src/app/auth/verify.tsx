@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import { authErrorKey, AuthField, AuthScaffold, PrimaryButton } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
+import { deferNavigation } from '@/lib/navigation';
 
 /**
  * Email-verification step (pushed from the register screen). The backend
@@ -39,7 +40,7 @@ export default function VerifyScreen() {
       // happen in the same frame. dismissAll() unwinds the whole auth stack
       // (register + verify) back to the tabs, where the now-authenticated
       // profile is shown — a single back() would stop on the register form.
-      requestAnimationFrame(() => router.dismissAll());
+      deferNavigation(() => router.dismissAll());
     } else if (outcome.ok === false) {
       // The verification code maps to allauth's `key` param; show its message
       // under the single code field, falling back to the generic coded message.
