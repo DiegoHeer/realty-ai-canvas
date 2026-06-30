@@ -16,6 +16,7 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { mapAuthFieldErrors } from '@/lib/auth-errors';
 
 /**
  * Login screen (pushed from the profile guest card). Supports email/password
@@ -55,7 +56,15 @@ export default function LoginScreen() {
       // frame (same reason the settings screens defer their `router.back()`).
       requestAnimationFrame(() => router.back());
     } else if (outcome.ok === false) {
-      setFormError(t(authErrorKey(outcome.code)));
+      // Prefer the backend's structured field errors (e.g. the mismatch tagged to
+      // `param: "password"`); only fall back to the generic banner when none exist.
+      if (outcome.fieldErrors?.length) {
+        const mapped = mapAuthFieldErrors(outcome.fieldErrors, ['email', 'password'], (k) => t(k));
+        setErrors({ email: mapped.fieldErrors.email, password: mapped.fieldErrors.password });
+        setFormError(mapped.formError);
+      } else {
+        setFormError(t(authErrorKey(outcome.code)));
+      }
     }
   }
 

@@ -74,4 +74,22 @@ describe('VerifyScreen', () => {
 
     expect(await findByText('That code is invalid or expired.')).toBeOnTheScreen();
   });
+
+  it('renders the invalid-key error from structured field errors under the code field', async () => {
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      verifyEmail: jest.fn().mockResolvedValue({
+        ok: false,
+        code: 'invalid_code',
+        fieldErrors: [{ message: 'Invalid or expired key.', code: 'invalid', param: 'key' }],
+      }),
+    });
+
+    const { getByTestId, getByPlaceholderText, findByText } = await renderScreen('en');
+
+    await typeInto(getByPlaceholderText('6-digit code'), '000000');
+    fireEvent.press(getByTestId('auth-submit'));
+
+    // code "invalid" on the "key" param resolves to the localized code-invalid copy.
+    expect(await findByText('That code is invalid or expired.')).toBeOnTheScreen();
+  });
 });

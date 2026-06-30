@@ -17,6 +17,7 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { mapAuthFieldErrors } from '@/lib/auth-errors';
 
 /**
  * Register screen (pushed from the profile guest card). Supports creating an
@@ -62,7 +63,16 @@ export default function RegisterScreen() {
       // frame (same reason the settings screens defer their `router.back()`).
       requestAnimationFrame(() => router.back());
     } else {
-      setFormError(t(authErrorKey(outcome.code)));
+      // Surface the backend's password/email validator messages under their
+      // field (allauth tags them `param: "password"` / `"email"`); the generic
+      // banner is only used when there are no structured errors to show.
+      if (outcome.fieldErrors?.length) {
+        const mapped = mapAuthFieldErrors(outcome.fieldErrors, ['email', 'password'], (k) => t(k));
+        setErrors({ email: mapped.fieldErrors.email, password: mapped.fieldErrors.password });
+        setFormError(mapped.formError);
+      } else {
+        setFormError(t(authErrorKey(outcome.code)));
+      }
     }
   }
 

@@ -99,6 +99,36 @@ describe('RegisterScreen', () => {
     expect(router.replace).toHaveBeenCalledWith('/auth/login');
   });
 
+  it('shows the exact backend message under the password field for a too-similar password', async () => {
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      registerWithEmail: jest.fn().mockResolvedValue({
+        ok: false,
+        code: 'generic',
+        fieldErrors: [
+          {
+            message: 'The password is too similar to the first name.',
+            code: 'password_too_similar',
+            param: 'password',
+          },
+        ],
+      }),
+      signInWithGoogle: jest.fn(),
+      signInWithApple: jest.fn(),
+    });
+
+    const { getByTestId, getByPlaceholderText, findByText, queryByText } = await renderScreen('en');
+
+    await typeInto(getByPlaceholderText('Your name'), 'Ada Lovelace');
+    await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
+    await typeInto(getByPlaceholderText('Enter your password'), 'adalovelace');
+    fireEvent.press(getByTestId('auth-submit'));
+
+    // The password validator has no localized key, so the raw backend message is shown verbatim.
+    expect(await findByText('The password is too similar to the first name.')).toBeOnTheScreen();
+    // And the generic banner must NOT appear when a structured error exists.
+    expect(queryByText('Something went wrong. Please try again.')).toBeNull();
+  });
+
   it('navigates to verify when registration is pending', async () => {
     const { mockPush } = require('../../../test-setup');
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
