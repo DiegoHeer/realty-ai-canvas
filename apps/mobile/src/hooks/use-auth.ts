@@ -11,6 +11,7 @@ import {
   refresh as authRefresh,
   signup as authSignup,
   verifyEmail as authVerifyEmail,
+  type AllauthFieldError,
   type AuthUserDto,
 } from '@realty/data';
 import { clearTokens, loadTokens, saveTokens } from '@/lib/secure-tokens';
@@ -34,11 +35,14 @@ export interface AuthUser {
 /**
  * Result of an auth action. A failure carries a stable `code` (not a message),
  * so the UI can localize it; `'generic'` covers unexpected/unmapped failures.
+ * When the backend returned structured field-level validation errors, the full
+ * `fieldErrors` array is carried through so screens can render each message
+ * under its `param`'s input (see `lib/auth-errors`).
  */
 export type AuthErrorCode = 'invalid_credentials' | 'invalid_code' | 'generic';
 export type AuthOutcome =
   | { ok: true }
-  | { ok: false; code: AuthErrorCode }
+  | { ok: false; code: AuthErrorCode; fieldErrors?: AllauthFieldError[] }
   | { ok: 'verifyPending' };
 
 interface UseAuthReturn {
@@ -117,13 +121,23 @@ function codeFor(error: unknown): AuthErrorCode {
   return 'generic';
 }
 
+/** The structured field errors a thrown {@link AuthError} carried, if any. */
+function fieldErrorsOf(error: unknown): AllauthFieldError[] | undefined {
+  return error instanceof AuthError ? error.fieldErrors : undefined;
+}
+
+/** Build a failure outcome that preserves both the stable code and field errors. */
+function failure(error: unknown): AuthOutcome {
+  return { ok: false, code: codeFor(error), fieldErrors: fieldErrorsOf(error) };
+}
+
 async function realSignIn(email: string, password: string): Promise<AuthOutcome> {
   try {
     const session = await authLogin({ email: email.trim(), password });
     await applySession(toAuthUser(session.user), session.tokens);
     return { ok: true };
   } catch (error) {
-    return { ok: false, code: codeFor(error) };
+    return failure(error);
   }
 }
 
@@ -145,7 +159,7 @@ async function realRegister(p: {
     pendingSessionToken = result.sessionToken;
     return { ok: 'verifyPending' };
   } catch (error) {
-    return { ok: false, code: codeFor(error) };
+    return failure(error);
   }
 }
 
@@ -159,7 +173,7 @@ async function realVerify(code: string): Promise<AuthOutcome> {
     await applySession(toAuthUser(session.user), session.tokens);
     return { ok: true };
   } catch (error) {
-    return { ok: false, code: codeFor(error) };
+    return failure(error);
   }
 }
 

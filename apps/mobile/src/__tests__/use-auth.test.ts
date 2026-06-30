@@ -177,6 +177,32 @@ describe('use-auth (real mode)', () => {
     });
   });
 
+  it('login surfaces the structured field errors carried by a coded AuthError', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      const fieldErrors = [
+        {
+          message: 'The email address and/or password you specified are not correct.',
+          code: 'email_password_mismatch',
+          param: 'password',
+        },
+      ];
+      jest
+        .spyOn(authData, 'login')
+        .mockRejectedValue(
+          new authData.AuthError('Invalid email or password.', 'invalid_credentials', fieldErrors),
+        );
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithEmail } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithEmail('ada@example.com', 'bad-pw');
+
+      expect(outcome).toEqual({ ok: false, code: 'invalid_credentials', fieldErrors });
+    });
+  });
+
   it('login collapses an unexpected (non-coded) failure to the generic code', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
