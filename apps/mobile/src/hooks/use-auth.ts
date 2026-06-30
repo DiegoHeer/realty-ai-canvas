@@ -223,7 +223,8 @@ async function realHydrate() {
   } catch {
     // Access token likely expired. getSession bypasses the /v1 interceptor, so
     // refresh manually: realRefresh() rotates tokens (and tears the session
-    // down + returns null on its own failure). If it succeeds, retry once.
+    // down + returns null on its own failure). If it succeeds, retry once —
+    // which also repopulates currentUser when the cached session was absent.
     const newAccess = await realRefresh();
     if (newAccess) {
       try {
