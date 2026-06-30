@@ -324,7 +324,7 @@ function mockSignInWithApple() {
 
 const MOCK_USER: AuthUser = {
   name: 'Jeroen Esseveld',
-  email: 'jeroen.esseveld@odido.nl',
+  email: 'jeroen_esseveld@hotmail.com',
 };
 
 /** Mock sign-in into a fixed demo account (used by tests and demos). */
