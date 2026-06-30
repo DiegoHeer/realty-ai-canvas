@@ -1,4 +1,4 @@
-import { configureAuthInterceptor } from '../client';
+import { coalescedRefresh, configureAuthInterceptor } from '../client';
 import { getListings } from '../client';
 
 // USE_LISTING_MOCKS is true only when API_URL === ''. Force a real fetch path.
@@ -93,5 +93,32 @@ describe('request() 401 refresh-retry', () => {
     configureAuthInterceptor({ getAccessToken: () => 'OLD', refresh: async () => null });
 
     await expect(getListings()).rejects.toThrow();
+  });
+
+  it('coalescedRefresh joins the interceptor single-flight (one refresh for a concurrent 401 + boot refresh)', async () => {
+    // The boot-hydration refresh must share the interceptor's in-flight promise:
+    // otherwise a /v1 401 and the hydrate refresh both consume the rotating
+    // refresh token and the second rejects, signing out a healthy session.
+    let resolveRefresh!: (token: string) => void;
+    const refresh = jest.fn().mockImplementation(
+      () => new Promise<string>((resolve) => { resolveRefresh = resolve; }),
+    );
+    const fetchMock = jest.fn().mockImplementation((_url, opts) => {
+      const auth = (opts.headers as Record<string, string>).Authorization;
+      return Promise.resolve(
+        auth === 'Bearer NEW'
+          ? okJson([])
+          : { ok: false, status: 401, statusText: 'Unauthorized', json: async () => ({}) },
+      );
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    configureAuthInterceptor({ getAccessToken: () => 'OLD', refresh });
+
+    const requestPromise = getListings(); // 401 → refreshOnce()
+    const bootPromise = coalescedRefresh(); // joins the same in-flight refresh
+    resolveRefresh('NEW');
+    await Promise.all([requestPromise, bootPromise]);
+
+    expect(refresh).toHaveBeenCalledTimes(1);
   });
 });
