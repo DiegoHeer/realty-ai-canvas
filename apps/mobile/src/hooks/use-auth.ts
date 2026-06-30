@@ -202,11 +202,16 @@ let hydrated = false;
 async function realHydrate() {
   if (hydrated) return;
   hydrated = true;
-  configureAuthInterceptor({ getAccessToken: () => accessToken, refresh: realRefresh });
+  // Load persisted tokens and set them BEFORE wiring the interceptor, so a /v1
+  // request firing during hydration sees the access token rather than null
+  // (which would cause a spurious 401 → refresh with a null refresh token).
   const tokens = await loadTokens();
+  if (tokens) {
+    accessToken = tokens.accessToken;
+    refreshToken = tokens.refreshToken;
+  }
+  configureAuthInterceptor({ getAccessToken: () => accessToken, refresh: realRefresh });
   if (!tokens) return;
-  accessToken = tokens.accessToken;
-  refreshToken = tokens.refreshToken;
   const cached = await loadJSON<AuthUser>(StorageKeys.session);
   if (cached) {
     currentUser = cached;
@@ -218,7 +223,21 @@ async function realHydrate() {
     await saveJSON(StorageKeys.session, currentUser);
     emit();
   } catch {
-    // Interceptor already tore down the session if refresh failed.
+    // Access token likely expired. getSession bypasses the /v1 interceptor, so
+    // refresh manually: realRefresh() rotates tokens (and tears the session
+    // down + returns null on its own failure). If it succeeds, retry once —
+    // which also repopulates currentUser when the cached session was absent.
+    const newAccess = await realRefresh();
+    if (newAccess) {
+      try {
+        const dto = await authGetSession(newAccess);
+        currentUser = toAuthUser(dto);
+        await saveJSON(StorageKeys.session, currentUser);
+        emit();
+      } catch {
+        await realSignOut();
+      }
+    }
   }
 }
 
