@@ -27,13 +27,28 @@ export type SignupResult =
   | { kind: 'verifyPending'; sessionToken: string }
   | { kind: 'authenticated'; session: AuthSession };
 
+/**
+ * One field-level validation error from an allauth `errors[]` response. `param`
+ * names the offending input (e.g. `"password"`, `"email"`, `"key"`); it is
+ * absent for form-wide errors. `code` is a stable machine code; `message` is the
+ * backend's human-readable text. See the allauth headless `ErrorResponse` schema.
+ */
+export interface AllauthFieldError {
+  message: string;
+  code?: string;
+  param?: string;
+}
+
 /** A handled auth failure (bad credentials, expired code, …) carrying a message. */
 export class AuthError extends Error {
   code?: string;
-  constructor(message: string, code?: string) {
+  /** The full, structured `errors[]` array from a 400 body, for field-level UI. */
+  fieldErrors?: AllauthFieldError[];
+  constructor(message: string, code?: string, fieldErrors?: AllauthFieldError[]) {
     super(message);
     this.name = 'AuthError';
     this.code = code;
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -52,7 +67,21 @@ interface AllauthEnvelope {
     refresh_token?: string;
     session_token?: string;
   };
-  errors?: { message?: string; code?: string }[];
+  errors?: { message?: string; code?: string; param?: string }[];
+}
+
+/**
+ * Normalize an allauth response's `errors[]` into typed {@link AllauthFieldError}
+ * entries. Fully empty entries (no message and no code) are dropped; everything
+ * else is preserved verbatim so the UI can map by `param` and resolve display
+ * text (localized code, or the backend message as a fallback).
+ */
+export function parseAllauthErrors(env: {
+  errors?: { message?: string; code?: string; param?: string }[];
+}): AllauthFieldError[] {
+  return (env.errors ?? [])
+    .filter((e) => (e.message ?? '') !== '' || e.code !== undefined)
+    .map((e) => ({ message: e.message ?? '', code: e.code, param: e.param }));
 }
 
 async function call(
@@ -77,7 +106,7 @@ async function call(
 
 function firstError(env: AllauthEnvelope, fallback: string): AuthError {
   const e = env.errors?.[0];
-  return new AuthError(e?.message ?? fallback, e?.code);
+  return new AuthError(e?.message ?? fallback, e?.code, parseAllauthErrors(env));
 }
 
 function toSession(env: AllauthEnvelope): AuthSession {
@@ -107,8 +136,13 @@ export async function signup(input: {
 export async function login(input: { email: string; password: string }): Promise<AuthSession> {
   const env = await call('/auth/login', { method: 'POST', body: JSON.stringify(input) });
   // Stable code so the UI can localize this case; the message is dev-facing.
+  // The structured errors[] are carried through for field-level rendering.
   if (!env.meta?.is_authenticated) {
-    throw new AuthError(env.errors?.[0]?.message ?? 'Invalid email or password.', 'invalid_credentials');
+    throw new AuthError(
+      env.errors?.[0]?.message ?? 'Invalid email or password.',
+      'invalid_credentials',
+      parseAllauthErrors(env),
+    );
   }
   return toSession(env);
 }
@@ -123,8 +157,13 @@ export async function verifyEmail(input: {
     body: JSON.stringify({ key: input.code }),
   });
   // Stable code so the UI can localize this case; the message is dev-facing.
+  // The structured errors[] are carried through for field-level rendering.
   if (!env.meta?.is_authenticated) {
-    throw new AuthError(env.errors?.[0]?.message ?? 'That code is invalid or expired.', 'invalid_code');
+    throw new AuthError(
+      env.errors?.[0]?.message ?? 'That code is invalid or expired.',
+      'invalid_code',
+      parseAllauthErrors(env),
+    );
   }
   return toSession(env);
 }
