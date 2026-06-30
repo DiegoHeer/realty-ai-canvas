@@ -66,6 +66,16 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// --- expo-secure-store mock (in-memory) ---
+jest.mock('expo-secure-store', () => {
+  const store = new Map<string, string>();
+  return {
+    setItemAsync: jest.fn(async (k: string, v: string) => void store.set(k, v)),
+    getItemAsync: jest.fn(async (k: string) => store.get(k) ?? null),
+    deleteItemAsync: jest.fn(async (k: string) => void store.delete(k)),
+  };
+});
+
 // --- react-native-safe-area-context mock ---
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');

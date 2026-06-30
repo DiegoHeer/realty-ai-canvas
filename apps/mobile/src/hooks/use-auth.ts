@@ -1,18 +1,28 @@
 import { useSyncExternalStore } from 'react';
 
+import {
+  AUTH_ENABLED,
+  AuthError,
+  configureAuthInterceptor,
+  getSession as authGetSession,
+  login as authLogin,
+  logout as authLogout,
+  queryClient,
+  refresh as authRefresh,
+  signup as authSignup,
+  verifyEmail as authVerifyEmail,
+  type AuthUserDto,
+} from '@realty/data';
+import { clearTokens, loadTokens, saveTokens } from '@/lib/secure-tokens';
 import { loadJSON, removeKey, saveJSON, StorageKeys } from '@/lib/storage';
 
 /**
- * Mock auth with a persisted session. There is no auth backend yet, so the
- * sign-in helpers below synthesize a session locally; what they have in common
- * is the {@link AuthUser} shape that screens depend on. Swap the helper bodies
- * for real network calls later — the store contract (and `useAuth()` return)
- * stays the same.
+ * Auth store gated by `AUTH_ENABLED`:
+ *   - `false` (default / visual-regression path): mock helpers synthesize sessions locally.
+ *   - `true`: real backend auth via allauth headless JWT.
  *
- * Persistence mirrors `lib/appearance`: an in-memory `useSyncExternalStore`
- * value that hydrates from AsyncStorage on boot and writes through on every
- * change. The app starts signed-out so the login flow is the default state; a
- * previously stored session is restored once disk resolves.
+ * Screens depend only on `useAuth()` (the hook) and the `AuthUser` type. The
+ * `getCurrentUser()` helper is exported for unit tests only.
  */
 export interface AuthUser {
   name: string;
@@ -21,36 +31,226 @@ export interface AuthUser {
   avatarUrl?: string;
 }
 
+/**
+ * Result of an auth action. A failure carries a stable `code` (not a message),
+ * so the UI can localize it; `'generic'` covers unexpected/unmapped failures.
+ */
+export type AuthErrorCode = 'invalid_credentials' | 'invalid_code' | 'generic';
+export type AuthOutcome =
+  | { ok: true }
+  | { ok: false; code: AuthErrorCode }
+  | { ok: 'verifyPending' };
+
+interface UseAuthReturn {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  signInWithEmail: (email: string, password?: string) => Promise<AuthOutcome>;
+  registerWithEmail: (p: { name: string; email: string; password?: string }) => Promise<AuthOutcome>;
+  verifyEmail: (code: string) => Promise<AuthOutcome>;
+  signOut: () => Promise<void>;
+  signIn: () => void;
+  signInWithGoogle: () => void;
+  signInWithApple: () => void;
+}
+
+// ---------------------------------------------------------------------------
+// Shared store primitives
+// ---------------------------------------------------------------------------
+
 let currentUser: AuthUser | null = null;
+let accessToken: string | null = null;
+let refreshToken: string | null = null;
+let pendingSessionToken: string | null = null;
 const listeners = new Set<() => void>();
 
 function emit() {
   for (const listener of listeners) listener();
 }
 
-/** Set (or clear) the session and write through to storage, best-effort. */
-function setSession(user: AuthUser | null) {
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function getSnapshot() {
+  return currentUser;
+}
+
+/** Test helper: returns the current in-memory user without rendering. */
+export function getCurrentUser(): AuthUser | null {
+  return currentUser;
+}
+
+// ---------------------------------------------------------------------------
+// Real-mode helpers
+// ---------------------------------------------------------------------------
+
+function toAuthUser(dto: AuthUserDto): AuthUser {
+  return { name: dto.name, email: dto.email };
+}
+
+/** Apply a signed-in session: user + tokens, persisted to disk + keychain. */
+async function applySession(
+  user: AuthUser,
+  tokens: { accessToken: string; refreshToken: string },
+) {
   currentUser = user;
-  if (user) void saveJSON(StorageKeys.session, user);
-  else void removeKey(StorageKeys.session);
+  accessToken = tokens.accessToken;
+  refreshToken = tokens.refreshToken;
+  pendingSessionToken = null;
+  await saveTokens(tokens);
+  await saveJSON(StorageKeys.session, user);
   emit();
+}
+
+/**
+ * Map a thrown auth error to a stable {@link AuthErrorCode}. auth-client tags
+ * the recognized cases (`invalid_credentials`, `invalid_code`); anything else
+ * (server error, network failure, unexpected shape) collapses to `'generic'`.
+ */
+function codeFor(error: unknown): AuthErrorCode {
+  if (error instanceof AuthError && (error.code === 'invalid_credentials' || error.code === 'invalid_code')) {
+    return error.code;
+  }
+  return 'generic';
+}
+
+async function realSignIn(email: string, password: string): Promise<AuthOutcome> {
+  try {
+    const session = await authLogin({ email: email.trim(), password });
+    await applySession(toAuthUser(session.user), session.tokens);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, code: codeFor(error) };
+  }
+}
+
+async function realRegister(p: {
+  name: string;
+  email: string;
+  password: string;
+}): Promise<AuthOutcome> {
+  try {
+    const result = await authSignup({
+      name: p.name.trim(),
+      email: p.email.trim(),
+      password: p.password,
+    });
+    if (result.kind === 'authenticated') {
+      await applySession(toAuthUser(result.session.user), result.session.tokens);
+      return { ok: true };
+    }
+    pendingSessionToken = result.sessionToken;
+    return { ok: 'verifyPending' };
+  } catch (error) {
+    return { ok: false, code: codeFor(error) };
+  }
+}
+
+async function realVerify(code: string): Promise<AuthOutcome> {
+  if (!pendingSessionToken) return { ok: false, code: 'generic' };
+  try {
+    const session = await authVerifyEmail({
+      code: code.trim(),
+      sessionToken: pendingSessionToken,
+    });
+    await applySession(toAuthUser(session.user), session.tokens);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, code: codeFor(error) };
+  }
+}
+
+/** Interceptor refresh: rotate tokens, or tear down the session on failure. */
+async function realRefresh(): Promise<string | null> {
+  if (!refreshToken) return null;
+  try {
+    const tokens = await authRefresh(refreshToken);
+    accessToken = tokens.accessToken;
+    refreshToken = tokens.refreshToken;
+    await saveTokens(tokens);
+    return tokens.accessToken;
+  } catch {
+    await realSignOut();
+    return null;
+  }
+}
+
+async function realSignOut(): Promise<void> {
+  const token = accessToken;
+  currentUser = null;
+  accessToken = null;
+  refreshToken = null;
+  pendingSessionToken = null;
+  emit();
+  await clearTokens();
+  await removeKey(StorageKeys.session);
+  queryClient.clear();
+  if (token) {
+    try {
+      await authLogout(token);
+    } catch {
+      // Best-effort server-side logout.
+    }
+  }
 }
 
 let hydrated = false;
 
-/**
- * Restore a saved session from disk and apply it. Safe to call repeatedly; runs
- * once. Skips if a session was already established in-memory (e.g. the user
- * signed in before hydration resolved).
- */
-export async function hydrateAuth() {
+async function realHydrate() {
   if (hydrated) return;
   hydrated = true;
-  const stored = await loadJSON<AuthUser>(StorageKeys.session);
-  if (stored && !currentUser) {
-    currentUser = stored;
+  // Load persisted tokens and set them BEFORE wiring the interceptor, so a /v1
+  // request firing during hydration sees the access token rather than null
+  // (which would cause a spurious 401 → refresh with a null refresh token).
+  const tokens = await loadTokens();
+  if (tokens) {
+    accessToken = tokens.accessToken;
+    refreshToken = tokens.refreshToken;
+  }
+  configureAuthInterceptor({ getAccessToken: () => accessToken, refresh: realRefresh });
+  if (!tokens) return;
+  const cached = await loadJSON<AuthUser>(StorageKeys.session);
+  if (cached) {
+    currentUser = cached;
     emit();
   }
+  try {
+    const dto = await authGetSession(tokens.accessToken);
+    currentUser = toAuthUser(dto);
+    await saveJSON(StorageKeys.session, currentUser);
+    emit();
+  } catch {
+    // Access token likely expired. getSession bypasses the /v1 interceptor, so
+    // refresh manually: realRefresh() rotates tokens (and tears the session
+    // down + returns null on its own failure). If it succeeds, retry once —
+    // which also repopulates currentUser when the cached session was absent.
+    const newAccess = await realRefresh();
+    if (newAccess) {
+      try {
+        const dto = await authGetSession(newAccess);
+        currentUser = toAuthUser(dto);
+        await saveJSON(StorageKeys.session, currentUser);
+        emit();
+      } catch {
+        await realSignOut();
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mock-mode helpers (unchanged from original; used by visual-regression path)
+// ---------------------------------------------------------------------------
+
+/** Set (or clear) the session and write through to storage, best-effort. */
+function mockSetSession(user: AuthUser | null) {
+  currentUser = user;
+  if (user) void saveJSON(StorageKeys.session, user);
+  else void removeKey(StorageKeys.session);
+  emit();
 }
 
 /**
@@ -66,14 +266,14 @@ function nameFromEmail(email: string): string {
 }
 
 /** Email sign-in (mock): establishes a session derived from the address. */
-export function signInWithEmail(email: string) {
+function mockSignInWithEmail(email: string) {
   const trimmed = email.trim();
-  setSession({ name: nameFromEmail(trimmed), email: trimmed });
+  mockSetSession({ name: nameFromEmail(trimmed), email: trimmed });
 }
 
 /** Email registration (mock): establishes a session for the new account. */
-export function registerWithEmail(params: { name: string; email: string }) {
-  setSession({ name: params.name.trim(), email: params.email.trim() });
+function mockRegisterWithEmail(params: { name: string; email: string }) {
+  mockSetSession({ name: params.name.trim(), email: params.email.trim() });
 }
 
 /**
@@ -81,8 +281,8 @@ export function registerWithEmail(params: { name: string; email: string }) {
  * (e.g. expo-auth-session) and exchange the result for a session; with no
  * backend we synthesize a Google-style account so the flow is demoable.
  */
-export function signInWithGoogle() {
-  setSession({ name: 'Google User', email: 'user@gmail.com' });
+function mockSignInWithGoogle() {
+  mockSetSession({ name: 'Google User', email: 'user@gmail.com' });
 }
 
 /**
@@ -90,8 +290,8 @@ export function signInWithGoogle() {
  * (expo-apple-authentication, iOS) and exchange the identity token for a
  * session; with no backend we synthesize an Apple-style account.
  */
-export function signInWithApple() {
-  setSession({ name: 'Apple User', email: 'user@privaterelay.appleid.com' });
+function mockSignInWithApple() {
+  mockSetSession({ name: 'Apple User', email: 'user@privaterelay.appleid.com' });
 }
 
 const MOCK_USER: AuthUser = {
@@ -100,40 +300,82 @@ const MOCK_USER: AuthUser = {
 };
 
 /** Mock sign-in into a fixed demo account (used by tests and demos). */
-export function signIn() {
-  setSession(MOCK_USER);
+function mockSignIn() {
+  mockSetSession(MOCK_USER);
 }
 
-/** Sign out: clears the session (in memory and on disk). */
-export function signOut() {
-  setSession(null);
+/** Mock sign-out: clears the session (in memory and on disk). */
+function mockSignOut() {
+  mockSetSession(null);
 }
 
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
+async function mockHydrateAuth() {
+  if (hydrated) return;
+  hydrated = true;
+  const stored = await loadJSON<AuthUser>(StorageKeys.session);
+  if (stored && !currentUser) {
+    currentUser = stored;
+    emit();
+  }
 }
 
-function getSnapshot() {
-  return currentUser;
+// ---------------------------------------------------------------------------
+// Module-level API helpers (gated by AUTH_ENABLED)
+// These are also exported as named exports so real-mode tests can call them
+// directly without going through the hook (no renderHook needed).
+// ---------------------------------------------------------------------------
+
+export function signInWithEmail(email: string, password?: string): Promise<AuthOutcome> {
+  if (AUTH_ENABLED) return realSignIn(email, password ?? '');
+  mockSignInWithEmail(email);
+  return Promise.resolve({ ok: true });
 }
 
-export function useAuth() {
+export function registerWithEmail(p: {
+  name: string;
+  email: string;
+  password?: string;
+}): Promise<AuthOutcome> {
+  if (AUTH_ENABLED) return realRegister({ name: p.name, email: p.email, password: p.password ?? '' });
+  mockRegisterWithEmail(p);
+  return Promise.resolve({ ok: true });
+}
+
+export function verifyEmail(code: string): Promise<AuthOutcome> {
+  if (AUTH_ENABLED) return realVerify(code);
+  return Promise.resolve({ ok: true });
+}
+
+export function signOut(): Promise<void> {
+  if (AUTH_ENABLED) return realSignOut();
+  mockSignOut();
+  return Promise.resolve();
+}
+
+/** Demo sign-in (mock mode only). No-op in real mode — social buttons removed in a later task. */
+export function signIn(): void {
+  if (!AUTH_ENABLED) mockSignIn();
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
+
+export function useAuth(): UseAuthReturn {
   const user = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   return {
     user,
     isAuthenticated: user !== null,
-    signIn,
-    signOut,
     signInWithEmail,
     registerWithEmail,
-    signInWithGoogle,
-    signInWithApple,
+    verifyEmail,
+    signOut,
+    // Social sign-in: no-ops in real mode (removed when backend OAuth lands); mock behavior in mock mode.
+    signIn,
+    signInWithGoogle: AUTH_ENABLED ? () => {} : mockSignInWithGoogle,
+    signInWithApple: AUTH_ENABLED ? () => {} : mockSignInWithApple,
   };
 }
 
-// Restore any saved session as early as the module is first imported (the root
-// layout imports `useAuth`, so this runs at boot alongside appearance hydration).
-void hydrateAuth();
+// Boot hydration: real or mock.
+void (AUTH_ENABLED ? realHydrate() : mockHydrateAuth());

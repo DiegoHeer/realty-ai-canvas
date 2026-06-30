@@ -16,6 +16,8 @@ Persistent storage is AsyncStorage only, wrapped in `apps/mobile/src/lib/storage
 
 Don't use SecureStore/SQLite/MMKV/filesystem. React Query (`packages/data`) is in-memory only — not persisted.
 
+**Exception:** JWT tokens (sensitive credentials) use SecureStore via `apps/mobile/src/lib/secure-tokens.ts` — the sole exception to the AsyncStorage-only rule.
+
 ## Testing
 
 **Test runner:** Jest via `jest-expo` for all unit and component tests.
