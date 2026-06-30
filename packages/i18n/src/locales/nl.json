@@ -166,7 +166,17 @@
       "corner": "Hoekwoning",
       "semi_detached": "Twee-onder-één-kap",
       "detached": "Vrijstaand"
-    }
+    },
+    "sort": "Sorteren",
+    "sortOptions": {
+      "newest": "Nieuwste",
+      "oldest": "Oudste",
+      "price_asc": "Prijs: laag naar hoog",
+      "price_desc": "Prijs: hoog naar laag",
+      "area_desc": "Grootste",
+      "price_per_m2_asc": "Beste prijs/m²"
+    },
+    "showHomesLoading": "Toon woningen"
   },
   "listings": {
     "title": "Aanbod",

@@ -71,6 +71,20 @@ const WEBSITE_NAMES: Record<ResidenceSource['website'], string> = {
   vastgoed_nl: 'Vastgoed NL',
 };
 
+/**
+ * Paginated envelope returned by `GET /v1/residences?api_version=2` (the
+ * `ResidencePage` schema). Without `api_version` the endpoint returns a bare
+ * `ResidenceOut[]`; the client tolerates both shapes — see `getListings`.
+ */
+export interface ResidencePage {
+  items: ResidenceOut[];
+  /** Total residences matching the filters, ignoring `limit`/`offset`. */
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
 /** Map the API's residence status onto our app-facing listing status. */
 const STATUS_TO_LISTING: Record<ResidenceStatus, ListingStatus> = {
   new: 'for_sale',

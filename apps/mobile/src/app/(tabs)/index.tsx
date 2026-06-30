@@ -16,7 +16,7 @@ import { Brand } from '@/constants/theme';
 import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
-import { applyFilters, countActiveFilters, useFilters } from '@/lib/filters';
+import { countActiveFilters, filtersToQuery, useFilters } from '@/lib/filters';
 import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
 import { normalizeStats } from '@/lib/neighborhood-stats';
 import { type GeocodeResult, zoomForType } from '@/lib/pdok';
@@ -29,8 +29,11 @@ import { recordRecentView } from '@/lib/recent-views';
 const AUTO_LOAD_AREAS_ZOOM = 12;
 
 export default function MapScreen() {
-  const { data: listings = [], isLoading } = useListings();
   const { filters } = useFilters();
+  // Filters (and sort) drive the query: the server returns only matching,
+  // geocoded homes (capped at the page size), so the map renders them directly.
+  const query = useMemo(() => filtersToQuery(filters), [filters]);
+  const { data: listings = [], isLoading } = useListings(query);
   const { data: cities = [] } = useCities(loadCities);
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ListingMapRef>(null);
@@ -85,10 +88,6 @@ export default function MapScreen() {
   // Precompute city bounding boxes once so a tap ray-casts only the polygons
   // whose bbox contains it. Cities load once and are cached, so this is cheap.
   const cityIndex = useMemo(() => buildCityIndex(cities), [cities]);
-
-  // The map shows only listings passing the active search filters; the full
-  // list is kept for selection lookups (a still-open card mustn't vanish).
-  const filteredListings = useMemo(() => applyFilters(listings, filters), [listings, filters]);
 
   const selected = useMemo(
     () => listings.find((l) => l.id === selectedId) ?? null,
@@ -202,7 +201,7 @@ export default function MapScreen() {
     <View className="flex-1 bg-neutral-100 dark:bg-black">
       <ListingMap
         ref={mapRef}
-        listings={filteredListings}
+        listings={listings}
         polygons={coloredAreas}
         onSelect={handleSelect}
         onSelectPolygon={handleSelectPolygon}

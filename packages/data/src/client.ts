@@ -1,12 +1,13 @@
 import type { AreaPolygon, CityShape, Listing, ListingQuery, NeighborhoodStats } from '@realty/types';
 
-import { API_BASE, API_URL, USE_LISTING_MOCKS } from './env';
+import { API_BASE, API_URL, API_VERSION, USE_LISTING_MOCKS } from './env';
 import { mockCityNames, mockListings } from './mocks';
 import {
   hasCoordinates,
   LISTING_TO_RESIDENCE_STATUS,
   residenceToListing,
   type ResidenceOut,
+  type ResidencePage,
 } from './residences';
 
 /** Max residences the API returns per request (the `limit` ceiling). */
@@ -81,10 +82,43 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** Parse a 4-digit year from a free-form construction period ("1973"). */
+function parseYear(period: string | undefined): number | null {
+  if (!period) return null;
+  const match = period.match(/\d{4}/);
+  return match ? Number.parseInt(match[0], 10) : null;
+}
+
+/**
+ * Mock-mode filter predicate. Mirrors the server-side filtering the real
+ * `/v1/residences` performs (see {@link buildResidenceParams}), so the bundled
+ * and web-export builds behave like the live API. `null`/empty/`0` facets are
+ * treated as "no constraint".
+ */
 function matchesQuery(listing: Listing, query: ListingQuery): boolean {
+  if (query.dealType === 'sale' && listing.status === 'for_rent') return false;
+  if (query.dealType === 'rent' && listing.status !== 'for_rent') return false;
   if (query.status && listing.status !== query.status) return false;
   if (query.minPrice != null && listing.price < query.minPrice) return false;
   if (query.maxPrice != null && listing.price > query.maxPrice) return false;
+  if (
+    query.buildingTypes?.length &&
+    (!listing.buildingType || !query.buildingTypes.includes(listing.buildingType))
+  )
+    return false;
+  if (query.minBedrooms != null && listing.bedrooms < query.minBedrooms) return false;
+  if (query.minBathrooms != null && listing.bathrooms < query.minBathrooms) return false;
+  if (query.minAreaSqm != null && listing.areaSqm < query.minAreaSqm) return false;
+  if (query.maxAreaSqm != null && listing.areaSqm > query.maxAreaSqm) return false;
+  if (
+    query.energyLabels?.length &&
+    (!listing.energyLabel || !query.energyLabels.includes(listing.energyLabel))
+  )
+    return false;
+  if (query.minBuildYear != null) {
+    const year = parseYear(listing.constructionPeriod);
+    if (year === null || year < query.minBuildYear) return false;
+  }
   if (query.search) {
     const haystack = `${listing.title} ${listing.address.line1} ${listing.address.city}`.toLowerCase();
     if (!haystack.includes(query.search.toLowerCase())) return false;
@@ -92,23 +126,65 @@ function matchesQuery(listing: Listing, query: ListingQuery): boolean {
   return true;
 }
 
+/**
+ * Translate a {@link ListingQuery} into `GET /v1/residences` query params. Pins
+ * `api_version` so the response is the paginated envelope; every filter is
+ * additive and omitted when unset (= no constraint). `limit`/`offset` are set by
+ * the caller. Multi-value facets repeat the param (OR-combined server-side).
+ * `includeSort` is false for the count-only request, where order is irrelevant.
+ */
+function buildResidenceParams(query: ListingQuery, includeSort = true): URLSearchParams {
+  const params = new URLSearchParams();
+  params.set('api_version', String(API_VERSION));
+  if (query.dealType) params.set('deal_type', query.dealType);
+  if (query.minPrice != null) params.set('min_price', String(query.minPrice));
+  if (query.maxPrice != null) params.set('max_price', String(query.maxPrice));
+  for (const type of query.buildingTypes ?? []) params.append('building_type', type);
+  if (query.minBedrooms != null) params.set('min_bedrooms', String(query.minBedrooms));
+  if (query.minBathrooms != null) params.set('min_bathrooms', String(query.minBathrooms));
+  if (query.minAreaSqm != null) params.set('min_area_m2', String(query.minAreaSqm));
+  if (query.maxAreaSqm != null) params.set('max_area_m2', String(query.maxAreaSqm));
+  for (const label of query.energyLabels ?? []) params.append('energy_label', label);
+  if (query.minBuildYear != null) params.set('min_build_year', String(query.minBuildYear));
+  const apiStatus = query.status ? LISTING_TO_RESIDENCE_STATUS[query.status] : undefined;
+  if (apiStatus) params.set('status', apiStatus);
+  if (includeSort && query.sort) params.set('sort', query.sort);
+  return params;
+}
+
+/** Unwrap the v2 envelope; tolerate a legacy bare array from an older backend. */
+function pageItems(res: ResidenceOut[] | ResidencePage): ResidenceOut[] {
+  return Array.isArray(res) ? res : res.items;
+}
+
 export async function getListings(query: ListingQuery = {}): Promise<Listing[]> {
   if (USE_LISTING_MOCKS) {
     return mockListings.filter((l) => matchesQuery(l, query));
   }
-  const params = new URLSearchParams();
-  // Price + status filter server-side; the API caps `limit` at 100.
-  if (query.minPrice != null) params.set('min_price', String(query.minPrice));
-  if (query.maxPrice != null) params.set('max_price', String(query.maxPrice));
-  const apiStatus = query.status ? LISTING_TO_RESIDENCE_STATUS[query.status] : undefined;
-  if (apiStatus) params.set('status', apiStatus);
+  const params = buildResidenceParams(query);
   params.set('limit', String(RESIDENCE_PAGE_SIZE));
 
-  const residences = await request<ResidenceOut[]>(`/v1/residences?${params}`);
+  const res = await request<ResidenceOut[] | ResidencePage>(`/v1/residences?${params}`);
   // Only geocoded residences can be placed on the map.
-  const listings = residences.filter(hasCoordinates).map(residenceToListing);
+  const listings = pageItems(res).filter(hasCoordinates).map(residenceToListing);
   // The API has no free-text search, so honor `search` client-side.
   return query.search ? listings.filter((l) => matchesQuery(l, { search: query.search })) : listings;
+}
+
+/**
+ * Total residences matching `query`, independent of the marker page size. Uses
+ * the API's count-only mode (`limit=0` → `{ total }`) so the filters screen can
+ * show a truthful "Show N homes" badge without fetching a page of homes. In mock
+ * mode it counts the bundled listings the same way {@link getListings} filters.
+ */
+export async function getListingsCount(query: ListingQuery = {}): Promise<number> {
+  if (USE_LISTING_MOCKS) {
+    return mockListings.filter((l) => matchesQuery(l, query)).length;
+  }
+  const params = buildResidenceParams(query, false);
+  params.set('limit', '0');
+  const res = await request<ResidenceOut[] | ResidencePage>(`/v1/residences?${params}`);
+  return Array.isArray(res) ? res.length : res.total;
 }
 
 // --- Geographic shapes (cities & neighborhoods) -----------------------------

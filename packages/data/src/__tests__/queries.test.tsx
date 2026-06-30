@@ -12,6 +12,7 @@ import {
   useCityNames,
   useListing,
   useListings,
+  useListingsCount,
 } from '../queries';
 
 let queryClient: QueryClient;
@@ -42,6 +43,15 @@ describe('useListings', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data!.every((l) => l.status === 'for_sale')).toBe(true);
+  });
+});
+
+describe('useListingsCount', () => {
+  it('returns the number of matching listings', async () => {
+    const { result } = await renderHook(() => useListingsCount(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(typeof result.current.data).toBe('number');
+    expect(result.current.data!).toBeGreaterThan(0);
   });
 });
 

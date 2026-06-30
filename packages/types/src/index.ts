@@ -127,10 +127,45 @@ export interface NeighborhoodStats {
   stats: Record<string, number>;
 }
 
-/** Filters accepted by the listings query. All fields optional. */
+/** Transaction kind. Maps to the API's `deal_type`; buy→`sale`, rent→`rent`. */
+export type DealType = 'sale' | 'rent';
+
+/**
+ * List/marker ordering. Mirrors the API's `sort` enum, minus `distance` (which
+ * needs a reference point the app doesn't send yet).
+ */
+export type SortOption =
+  | 'newest'
+  | 'oldest'
+  | 'price_asc'
+  | 'price_desc'
+  | 'area_asc'
+  | 'area_desc'
+  | 'price_per_m2_asc';
+
+/**
+ * Filters accepted by the listings query — a flattened view of the search
+ * filters, each field mapping to a `GET /v1/residences` query param. All
+ * optional; an omitted field means "no constraint" on that facet.
+ */
 export interface ListingQuery {
   search?: string;
+  /** Transaction kind; buy→`sale`, rent→`rent`. */
+  dealType?: DealType;
   minPrice?: number;
   maxPrice?: number;
+  /** Accepted building types, OR-combined. Empty/omitted = any. */
+  buildingTypes?: BuildingType[];
+  minBedrooms?: number;
+  minBathrooms?: number;
+  minAreaSqm?: number;
+  maxAreaSqm?: number;
+  /** Accepted energy labels, OR-combined. Empty/omitted = any. */
+  energyLabels?: string[];
+  /** Keep residences built in/after this year. */
+  minBuildYear?: number;
+  /** Sale-lifecycle sub-filter; not set by the map UI today. */
   status?: ListingStatus;
+  /** Result ordering. Defaults to `newest` server-side when omitted. */
+  sort?: SortOption;
 }

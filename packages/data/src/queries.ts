@@ -1,5 +1,5 @@
 import type { AreaPolygon, CityShape, ListingQuery, NeighborhoodStats } from '@realty/types';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import {
   getAreas,
@@ -8,6 +8,7 @@ import {
   getStats,
   getListing,
   getListings,
+  getListingsCount,
   type CityName,
 } from './client';
 
@@ -15,6 +16,7 @@ import {
 export const listingKeys = {
   all: ['listings'] as const,
   list: (query: ListingQuery) => ['listings', 'list', query] as const,
+  count: (query: ListingQuery) => ['listings', 'count', query] as const,
   detail: (id: string) => ['listings', 'detail', id] as const,
 };
 
@@ -22,6 +24,19 @@ export function useListings(query: ListingQuery = {}) {
   return useQuery({
     queryKey: listingKeys.list(query),
     queryFn: () => getListings(query),
+  });
+}
+
+/**
+ * Total residences matching `query`, for the filters screen's "Show N homes"
+ * badge. Keeps the previous count visible while a new one loads so the badge
+ * doesn't flicker as filters change (callers debounce the query).
+ */
+export function useListingsCount(query: ListingQuery = {}) {
+  return useQuery({
+    queryKey: listingKeys.count(query),
+    queryFn: () => getListingsCount(query),
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -1,4 +1,4 @@
-import type { BuildingType, Listing } from '@realty/types';
+import type { BuildingType, ListingQuery, SortOption } from '@realty/types';
 import { useSyncExternalStore } from 'react';
 
 import { loadJSON, saveJSON, StorageKeys } from './storage';
@@ -26,6 +26,8 @@ export interface Filters {
   energyLabels: string[];
   /** Keep listings built in/after this year; null = any. */
   minBuildYear: number | null;
+  /** Result ordering applied to the map/list query. */
+  sort: SortOption;
 }
 
 export const DEFAULT_FILTERS: Filters = {
@@ -39,6 +41,7 @@ export const DEFAULT_FILTERS: Filters = {
   maxAreaSqm: null,
   energyLabels: [],
   minBuildYear: null,
+  sort: 'newest',
 };
 
 /** Building types, in the order they're shown as pills. */
@@ -52,6 +55,19 @@ export const BUILDING_TYPES: readonly BuildingType[] = [
 
 /** Energy labels, best → worst. Index doubles as the rank used for filtering. */
 export const ENERGY_LABELS = ['A+++', 'A++', 'A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
+
+/**
+ * Sort options exposed in the filters UI, in display order. Labels are i18n
+ * (`filtersPage.sortOptions.<value>`). A curated subset of {@link SortOption}.
+ */
+export const SORT_OPTIONS: readonly SortOption[] = [
+  'newest',
+  'oldest',
+  'price_asc',
+  'price_desc',
+  'area_desc',
+  'price_per_m2_asc',
+];
 
 /** Slider domain for price; rent and buy live on very different scales. */
 export function priceDomain(mode: ListingMode): { min: number; max: number; step: number } {
@@ -73,17 +89,11 @@ export const PRICE_DISTRIBUTION_RENT = [
   3, 8, 15, 22, 28, 30, 27, 21, 16, 11, 8, 5, 4, 3, 2, 2, 1, 1, 1, 1,
 ];
 
-/** Parse a 4-digit year out of a free-form construction period ("1973"). */
-function parseYear(period: string | undefined): number | null {
-  if (!period) return null;
-  const match = period.match(/\d{4}/);
-  return match ? Number.parseInt(match[0], 10) : null;
-}
-
 /**
  * Number of facets that differ from the default (unfiltered) state. Price and
- * area each count once whether their min, max, or both are set. Drives the count
- * badge on the search bar's filters button.
+ * area each count once whether their min, max, or both are set. Sort is an
+ * ordering, not a filter, so it's excluded. Drives the count badge on the search
+ * bar's filters button.
  */
 export function countActiveFilters(f: Filters): number {
   let n = 0;
@@ -98,26 +108,26 @@ export function countActiveFilters(f: Filters): number {
   return n;
 }
 
-/** Apply the filters to a list of listings, returning those that match. */
-export function applyFilters(listings: Listing[], f: Filters): Listing[] {
-  return listings.filter((l) => {
-    if (f.mode === 'rent' ? l.status !== 'for_rent' : l.status === 'for_rent') return false;
-    if (f.minPrice !== null && l.price < f.minPrice) return false;
-    if (f.maxPrice !== null && l.price > f.maxPrice) return false;
-    if (f.propertyTypes.length > 0 && (!l.buildingType || !f.propertyTypes.includes(l.buildingType)))
-      return false;
-    if (l.bedrooms < f.minBedrooms) return false;
-    if (l.bathrooms < f.minBathrooms) return false;
-    if (f.minAreaSqm !== null && l.areaSqm < f.minAreaSqm) return false;
-    if (f.maxAreaSqm !== null && l.areaSqm > f.maxAreaSqm) return false;
-    if (f.energyLabels.length > 0 && (!l.energyLabel || !f.energyLabels.includes(l.energyLabel)))
-      return false;
-    if (f.minBuildYear !== null) {
-      const year = parseYear(l.constructionPeriod);
-      if (year === null || year < f.minBuildYear) return false;
-    }
-    return true;
-  });
+/**
+ * Flatten the UI {@link Filters} into a {@link ListingQuery} the data layer
+ * sends to `GET /v1/residences`. `null`/empty/`0` ("any") become omitted params
+ * (no constraint); buy/rent maps to `deal_type`. The server applies the
+ * filtering — there is no client-side fallback pass.
+ */
+export function filtersToQuery(f: Filters): ListingQuery {
+  return {
+    dealType: f.mode === 'rent' ? 'rent' : 'sale',
+    minPrice: f.minPrice ?? undefined,
+    maxPrice: f.maxPrice ?? undefined,
+    buildingTypes: f.propertyTypes.length > 0 ? f.propertyTypes : undefined,
+    minBedrooms: f.minBedrooms > 0 ? f.minBedrooms : undefined,
+    minBathrooms: f.minBathrooms > 0 ? f.minBathrooms : undefined,
+    minAreaSqm: f.minAreaSqm ?? undefined,
+    maxAreaSqm: f.maxAreaSqm ?? undefined,
+    energyLabels: f.energyLabels.length > 0 ? f.energyLabels : undefined,
+    minBuildYear: f.minBuildYear ?? undefined,
+    sort: f.sort,
+  };
 }
 
 // --- Store -----------------------------------------------------------------

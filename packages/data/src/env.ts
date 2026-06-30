@@ -45,3 +45,10 @@ export const USE_LISTING_MOCKS = API_URL === '';
  * signup/login/verify flow and attach Bearer tokens to /v1 requests.
  */
 export const AUTH_ENABLED = process.env.EXPO_PUBLIC_AUTH_ENABLED === 'true';
+
+/**
+ * API contract version the client speaks, sent as `api_version` on
+ * `/v1/residences`. `2` selects the paginated `ResidencePage` envelope;
+ * absent/`1` is the legacy bare array. Bump only on breaking response changes.
+ */
+export const API_VERSION = 2;
