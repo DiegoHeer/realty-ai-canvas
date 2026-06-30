@@ -185,7 +185,17 @@
       "corner": "Corner house",
       "semi_detached": "Semi-detached",
       "detached": "Detached"
-    }
+    },
+    "sort": "Sort",
+    "sortOptions": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "price_asc": "Price: low to high",
+      "price_desc": "Price: high to low",
+      "area_desc": "Largest",
+      "price_per_m2_asc": "Best value"
+    },
+    "showHomesLoading": "Show homes"
   },
   "listings": {
     "title": "Listings",

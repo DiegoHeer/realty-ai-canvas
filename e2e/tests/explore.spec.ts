@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
+import { stubApi } from '../fixtures';
+
 test.describe('Explore / Listings page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.route('https://images.unsplash.com/**', (route) =>
-      route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.alloc(0) }),
-    );
+    await stubApi(page);
     await page.goto('/explore');
     await page.waitForSelector('text=Listings', { timeout: 10_000 });
   });

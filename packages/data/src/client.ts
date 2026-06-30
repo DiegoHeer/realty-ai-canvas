@@ -1,12 +1,12 @@
 import type { AreaPolygon, CityShape, Listing, ListingQuery, NeighborhoodStats } from '@realty/types';
 
-import { API_BASE, API_URL, USE_LISTING_MOCKS } from './env';
-import { mockCityNames, mockListings } from './mocks';
+import { API_BASE, API_URL, API_VERSION } from './env';
 import {
   hasCoordinates,
   LISTING_TO_RESIDENCE_STATUS,
   residenceToListing,
   type ResidenceOut,
+  type ResidencePage,
 } from './residences';
 
 /** Max residences the API returns per request (the `limit` ceiling). */
@@ -52,10 +52,7 @@ export function coalescedRefresh(): Promise<string | null> {
   return refreshOnce();
 }
 
-/**
- * Thin typed wrapper around `fetch`. Swap `USE_MOCKS` off (by setting
- * `EXPO_PUBLIC_API_URL`) and these functions hit the real backend instead.
- */
+/** Thin typed wrapper around `fetch` that targets the configured backend. */
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const send = (token: string | null) => {
     const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
@@ -81,34 +78,64 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-function matchesQuery(listing: Listing, query: ListingQuery): boolean {
-  if (query.status && listing.status !== query.status) return false;
-  if (query.minPrice != null && listing.price < query.minPrice) return false;
-  if (query.maxPrice != null && listing.price > query.maxPrice) return false;
-  if (query.search) {
-    const haystack = `${listing.title} ${listing.address.line1} ${listing.address.city}`.toLowerCase();
-    if (!haystack.includes(query.search.toLowerCase())) return false;
-  }
-  return true;
+/** Case-insensitive substring match over a listing's title + address. */
+function matchesSearch(listing: Listing, search: string): boolean {
+  const haystack = `${listing.title} ${listing.address.line1} ${listing.address.city}`.toLowerCase();
+  return haystack.includes(search.toLowerCase());
+}
+
+/**
+ * Translate a {@link ListingQuery} into `GET /v1/residences` query params. Pins
+ * `api_version` so the response is the paginated envelope; every filter is
+ * additive and omitted when unset (= no constraint). `limit`/`offset` are set by
+ * the caller. Multi-value facets repeat the param (OR-combined server-side).
+ * `includeSort` is false for the count-only request, where order is irrelevant.
+ */
+function buildResidenceParams(query: ListingQuery, includeSort = true): URLSearchParams {
+  const params = new URLSearchParams();
+  params.set('api_version', String(API_VERSION));
+  if (query.dealType) params.set('deal_type', query.dealType);
+  if (query.minPrice != null) params.set('min_price', String(query.minPrice));
+  if (query.maxPrice != null) params.set('max_price', String(query.maxPrice));
+  for (const type of query.buildingTypes ?? []) params.append('building_type', type);
+  if (query.minBedrooms != null) params.set('min_bedrooms', String(query.minBedrooms));
+  if (query.minBathrooms != null) params.set('min_bathrooms', String(query.minBathrooms));
+  if (query.minAreaSqm != null) params.set('min_area_m2', String(query.minAreaSqm));
+  if (query.maxAreaSqm != null) params.set('max_area_m2', String(query.maxAreaSqm));
+  for (const label of query.energyLabels ?? []) params.append('energy_label', label);
+  if (query.minBuildYear != null) params.set('min_build_year', String(query.minBuildYear));
+  const apiStatus = query.status ? LISTING_TO_RESIDENCE_STATUS[query.status] : undefined;
+  if (apiStatus) params.set('status', apiStatus);
+  if (includeSort && query.sort) params.set('sort', query.sort);
+  return params;
+}
+
+/** Unwrap the v2 envelope; tolerate a legacy bare array from an older backend. */
+function pageItems(res: ResidenceOut[] | ResidencePage): ResidenceOut[] {
+  return Array.isArray(res) ? res : res.items;
 }
 
 export async function getListings(query: ListingQuery = {}): Promise<Listing[]> {
-  if (USE_LISTING_MOCKS) {
-    return mockListings.filter((l) => matchesQuery(l, query));
-  }
-  const params = new URLSearchParams();
-  // Price + status filter server-side; the API caps `limit` at 100.
-  if (query.minPrice != null) params.set('min_price', String(query.minPrice));
-  if (query.maxPrice != null) params.set('max_price', String(query.maxPrice));
-  const apiStatus = query.status ? LISTING_TO_RESIDENCE_STATUS[query.status] : undefined;
-  if (apiStatus) params.set('status', apiStatus);
+  const params = buildResidenceParams(query);
   params.set('limit', String(RESIDENCE_PAGE_SIZE));
 
-  const residences = await request<ResidenceOut[]>(`/v1/residences?${params}`);
+  const res = await request<ResidenceOut[] | ResidencePage>(`/v1/residences?${params}`);
   // Only geocoded residences can be placed on the map.
-  const listings = residences.filter(hasCoordinates).map(residenceToListing);
+  const listings = pageItems(res).filter(hasCoordinates).map(residenceToListing);
   // The API has no free-text search, so honor `search` client-side.
-  return query.search ? listings.filter((l) => matchesQuery(l, { search: query.search })) : listings;
+  return query.search ? listings.filter((l) => matchesSearch(l, query.search!)) : listings;
+}
+
+/**
+ * Total residences matching `query`, independent of the marker page size. Uses
+ * the API's count-only mode (`limit=0` → `{ total }`) so the filters screen can
+ * show a truthful "Show N homes" badge without fetching a page of homes.
+ */
+export async function getListingsCount(query: ListingQuery = {}): Promise<number> {
+  const params = buildResidenceParams(query, false);
+  params.set('limit', '0');
+  const res = await request<ResidenceOut[] | ResidencePage>(`/v1/residences?${params}`);
+  return Array.isArray(res) ? res.length : res.total;
 }
 
 // --- Geographic shapes (cities & neighborhoods) -----------------------------
@@ -183,8 +210,8 @@ function shapesToAreas(shapes: NeighborhoodShape[]): AreaPolygon[] {
  * Neighborhood ("buurten") boundaries for a city (CBS municipality code, e.g.
  * `0518` for Den Haag), fetched from the Realty Alerts shapes API and
  * transformed into `AreaPolygon[]`. Returns an empty array when no backend is
- * configured (mock/offline builds) so the map renders without overlays rather
- * than failing. Boundaries never change, so the app caches the result per city
+ * configured, so the map renders without overlays rather than failing.
+ * Boundaries never change, so the app caches the result per city
  * (see `loadAreas`).
  */
 export async function getAreas(city: string = DEN_HAAG_CITY_CODE): Promise<AreaPolygon[]> {
@@ -211,7 +238,7 @@ const CITY_PAGE_SIZE = 200;
 /**
  * All Dutch municipality ("gemeente") boundaries, fetched from the shapes API
  * and transformed into {@link CityShape}. Returns an empty array when no backend
- * is configured (mock/offline builds). Boundaries never change, so the app caches
+ * is configured. Boundaries never change, so the app caches
  * the result (see `loadCities`).
  *
  * Pagination is defensive: we page through offsets, dedupe by `code`, and stop
@@ -247,13 +274,12 @@ export interface CityName {
 /**
  * All Dutch municipality names (code + name) from the lightweight `/v1/cities`
  * endpoint — no geometry, unlike {@link getCities}, so it's cheap to fetch and
- * search. Used by the onboarding city picker and its fuzzy search. Falls back to
- * a bundled sample ({@link mockCityNames}) when no backend is configured
- * (mock/offline builds and the deterministic web export), so the picker always
- * has content. The list never changes, so callers cache it for the session.
+ * search. Used by the onboarding city picker and its fuzzy search. Returns an
+ * empty array when no backend is configured. The list never changes, so callers
+ * cache it for the session.
  */
 export async function getCityNames(): Promise<CityName[]> {
-  if (!API_URL) return mockCityNames;
+  if (!API_URL) return [];
   return request<CityName[]>('/v1/cities');
 }
 
@@ -282,11 +308,6 @@ export async function getStats(city: string = DEN_HAAG_CITY_CODE): Promise<Neigh
 }
 
 export async function getListing(id: string): Promise<Listing> {
-  if (USE_LISTING_MOCKS) {
-    const found = mockListings.find((l) => l.id === id);
-    if (!found) throw new Error(`Listing ${id} not found`);
-    return found;
-  }
   // No public detail endpoint exists yet, so resolve the id against the list.
   const residences = await request<ResidenceOut[]>(
     `/v1/residences?limit=${RESIDENCE_PAGE_SIZE}`,

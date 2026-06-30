@@ -1,90 +1,26 @@
-import { getAreas, getCityNames, getListing, getListings } from '../client';
-import { mockCityNames, mockListings } from '../mocks';
+import { getAreas, getCityNames, getListings, getListingsCount } from '../client';
 
-// ---- Mock-mode tests ----
-// By default USE_MOCKS is true when EXPO_PUBLIC_API_URL is empty.
+// The client always talks to the real backend now (mocks were removed). These
+// tests mock `fetch` so they exercise URL construction and the residence →
+// listing transform without a live API.
 
-describe('client (mock mode)', () => {
-  describe('getListings', () => {
-    it('returns all mock listings when no query is given', async () => {
-      const listings = await getListings();
-      expect(listings).toHaveLength(mockListings.length);
-    });
+// ---- "No backend configured" tests ----
+// With no API_URL set, the shape/stat/city-name endpoints resolve to empty
+// arrays rather than failing (so the map renders without overlays).
 
-    it('filters by status', async () => {
-      const listings = await getListings({ status: 'for_sale' });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.status === 'for_sale')).toBe(true);
-    });
-
-    it('filters by minPrice', async () => {
-      const listings = await getListings({ minPrice: 1000000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.price >= 1000000)).toBe(true);
-    });
-
-    it('filters by maxPrice', async () => {
-      const listings = await getListings({ maxPrice: 600000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.price <= 600000)).toBe(true);
-    });
-
-    it('filters by price range', async () => {
-      const listings = await getListings({ minPrice: 500000, maxPrice: 700000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.price >= 500000 && l.price <= 700000)).toBe(true);
-    });
-
-    it('filters by case-insensitive search', async () => {
-      const listings = await getListings({ search: 'canal' });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(
-        listings.every((l) => {
-          const haystack = `${l.title} ${l.address.line1} ${l.address.city}`.toLowerCase();
-          return haystack.includes('canal');
-        }),
-      ).toBe(true);
-    });
-
-    it('returns empty array when search matches nothing', async () => {
-      const listings = await getListings({ search: 'xyznonexistent' });
-      expect(listings).toEqual([]);
-    });
+describe('client (no backend configured)', () => {
+  it('getAreas returns an empty array', async () => {
+    expect(await getAreas()).toEqual([]);
   });
 
-  describe('getListing', () => {
-    it('returns the matching listing by id', async () => {
-      const listing = await getListing('lst_001');
-      expect(listing.id).toBe('lst_001');
-      expect(listing.title).toBe('Bright canal-side apartment');
-    });
-
-    it('throws when listing is not found', async () => {
-      await expect(getListing('nonexistent')).rejects.toThrow('not found');
-    });
-  });
-
-  describe('getAreas', () => {
-    it('returns an empty array when no backend is configured', async () => {
-      const areas = await getAreas();
-      expect(areas).toEqual([]);
-    });
-  });
-
-  describe('getCityNames', () => {
-    it('returns the bundled sample list when no backend is configured', async () => {
-      const cities = await getCityNames();
-      expect(cities).toEqual(mockCityNames);
-      // The largest cities back the onboarding picker's pills, so they must be present.
-      expect(cities.some((c) => c.name === 'Amsterdam')).toBe(true);
-      expect(cities.some((c) => c.name === 'Rotterdam')).toBe(true);
-    });
+  it('getCityNames returns an empty array', async () => {
+    expect(await getCityNames()).toEqual([]);
   });
 });
 
 // ---- API-mode tests ----
-// These tests need a fresh module graph with USE_MOCKS=false.
-// We use jest.mock to override the env module before client.ts imports it.
+// These need a fresh module graph with API_URL set; jest.mock overrides the env
+// module before client.ts imports it.
 
 describe('client (API mode)', () => {
   const mockResidences = [
@@ -134,6 +70,7 @@ describe('client (API mode)', () => {
 
   // Re-import client with mocked env for each test
   let getListingsApi: typeof getListings;
+  let getListingsCountApi: typeof getListingsCount;
   let getAreasApi: typeof getAreas;
   let getStatsApi: typeof import('../client').getStats;
   let getCitiesApi: typeof import('../client').getCities;
@@ -142,15 +79,16 @@ describe('client (API mode)', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.mock('../env', () => ({
-      USE_MOCKS: false,
       API_BASE: 'https://api.example.com',
       API_URL: 'https://api.example.com',
+      API_VERSION: 2,
     }));
     global.fetch = jest.fn();
 
     // Re-require after mocking env
     const client = require('../client');
     getListingsApi = client.getListings;
+    getListingsCountApi = client.getListingsCount;
     getAreasApi = client.getAreas;
     getStatsApi = client.getStats;
     getCitiesApi = client.getCities;
@@ -203,6 +141,78 @@ describe('client (API mode)', () => {
 
     const noMatch = await getListingsApi({ search: 'xyznotfound' });
     expect(noMatch).toHaveLength(0);
+  });
+
+  it('getListings sends api_version and maps every filter to a query param', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+    await getListingsApi({
+      dealType: 'sale',
+      minPrice: 300000,
+      maxPrice: 600000,
+      buildingTypes: ['apartment', 'terraced'],
+      minBedrooms: 2,
+      minBathrooms: 1,
+      minAreaSqm: 70,
+      maxAreaSqm: 150,
+      energyLabels: ['A', 'B'],
+      minBuildYear: 1990,
+      sort: 'price_asc',
+    });
+
+    const url = (global.fetch as jest.Mock).mock.calls[0]![0] as string;
+    expect(url).toContain('api_version=2');
+    expect(url).toContain('deal_type=sale');
+    expect(url).toContain('min_price=300000');
+    expect(url).toContain('max_price=600000');
+    // Multi-value facets repeat the param (OR-combined server-side).
+    expect(url).toContain('building_type=apartment');
+    expect(url).toContain('building_type=terraced');
+    expect(url).toContain('min_bedrooms=2');
+    expect(url).toContain('min_bathrooms=1');
+    expect(url).toContain('min_area_m2=70');
+    expect(url).toContain('max_area_m2=150');
+    expect(url).toContain('energy_label=A');
+    expect(url).toContain('energy_label=B');
+    expect(url).toContain('min_build_year=1990');
+    expect(url).toContain('sort=price_asc');
+    expect(url).toContain('limit=100');
+  });
+
+  it('getListings parses the v2 ResidencePage envelope', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: mockResidences, total: 42, limit: 100, offset: 0, has_more: false }),
+    });
+
+    const listings = await getListingsApi();
+    // Only the geocoded residence (id:10) survives.
+    expect(listings).toHaveLength(1);
+    expect(listings[0]!.id).toBe('10');
+  });
+
+  it('getListingsCount requests a count-only page and returns the envelope total', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: [], total: 142, limit: 0, offset: 0, has_more: true }),
+    });
+
+    const count = await getListingsCountApi({ sort: 'price_asc' });
+    expect(count).toBe(142);
+    const url = (global.fetch as jest.Mock).mock.calls[0]![0] as string;
+    expect(url).toContain('limit=0');
+    expect(url).toContain('api_version=2');
+    // Ordering is irrelevant to a count, so `sort` is omitted.
+    expect(url).not.toContain('sort=');
+  });
+
+  it('getListingsCount tolerates a legacy bare array (counts its length)', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResidences,
+    });
+
+    expect(await getListingsCountApi()).toBe(mockResidences.length);
   });
 
   it('getAreas fetches neighborhood shapes and transforms them', async () => {

@@ -185,7 +185,17 @@
       "corner": "Casa de gaveto",
       "semi_detached": "Casa geminada",
       "detached": "Casa isolada"
-    }
+    },
+    "sort": "Ordenar",
+    "sortOptions": {
+      "newest": "Mais recentes",
+      "oldest": "Mais antigos",
+      "price_asc": "Preço: baixo para alto",
+      "price_desc": "Preço: alto para baixo",
+      "area_desc": "Maiores",
+      "price_per_m2_asc": "Melhor valor"
+    },
+    "showHomesLoading": "Mostrar imóveis"
   },
   "listings": {
     "title": "Imóveis",

@@ -1,8 +1,8 @@
-import { useListings } from '@realty/data';
+import { useListingsCount } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import type { BuildingType } from '@realty/types';
 import { useNavigation, useRouter } from 'expo-router';
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,13 +11,14 @@ import { RangeSlider } from '@/components/range-slider';
 import { deferNavigation } from '@/lib/navigation';
 import {
   AREA_DOMAIN,
-  applyFilters,
   BUILDING_TYPES,
   DEFAULT_FILTERS,
   ENERGY_LABELS,
+  filtersToQuery,
   PRICE_DISTRIBUTION_BUY,
   PRICE_DISTRIBUTION_RENT,
   priceDomain,
+  SORT_OPTIONS,
   useFilters,
   YEAR_DOMAIN,
   type Filters,
@@ -29,6 +30,17 @@ function compactEuro(v: number): string {
   if (v >= 1_000_000) return `€${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`;
   if (v >= 10_000) return `€${Math.round(v / 1000)}k`;
   return `€${v}`;
+}
+
+// Debounce a rapidly-changing value (e.g. while dragging a slider) so the
+// "Show N homes" count isn't refetched on every intermediate value.
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(id);
+  }, [value, delayMs]);
+  return debounced;
 }
 
 /**
@@ -43,7 +55,6 @@ export default function FiltersScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { filters, setFilters } = useFilters();
-  const { data: listings = [] } = useListings();
 
   // Stage edits locally; nothing affects the map until "Show homes".
   const [draft, setDraft] = useState<Filters>(filters);
@@ -74,7 +85,12 @@ export default function FiltersScreen() {
     });
   }, [navigation, t]);
 
-  const matchCount = applyFilters(listings, draft).length;
+  // "Show N homes" reflects the true server-side match count for the staged
+  // draft. Debounce so dragging a slider doesn't fire a request per frame; the
+  // count query keeps its previous value while the next one loads. Sort doesn't
+  // affect the count, so it's dropped from the count request in the data layer.
+  const debouncedDraft = useDebouncedValue(draft, 300);
+  const { data: matchCount } = useListingsCount(filtersToQuery(debouncedDraft));
   const anyLabel = t('filtersPage.any');
 
   // Bedrooms/bathrooms render as discrete 0–6 sliders; 0 reads as "Any", n as "+n".
@@ -251,6 +267,19 @@ export default function FiltersScreen() {
             {...sliderDrag}
           />
         </FilterSection>
+
+        <FilterSection
+          title={t('filtersPage.sort')}
+          value={t(`filtersPage.sortOptions.${draft.sort}` as const)}>
+          <SelectPills
+            options={SORT_OPTIONS.map((key) => ({
+              key,
+              label: t(`filtersPage.sortOptions.${key}` as const),
+            }))}
+            selected={[draft.sort]}
+            onToggle={(key) => update({ sort: key as Filters['sort'] })}
+          />
+        </FilterSection>
       </ScrollView>
 
       <View
@@ -261,7 +290,9 @@ export default function FiltersScreen() {
           accessibilityRole="button"
           className="items-center rounded-xl bg-blue-600 py-3.5 active:opacity-80">
           <Text className="text-base font-semibold text-white">
-            {t('filtersPage.showHomes', { count: matchCount })}
+            {matchCount === undefined
+              ? t('filtersPage.showHomesLoading')
+              : t('filtersPage.showHomes', { count: matchCount })}
           </Text>
         </Pressable>
       </View>

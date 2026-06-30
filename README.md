@@ -13,7 +13,7 @@ exporting to the web for desktop users. Bun workspaces monorepo.
 | Routing    | Expo Router (file-based, typed routes, static web output)              |
 | Maps       | MapLibre — `@maplibre/maplibre-react-native` (native) / `react-map-gl` + `maplibre-gl` (web) |
 | Styling    | NativeWind (Tailwind CSS) — shared across native & web                 |
-| Data       | TanStack Query over a typed API client (mock data until the API lands) |
+| Data       | TanStack Query over a typed API client (Realty Alerts API)             |
 | i18n       | i18next + react-i18next, device language via `expo-localization`       |
 | Pkg manager| Bun (hoisted linker — see `bunfig.toml`)                               |
 
@@ -30,7 +30,7 @@ exporting to the web for desktop users. Bun workspaces monorepo.
 │           └── components/    # listing-map.tsx (native) + listing-map.web.tsx
 ├── packages/
 │   ├── types/                 # @realty/types — shared domain types
-│   ├── data/                  # @realty/data — API client, TanStack Query hooks, mocks
+│   ├── data/                  # @realty/data — API client, TanStack Query hooks
 │   ├── i18n/                  # @realty/i18n  — i18next setup + locale resources
 │   └── ui/                    # @realty/ui   — cross-platform components (ListingCard)
 ├── bunfig.toml                # hoisted linker (required for Expo/Metro/Babel)
@@ -95,18 +95,20 @@ In components: `const { t, i18n } = useTranslation()` from `@realty/i18n` (app) 
 `react-i18next` (shared `ui` package), then `t('listings.title')`. Pass
 `i18n.language` to `formatPrice(...)` for locale-aware currency formatting.
 
-## Connecting the real API
+## Connecting the API
 
-Listings currently come from bundled mock data (`packages/data/src/mocks.ts`).
-When the backend is ready, copy `apps/mobile/.env.example` to `apps/mobile/.env` and set:
+All data is fetched from the backend — there is no bundled/offline data. Copy
+`apps/mobile/.env.example` to `apps/mobile/.env.local` and set the API base URL:
 
 ```bash
-EXPO_PUBLIC_API_URL=https://your-api.example.com
+# Staging (Realty Alerts API)
+EXPO_PUBLIC_API_URL=https://api-staging.realty-ai.nl
 ```
 
-The client (`packages/data/src/client.ts`) expects `GET /listings` and
-`GET /listings/:id` returning the `Listing` shape from `@realty/types`. Adjust
-the request paths/params there to match the real contract.
+The client (`packages/data/src/client.ts`) reads residences from
+`GET /v1/residences` and geographic data from `GET /v1/shapes/*` and
+`GET /v1/stats/*`, mapping each residence onto the `Listing` shape from
+`@realty/types`. Adjust the request paths/params there to match the contract.
 
 
 https://www.troostwijkauctions.com/l/apple-macbook-air-13-3%E2%80%9D-apple-m2-16-gb-ram-500-gb-nvme-laptop-A1-38887-4300

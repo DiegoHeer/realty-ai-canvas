@@ -1,13 +1,11 @@
 import { coalescedRefresh, configureAuthInterceptor } from '../client';
 import { getListings } from '../client';
 
-// USE_LISTING_MOCKS is true only when API_URL === ''. Force a real fetch path.
+// Point the client at a test API base so request() hits our mocked fetch.
 jest.mock('../env', () => ({
   ...jest.requireActual('../env'),
   API_BASE: 'https://api.test',
   API_URL: 'https://api.test',
-  USE_LISTING_MOCKS: false,
-  USE_MOCKS: false,
 }));
 
 function okJson(body: unknown) {

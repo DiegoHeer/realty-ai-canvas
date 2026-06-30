@@ -133,7 +133,7 @@ adb logcat -d | grep ReactNativeJS    # JS errors / console.error / red-box (com
 ## When NOT to use the device
 
 Web-renderable UI (layout, static content, icons that aren't native) is faster to check via
-the web export + Playwright MCP: `EXPO_PUBLIC_USE_MOCKS=true bun run export:web`, serve
-`apps/mobile/dist` on :3000, drive with `mcp__playwright__*`. Reach for the **device** the
+the web export + Playwright MCP: `EXPO_PUBLIC_API_URL=https://api-staging.realty-ai.nl bun run export:web`,
+serve `apps/mobile/dist` on :3000, drive with `mcp__playwright__*`. Reach for the **device** the
 moment native behavior is involved. See `memory/rnscreens-recycled-bitmap-crash.md` for a
 worked example (a crash invisible to both Jest and the web export).
