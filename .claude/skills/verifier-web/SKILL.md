@@ -3,8 +3,8 @@ name: verifier-web
 description: >-
   Test/verify a change by running the Expo web export and driving it with the Playwright
   MCP browser (mcp__playwright__*). Use to confirm data flows, map interactions, transient
-  UI (spinners, animations), and web-renderable layout actually work end-to-end against real
-  or mocked data — anything Jest only renders shallowly. The web map is a <canvas>, so assert
+  UI (spinners, animations), and web-renderable layout actually work end-to-end against the
+  live staging API — anything Jest only renders shallowly. The web map is a <canvas>, so assert
   via network requests, the DOM (inputs/text), and screenshot pixel-diffs, not by reading the
   canvas. For native-only behavior (screen transitions, Glide, native Alert) use
   `verifier-android` instead.
@@ -26,16 +26,16 @@ Use `bun`/`bunx`, never `npm`/`npx` (project rule). Put temp files in the scratc
 | Web dev server | `cd apps/mobile && CI=1 BROWSER=none bunx expo start --web --port <FREE>` |
 | Free port | **8081 is usually taken by another Expo project ("mobius-chess")** — pick another, e.g. `8090` |
 | API proxy | Metro proxies `/realty-api/*` → `EXPO_PUBLIC_API_URL` (`apps/mobile/metro.config.js`) — dodges CORS in web dev |
-| Real data | `apps/mobile/.env.local` sets `EXPO_PUBLIC_API_URL=https://api-staging.realty-ai.nl`. `getCities`/`getAreas`/`getStats` gate on `API_URL` (so they hit staging); only **listings** mock via `USE_MOCKS` |
-| Deterministic visuals | static export with mocks: `EXPO_PUBLIC_USE_MOCKS=true bun run export:web` → serve `apps/mobile/dist` (this is what the Playwright visual-regression e2e uses) |
+| Data source | `apps/mobile/.env.local` sets `EXPO_PUBLIC_API_URL=https://api-staging.realty-ai.nl`. There are no mocks — listings, `getCities`/`getAreas`/`getStats` all gate on `API_URL` and hit staging |
+| Static visual export | `EXPO_PUBLIC_API_URL=https://api-staging.realty-ai.nl bun run export:web` → serve `apps/mobile/dist` (this is what the Playwright visual-regression e2e uses; data is live, so screenshots aren't fully deterministic) |
 | The map | MapLibre GL `<canvas>` — **not DOM-inspectable**; assert via network/DOM/pixels |
 
-Re-derive if unsure: `rg 'PROXY_PREFIX|PROXY_TARGET' apps/mobile/metro.config.js`, `rg 'API_URL|USE_MOCKS' packages/data/src/env.ts`.
+Re-derive if unsure: `rg 'PROXY_PREFIX|PROXY_TARGET' apps/mobile/metro.config.js`, `rg 'API_URL' packages/data/src/env.ts`.
 
 ## Pick a mode
 
 - **Real-data flow** (did tapping a city fetch its neighborhoods? does search resolve?) → **dev server** so requests proxy to staging. Verify by watching the network.
-- **Deterministic visuals / pixel baselines** → **static export with mocks** (no network variance). This is the `bun run test:e2e` path.
+- **Pixel baselines / layout** → **static export** (`bun run test:e2e` path). It also pulls from staging, so expect some data-driven variance rather than perfect determinism.
 
 ## 1. Start the web server (on a free port)
 

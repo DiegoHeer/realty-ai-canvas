@@ -1,137 +1,26 @@
-import { getAreas, getCityNames, getListing, getListings, getListingsCount } from '../client';
-import { mockCityNames, mockListings } from '../mocks';
+import { getAreas, getCityNames, getListings, getListingsCount } from '../client';
 
-// ---- Mock-mode tests ----
-// By default USE_MOCKS is true when EXPO_PUBLIC_API_URL is empty.
+// The client always talks to the real backend now (mocks were removed). These
+// tests mock `fetch` so they exercise URL construction and the residence →
+// listing transform without a live API.
 
-describe('client (mock mode)', () => {
-  describe('getListings', () => {
-    it('returns all mock listings when no query is given', async () => {
-      const listings = await getListings();
-      expect(listings).toHaveLength(mockListings.length);
-    });
+// ---- "No backend configured" tests ----
+// With no API_URL set, the shape/stat/city-name endpoints resolve to empty
+// arrays rather than failing (so the map renders without overlays).
 
-    it('filters by status', async () => {
-      const listings = await getListings({ status: 'for_sale' });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.status === 'for_sale')).toBe(true);
-    });
-
-    it('filters by minPrice', async () => {
-      const listings = await getListings({ minPrice: 1000000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.price >= 1000000)).toBe(true);
-    });
-
-    it('filters by maxPrice', async () => {
-      const listings = await getListings({ maxPrice: 600000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.price <= 600000)).toBe(true);
-    });
-
-    it('filters by price range', async () => {
-      const listings = await getListings({ minPrice: 500000, maxPrice: 700000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.price >= 500000 && l.price <= 700000)).toBe(true);
-    });
-
-    it('filters by case-insensitive search', async () => {
-      const listings = await getListings({ search: 'canal' });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(
-        listings.every((l) => {
-          const haystack = `${l.title} ${l.address.line1} ${l.address.city}`.toLowerCase();
-          return haystack.includes('canal');
-        }),
-      ).toBe(true);
-    });
-
-    it('returns empty array when search matches nothing', async () => {
-      const listings = await getListings({ search: 'xyznonexistent' });
-      expect(listings).toEqual([]);
-    });
-
-    it('filters by deal type (sale excludes rentals)', async () => {
-      const listings = await getListings({ dealType: 'sale' });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.status !== 'for_rent')).toBe(true);
-    });
-
-    it('filters by building type', async () => {
-      const listings = await getListings({ buildingTypes: ['terraced'] });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.buildingType === 'terraced')).toBe(true);
-    });
-
-    it('filters by minimum bedrooms', async () => {
-      const listings = await getListings({ minBedrooms: 3 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.bedrooms >= 3)).toBe(true);
-    });
-
-    it('filters by energy label set', async () => {
-      const listings = await getListings({ energyLabels: ['A'] });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.energyLabel === 'A')).toBe(true);
-    });
-
-    it('filters by minimum build year, excluding older/unparseable homes', async () => {
-      const listings = await getListings({ minBuildYear: 2000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(
-        listings.every((l) => {
-          const match = l.constructionPeriod?.match(/\d{4}/);
-          return match != null && Number.parseInt(match[0], 10) >= 2000;
-        }),
-      ).toBe(true);
-    });
+describe('client (no backend configured)', () => {
+  it('getAreas returns an empty array', async () => {
+    expect(await getAreas()).toEqual([]);
   });
 
-  describe('getListingsCount', () => {
-    it('counts all mock listings when unfiltered', async () => {
-      expect(await getListingsCount()).toBe(mockListings.length);
-    });
-
-    it('counts only listings matching the filters', async () => {
-      const count = await getListingsCount({ buildingTypes: ['terraced'] });
-      const listings = await getListings({ buildingTypes: ['terraced'] });
-      expect(count).toBe(listings.length);
-    });
-  });
-
-  describe('getListing', () => {
-    it('returns the matching listing by id', async () => {
-      const listing = await getListing('lst_001');
-      expect(listing.id).toBe('lst_001');
-      expect(listing.title).toBe('Bright canal-side apartment');
-    });
-
-    it('throws when listing is not found', async () => {
-      await expect(getListing('nonexistent')).rejects.toThrow('not found');
-    });
-  });
-
-  describe('getAreas', () => {
-    it('returns an empty array when no backend is configured', async () => {
-      const areas = await getAreas();
-      expect(areas).toEqual([]);
-    });
-  });
-
-  describe('getCityNames', () => {
-    it('returns the bundled sample list when no backend is configured', async () => {
-      const cities = await getCityNames();
-      expect(cities).toEqual(mockCityNames);
-      // The largest cities back the onboarding picker's pills, so they must be present.
-      expect(cities.some((c) => c.name === 'Amsterdam')).toBe(true);
-      expect(cities.some((c) => c.name === 'Rotterdam')).toBe(true);
-    });
+  it('getCityNames returns an empty array', async () => {
+    expect(await getCityNames()).toEqual([]);
   });
 });
 
 // ---- API-mode tests ----
-// These tests need a fresh module graph with USE_MOCKS=false.
-// We use jest.mock to override the env module before client.ts imports it.
+// These need a fresh module graph with API_URL set; jest.mock overrides the env
+// module before client.ts imports it.
 
 describe('client (API mode)', () => {
   const mockResidences = [
@@ -190,7 +79,6 @@ describe('client (API mode)', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.mock('../env', () => ({
-      USE_MOCKS: false,
       API_BASE: 'https://api.example.com',
       API_URL: 'https://api.example.com',
       API_VERSION: 2,

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DataProvider, queryClient } from '@realty/data';
+import { cityNameKeys, DataProvider, queryClient } from '@realty/data';
 import { initI18n } from '@realty/i18n';
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
@@ -111,6 +111,14 @@ describe('OnboardingScreen', () => {
   });
 
   it('finishing applies the chosen city to the map and marks the tour done', async () => {
+    // The city list is fetched from the API (mocks were removed); seed the query
+    // cache so the picker has a deterministic set to search. useCityNames pins
+    // staleTime: Infinity, so this seeded data is used without a network fetch.
+    queryClient.setQueryData(cityNameKeys.all, [
+      { code: '0363', name: 'Amsterdam' },
+      { code: '0518', name: "'s-Gravenhage" },
+      { code: '0599', name: 'Rotterdam' },
+    ]);
     const { getByTestId } = await renderScreen('en');
 
     // Walk to the cities step (welcome → features → filters → cities).
