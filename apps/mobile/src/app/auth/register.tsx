@@ -17,6 +17,7 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { deferNavigation } from '@/lib/navigation';
 
 /**
@@ -63,7 +64,24 @@ export default function RegisterScreen() {
       // frame (same reason the settings screens defer their `router.back()`).
       deferNavigation(() => router.back());
     } else {
-      setFormError(t(authErrorKey(outcome.code)));
+      // Surface the backend's password/email validator messages under their
+      // field (allauth tags them `param: "password"` / `"email"`); the generic
+      // banner is only used when there are no structured errors to show.
+      if (outcome.fieldErrors?.length) {
+        const mapped = mapAuthFieldErrors(
+          outcome.fieldErrors,
+          ['name', 'email', 'password'],
+          (k) => t(k),
+        );
+        setErrors({
+          name: mapped.fieldErrors.name,
+          email: mapped.fieldErrors.email,
+          password: mapped.fieldErrors.password,
+        });
+        setFormError(mapped.formError);
+      } else {
+        setFormError(t(authErrorKey(outcome.code)));
+      }
     }
   }
 

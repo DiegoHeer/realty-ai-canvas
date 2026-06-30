@@ -99,6 +99,66 @@ describe('RegisterScreen', () => {
     expect(router.replace).toHaveBeenCalledWith('/auth/login');
   });
 
+  it('shows the exact backend message under the password field for a too-similar password', async () => {
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      registerWithEmail: jest.fn().mockResolvedValue({
+        ok: false,
+        code: 'generic',
+        fieldErrors: [
+          {
+            message: 'The password is too similar to the first name.',
+            code: 'password_too_similar',
+            param: 'password',
+          },
+        ],
+      }),
+      signInWithGoogle: jest.fn(),
+      signInWithApple: jest.fn(),
+    });
+
+    const { getByTestId, getByPlaceholderText, findByText, queryByText } = await renderScreen('en');
+
+    await typeInto(getByPlaceholderText('Your name'), 'Ada Lovelace');
+    await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
+    await typeInto(getByPlaceholderText('Enter your password'), 'adalovelace');
+    fireEvent.press(getByTestId('auth-submit'));
+
+    // The password validator has no localized key, so the raw backend message is shown verbatim.
+    expect(await findByText('The password is too similar to the first name.')).toBeOnTheScreen();
+    // And the generic banner must NOT appear when a structured error exists.
+    expect(queryByText('Something went wrong. Please try again.')).toBeNull();
+  });
+
+  it('shows the backend message under the name field for a rejected name', async () => {
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      registerWithEmail: jest.fn().mockResolvedValue({
+        ok: false,
+        code: 'generic',
+        fieldErrors: [
+          {
+            message: 'Ensure this value has at most 150 characters.',
+            code: 'max_length',
+            param: 'name',
+          },
+        ],
+      }),
+      signInWithGoogle: jest.fn(),
+      signInWithApple: jest.fn(),
+    });
+
+    const { getByTestId, getByPlaceholderText, findByText, queryByText } = await renderScreen('en');
+
+    await typeInto(getByPlaceholderText('Your name'), 'Ada Lovelace');
+    await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
+    await typeInto(getByPlaceholderText('Enter your password'), 'adalovelace');
+    fireEvent.press(getByTestId('auth-submit'));
+
+    // The name validator has no localized key, so the raw backend message is shown
+    // verbatim — and it must surface under the name field, not as the generic banner.
+    expect(await findByText('Ensure this value has at most 150 characters.')).toBeOnTheScreen();
+    expect(queryByText('Something went wrong. Please try again.')).toBeNull();
+  });
+
   it('shows the localized email-taken error when registration reports email_taken', async () => {
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
       registerWithEmail: jest.fn().mockResolvedValue({ ok: false, code: 'email_taken' }),

@@ -129,6 +129,32 @@ describe('LoginScreen', () => {
     expect(await findByText('Invalid email or password.')).toBeOnTheScreen();
   });
 
+  it('renders the backend mismatch message from structured field errors', async () => {
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      signInWithEmail: jest.fn().mockResolvedValue({
+        ok: false,
+        code: 'invalid_credentials',
+        fieldErrors: [
+          {
+            message: 'The email address and/or password you specified are not correct.',
+            code: 'email_password_mismatch',
+            param: 'password',
+          },
+        ],
+      }),
+      signInWithGoogle: jest.fn(),
+      signInWithApple: jest.fn(),
+    });
+    const { getByPlaceholderText, getByTestId, findByText } = await renderScreen('en');
+
+    await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
+    await typeInto(getByPlaceholderText('Enter your password'), 'bad');
+    fireEvent.press(getByTestId('auth-submit'));
+
+    // email_password_mismatch is a known code → localized copy, shown by the field.
+    expect(await findByText('Invalid email or password.')).toBeOnTheScreen();
+  });
+
   it('hides the social button in real-auth mode', async () => {
     // Babel compiles named imports as live property reads (_data.AUTH_ENABLED),
     // so updating the plain mock object is seen by the component at render time

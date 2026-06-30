@@ -1,4 +1,4 @@
-import { AuthError, login, signup, verifyEmail, refresh } from '../auth-client';
+import { AuthError, login, parseAllauthErrors, signup, verifyEmail, refresh } from '../auth-client';
 
 function mockFetch(status: number, body: unknown) {
   global.fetch = jest.fn().mockResolvedValue({
@@ -66,12 +66,86 @@ describe('auth-client', () => {
     });
   });
 
+  it('login carries the structured field errors (param/code/message) from the 400 body', async () => {
+    mockFetch(400, {
+      status: 400,
+      errors: [
+        {
+          message: 'The email address and/or password you specified are not correct.',
+          code: 'email_password_mismatch',
+          param: 'password',
+        },
+      ],
+    });
+    await expect(login({ email: 'x@y.z', password: 'bad' })).rejects.toMatchObject({
+      name: 'AuthError',
+      code: 'invalid_credentials',
+      fieldErrors: [
+        {
+          message: 'The email address and/or password you specified are not correct.',
+          code: 'email_password_mismatch',
+          param: 'password',
+        },
+      ],
+    });
+  });
+
   it('verifyEmail throws AuthError with code "invalid_code" on a rejected code', async () => {
     mockFetch(400, { status: 400, errors: [{ message: 'Incorrect code.' }] });
     await expect(verifyEmail({ code: '000000', sessionToken: 'ST' })).rejects.toMatchObject({
       name: 'AuthError',
       code: 'invalid_code',
     });
+  });
+
+  it('signup carries the password-validator field error from the 400 body', async () => {
+    mockFetch(400, {
+      status: 400,
+      errors: [
+        {
+          message: 'The password is too similar to the first name.',
+          code: 'password_too_similar',
+          param: 'password',
+        },
+      ],
+    });
+    await expect(
+      signup({ email: 'ada@example.com', name: 'Ada', password: 'ada' }),
+    ).rejects.toMatchObject({
+      name: 'AuthError',
+      fieldErrors: [
+        { code: 'password_too_similar', param: 'password' },
+      ],
+    });
+  });
+});
+
+describe('parseAllauthErrors', () => {
+  it('maps each entry to { message, code, param }', () => {
+    const parsed = parseAllauthErrors({
+      errors: [
+        { message: 'Enter a valid email address.', code: 'invalid', param: 'email' },
+        { message: 'Invalid or expired key.', code: 'invalid', param: 'key' },
+      ],
+    });
+    expect(parsed).toEqual([
+      { message: 'Enter a valid email address.', code: 'invalid', param: 'email' },
+      { message: 'Invalid or expired key.', code: 'invalid', param: 'key' },
+    ]);
+  });
+
+  it('returns [] when there are no errors', () => {
+    expect(parseAllauthErrors({})).toEqual([]);
+    expect(parseAllauthErrors({ errors: [] })).toEqual([]);
+  });
+
+  it('keeps a param-less entry (form-level error) and preserves a missing code', () => {
+    const parsed = parseAllauthErrors({ errors: [{ message: 'Something failed.' }] });
+    expect(parsed).toEqual([{ message: 'Something failed.', code: undefined, param: undefined }]);
+  });
+
+  it('drops a fully empty entry (no message and no code)', () => {
+    expect(parseAllauthErrors({ errors: [{ param: 'email' }] })).toEqual([]);
   });
 
   it('verifyEmail sends the code + session token and returns an authenticated session', async () => {

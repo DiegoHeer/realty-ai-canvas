@@ -5,6 +5,7 @@ import { View } from 'react-native';
 
 import { authErrorKey, AuthField, AuthScaffold, PrimaryButton } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { deferNavigation } from '@/lib/navigation';
 
 /**
@@ -41,7 +42,19 @@ export default function VerifyScreen() {
       // profile is shown — a single back() would stop on the register form.
       deferNavigation(() => router.dismissAll());
     } else if (outcome.ok === false) {
-      setError(t(authErrorKey(outcome.code)));
+      // The verification code maps to allauth's `key` param; show its message
+      // under the single code field, falling back to the generic coded message.
+      if (outcome.fieldErrors?.length) {
+        const mapped = mapAuthFieldErrors(outcome.fieldErrors, ['key', 'code'], (k) => t(k));
+        setError(
+          mapped.fieldErrors.key ??
+            mapped.fieldErrors.code ??
+            mapped.formError ??
+            t(authErrorKey(outcome.code)),
+        );
+      } else {
+        setError(t(authErrorKey(outcome.code)));
+      }
     }
   }
 
