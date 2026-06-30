@@ -68,8 +68,16 @@ export default function RegisterScreen() {
       // field (allauth tags them `param: "password"` / `"email"`); the generic
       // banner is only used when there are no structured errors to show.
       if (outcome.fieldErrors?.length) {
-        const mapped = mapAuthFieldErrors(outcome.fieldErrors, ['email', 'password'], (k) => t(k));
-        setErrors({ email: mapped.fieldErrors.email, password: mapped.fieldErrors.password });
+        const mapped = mapAuthFieldErrors(
+          outcome.fieldErrors,
+          ['name', 'email', 'password'],
+          (k) => t(k),
+        );
+        setErrors({
+          name: mapped.fieldErrors.name,
+          email: mapped.fieldErrors.email,
+          password: mapped.fieldErrors.password,
+        });
         setFormError(mapped.formError);
       } else {
         setFormError(t(authErrorKey(outcome.code)));
