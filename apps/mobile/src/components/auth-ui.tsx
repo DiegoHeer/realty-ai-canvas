@@ -30,6 +30,8 @@ export function authErrorKey(code: AuthErrorCode): string {
       return 'auth.errorInvalidCredentials';
     case 'invalid_code':
       return 'auth.errorCodeInvalid';
+    case 'email_taken':
+      return 'auth.errorEmailTaken';
     default:
       return 'auth.errorGeneric';
   }

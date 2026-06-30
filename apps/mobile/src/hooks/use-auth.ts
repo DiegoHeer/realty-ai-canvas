@@ -43,7 +43,7 @@ export interface AuthUser {
  * Result of an auth action. A failure carries a stable `code` (not a message),
  * so the UI can localize it; `'generic'` covers unexpected/unmapped failures.
  */
-export type AuthErrorCode = 'invalid_credentials' | 'invalid_code' | 'generic';
+export type AuthErrorCode = 'invalid_credentials' | 'invalid_code' | 'email_taken' | 'generic';
 export type AuthOutcome =
   | { ok: true }
   | { ok: false; code: AuthErrorCode }
@@ -116,11 +116,15 @@ async function applySession(
 
 /**
  * Map a thrown auth error to a stable {@link AuthErrorCode}. auth-client tags
- * the recognized cases (`invalid_credentials`, `invalid_code`); anything else
- * (server error, network failure, unexpected shape) collapses to `'generic'`.
+ * the recognized cases (`invalid_credentials`, `invalid_code`, `email_taken`);
+ * anything else (server error, network failure, unexpected shape) collapses to
+ * `'generic'`.
  */
 function codeFor(error: unknown): AuthErrorCode {
-  if (error instanceof AuthError && (error.code === 'invalid_credentials' || error.code === 'invalid_code')) {
+  if (
+    error instanceof AuthError &&
+    (error.code === 'invalid_credentials' || error.code === 'invalid_code' || error.code === 'email_taken')
+  ) {
     return error.code;
   }
   return 'generic';

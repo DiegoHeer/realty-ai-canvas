@@ -43,6 +43,21 @@ describe('auth-client', () => {
     expect(result).toEqual({ kind: 'verifyPending', sessionToken: 'ST' });
   });
 
+  it('signup throws AuthError with code "email_taken" when the email is already registered', async () => {
+    // allauth (enumeration prevention off) returns this envelope on a duplicate
+    // signup; verified live against django-allauth headless 65.18.
+    mockFetch(400, {
+      status: 400,
+      errors: [
+        { message: 'A user is already registered with this email address.', code: 'email_taken', param: 'email' },
+      ],
+    });
+    await expect(signup({ email: 'dup@example.com', name: 'Dup', password: 'pw' })).rejects.toMatchObject({
+      name: 'AuthError',
+      code: 'email_taken',
+    });
+  });
+
   it('login throws AuthError with code "invalid_credentials" on a rejected login', async () => {
     mockFetch(400, { status: 400, errors: [{ message: 'Invalid credentials.' }] });
     await expect(login({ email: 'x@y.z', password: 'bad' })).rejects.toMatchObject({
