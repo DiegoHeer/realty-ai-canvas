@@ -43,6 +43,16 @@ function refreshOnce(): Promise<string | null> {
 }
 
 /**
+ * Trigger (or join) the single-flight token refresh used by the 401 retry path.
+ * Exposed so other refreshers — e.g. boot hydration — coalesce through the same
+ * in-flight promise instead of issuing a competing `refresh()` that would race
+ * to consume the (rotating) refresh token and spuriously sign the user out.
+ */
+export function coalescedRefresh(): Promise<string | null> {
+  return refreshOnce();
+}
+
+/**
  * Thin typed wrapper around `fetch`. Swap `USE_MOCKS` off (by setting
  * `EXPO_PUBLIC_API_URL`) and these functions hit the real backend instead.
  */

@@ -16,6 +16,7 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { deferNavigation } from '@/lib/navigation';
 
 /**
  * Login screen (pushed from the profile guest card). Supports email/password
@@ -53,7 +54,7 @@ export default function LoginScreen() {
       // Defer the pop to avoid react-native-screens' "recycled bitmap" crash on
       // Android when a global state change and the navigation happen in the same
       // frame (same reason the settings screens defer their `router.back()`).
-      requestAnimationFrame(() => router.back());
+      deferNavigation(() => router.back());
     } else if (outcome.ok === false) {
       setFormError(t(authErrorKey(outcome.code)));
     }
@@ -103,7 +104,7 @@ export default function LoginScreen() {
             onPress={() => {
               const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
               action();
-              requestAnimationFrame(() => router.back());
+              deferNavigation(() => router.back());
             }}
           />
         </>
