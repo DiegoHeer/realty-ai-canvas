@@ -17,6 +17,7 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { deferNavigation } from '@/lib/navigation';
 
 /**
  * Register screen (pushed from the profile guest card). Supports creating an
@@ -60,7 +61,7 @@ export default function RegisterScreen() {
       // Defer the pop to avoid react-native-screens' "recycled bitmap" crash on
       // Android when a global state change and the navigation happen in the same
       // frame (same reason the settings screens defer their `router.back()`).
-      requestAnimationFrame(() => router.back());
+      deferNavigation(() => router.back());
     } else {
       setFormError(t(authErrorKey(outcome.code)));
     }
@@ -120,7 +121,7 @@ export default function RegisterScreen() {
             onPress={() => {
               const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
               action();
-              requestAnimationFrame(() => router.back());
+              deferNavigation(() => router.back());
             }}
           />
         </>
