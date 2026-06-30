@@ -13,10 +13,27 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { type AuthErrorCode } from '@/hooks/use-auth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 /** Placeholder grey that reads on both light and dark inputs (neutral-400). */
 const PLACEHOLDER_COLOR = '#9ca3af';
+
+/**
+ * i18n key for an auth failure code. The screens render `t(authErrorKey(code))`
+ * so NL/PT users get localized copy; unmapped/`generic` codes fall back to the
+ * generic message.
+ */
+export function authErrorKey(code: AuthErrorCode): string {
+  switch (code) {
+    case 'invalid_credentials':
+      return 'auth.errorInvalidCredentials';
+    case 'invalid_code':
+      return 'auth.errorCodeInvalid';
+    default:
+      return 'auth.errorGeneric';
+  }
+}
 
 /** Minimum password length enforced by the register form. */
 export const MIN_PASSWORD_LENGTH = 8;

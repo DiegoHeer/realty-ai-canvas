@@ -12,7 +12,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
-import { clearTokens, loadTokens } from '@/lib/secure-tokens';
+import { clearPendingSession, clearTokens, loadTokens } from '@/lib/secure-tokens';
 import { useAuth } from '@/hooks/use-auth';
 import { StorageKeys } from '@/lib/storage';
 
@@ -114,6 +114,7 @@ describe('useAuth (mock mode)', () => {
 describe('use-auth (real mode)', () => {
   afterEach(async () => {
     await clearTokens();
+    await clearPendingSession();
     await AsyncStorage.clear();
     jest.restoreAllMocks();
   });
@@ -235,6 +236,7 @@ describe('use-auth (real mode)', () => {
       expect(await loadTokens()).toEqual({ accessToken: 'NEW-AT', refreshToken: 'NEW-RT' });
     });
   });
+
   it('hydrate-expired: getSession rejects and refresh rejects → session torn down', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -262,6 +264,79 @@ describe('use-auth (real mode)', () => {
 
       expect(getCurrentUser()).toBeNull();
       expect(await loadTokens()).toBeNull();
+    });
+  });
+
+  it('signOut clears user, tokens and calls queryClient.clear', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+
+      jest.spyOn(authData, 'login').mockResolvedValue({
+        user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' },
+        tokens: { accessToken: 'AT', refreshToken: 'RT' },
+      });
+      jest.spyOn(authData, 'logout').mockResolvedValue(undefined);
+      const clearSpy = jest.spyOn(authData.queryClient, 'clear');
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithEmail, signOut: realSignOut, getCurrentUser } = require('@/hooks/use-auth');
+
+      await signInWithEmail('ada@example.com', 'pw');
+      expect(getCurrentUser()).not.toBeNull();
+      expect(await loadTokens()).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
+
+      await realSignOut();
+
+      expect(getCurrentUser()).toBeNull();
+      expect(await loadTokens()).toBeNull();
+      expect(clearSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('register persists the pending session token for cross-restart verification', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      jest.spyOn(authData, 'signup').mockResolvedValue({ kind: 'verifyPending', sessionToken: 'ST-123' });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { registerWithEmail } = require('@/hooks/use-auth');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { loadPendingSession } = require('@/lib/secure-tokens');
+
+      const outcome = await registerWithEmail({ name: 'Ada', email: 'ada@example.com', password: 'pw' });
+
+      expect(outcome).toEqual({ ok: 'verifyPending' });
+      expect(await loadPendingSession()).toBe('ST-123');
+    });
+  });
+
+  it('verify recovers the pending session token from storage after eviction', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+
+      // Simulate a process restart: token persisted previously, in-memory state empty.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { savePendingSession } = require('@/lib/secure-tokens');
+      await savePendingSession('ST-evicted');
+
+      jest.spyOn(authData, 'verifyEmail').mockResolvedValue({
+        user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' },
+        tokens: { accessToken: 'AT', refreshToken: 'RT' },
+      });
+      jest.spyOn(authData, 'logout').mockResolvedValue(undefined);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { verifyEmail: doVerify, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await doVerify('123456');
+
+      expect(outcome).toEqual({ ok: true });
+      expect(authData.verifyEmail).toHaveBeenCalledWith({ code: '123456', sessionToken: 'ST-evicted' });
+      expect(getCurrentUser()).toMatchObject({ email: 'ada@example.com' });
     });
   });
 });

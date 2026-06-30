@@ -15,6 +15,12 @@ export interface StoredTokens {
 // used by AsyncStorage isn't valid here, so use a dot.
 const TOKENS_KEY = 'realty.tokens';
 
+// The allauth session token handed back by signup while email verification is
+// pending. It's the only handle for completing verification, so persist it —
+// reading the emailed code usually means backgrounding the app, and an OS
+// eviction would otherwise lose it and dead-end the verify screen.
+const PENDING_SESSION_KEY = 'realty.pending_session';
+
 export async function loadTokens(): Promise<StoredTokens | null> {
   try {
     const raw = await SecureStore.getItemAsync(TOKENS_KEY);
@@ -38,6 +44,30 @@ export async function saveTokens(tokens: StoredTokens): Promise<void> {
 export async function clearTokens(): Promise<void> {
   try {
     await SecureStore.deleteItemAsync(TOKENS_KEY);
+  } catch {
+    // Best-effort.
+  }
+}
+
+export async function loadPendingSession(): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(PENDING_SESSION_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export async function savePendingSession(token: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(PENDING_SESSION_KEY, token);
+  } catch {
+    // Best-effort.
+  }
+}
+
+export async function clearPendingSession(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(PENDING_SESSION_KEY);
   } catch {
     // Best-effort.
   }

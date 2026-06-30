@@ -1,9 +1,11 @@
 import { useTranslation } from '@realty/i18n';
+import { AUTH_ENABLED } from '@realty/data';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import {
+  authErrorKey,
   AuthField,
   AuthScaffold,
   AuthSwitchLink,
@@ -14,11 +16,12 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { deferNavigation } from '@/lib/navigation';
 
 /**
  * Login screen (pushed from the profile guest card). Supports email/password
- * sign-in plus the platform OAuth provider. There is no auth backend yet, so a
- * successful sign-in resolves into the mock session (see `hooks/use-auth`).
+ * sign-in plus the platform OAuth provider. A successful sign-in stores the
+ * session and pops back to the profile screen.
  */
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -28,28 +31,33 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [formError, setFormError] = useState<string | undefined>();
+  const [submitting, setSubmitting] = useState(false);
 
   const provider = defaultOAuthProvider();
 
-  // Establish the session, then pop back to the profile a frame later. Deferring
-  // the pop avoids react-native-screens' "recycled bitmap" crash on Android when
-  // a global state change and the navigation happen in the same frame (same
-  // reason the settings screens defer their `router.back()`).
-  function completeAndDismiss(action: () => void) {
-    action();
-    requestAnimationFrame(() => router.back());
-  }
-
-  function submit() {
+  async function submit() {
     const next: { email?: string; password?: string } = {};
     if (!email.trim()) next.email = t('auth.errorEmailRequired');
     else if (!isValidEmail(email)) next.email = t('auth.errorEmailInvalid');
     if (!password) next.password = t('auth.errorPasswordRequired');
 
     setErrors(next);
+    setFormError(undefined);
     if (next.email || next.password) return;
 
-    completeAndDismiss(() => signInWithEmail(email));
+    setSubmitting(true);
+    const outcome = await signInWithEmail(email, password);
+    setSubmitting(false);
+
+    if (outcome.ok === true) {
+      // Defer the pop to avoid react-native-screens' "recycled bitmap" crash on
+      // Android when a global state change and the navigation happen in the same
+      // frame (same reason the settings screens defer their `router.back()`).
+      deferNavigation(() => router.back());
+    } else if (outcome.ok === false) {
+      setFormError(t(authErrorKey(outcome.code)));
+    }
   }
 
   return (
@@ -79,17 +87,28 @@ export default function LoginScreen() {
           onSubmitEditing={submit}
           returnKeyType="go"
         />
-        <PrimaryButton label={t('auth.logInCta')} onPress={submit} />
+        {formError ? (
+          <Text className="text-sm text-red-600 dark:text-red-400">{formError}</Text>
+        ) : null}
+        <PrimaryButton
+          label={submitting ? t('auth.submitting') : t('auth.logInCta')}
+          onPress={submit}
+        />
       </View>
 
-      <OrDivider />
-
-      <OAuthButton
-        provider={provider}
-        onPress={() =>
-          completeAndDismiss(provider === 'apple' ? signInWithApple : signInWithGoogle)
-        }
-      />
+      {!AUTH_ENABLED ? (
+        <>
+          <OrDivider />
+          <OAuthButton
+            provider={provider}
+            onPress={() => {
+              const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
+              action();
+              deferNavigation(() => router.back());
+            }}
+          />
+        </>
+      ) : null}
 
       <AuthSwitchLink
         prompt={t('auth.noAccountPrompt')}

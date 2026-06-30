@@ -98,4 +98,22 @@ describe('RegisterScreen', () => {
 
     expect(router.replace).toHaveBeenCalledWith('/auth/login');
   });
+
+  it('navigates to verify when registration is pending', async () => {
+    const { mockPush } = require('../../../test-setup');
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      registerWithEmail: jest.fn().mockResolvedValue({ ok: 'verifyPending' }),
+      signInWithGoogle: jest.fn(),
+      signInWithApple: jest.fn(),
+    });
+
+    const { getByTestId, getByPlaceholderText } = await renderScreen('en');
+
+    await typeInto(getByPlaceholderText('Your name'), 'Ada Lovelace');
+    await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
+    await typeInto(getByPlaceholderText('Enter your password'), 'sup3rs3cret!');
+    await tap(getByTestId('auth-submit'));
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/auth/verify'));
+  });
 });

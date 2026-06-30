@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FilterSection, SelectPills, Stepper } from '@/components/filter-controls';
 import { RangeSlider } from '@/components/range-slider';
+import { deferNavigation } from '@/lib/navigation';
 import {
   AREA_DOMAIN,
   applyFilters,
@@ -106,7 +107,7 @@ export default function FiltersScreen() {
     // draws listing imagery) and popping in the same frame races
     // react-native-screens' transition and crashes Android with "recycled
     // bitmap". Mirrors app/settings/language.tsx.
-    requestAnimationFrame(() => router.back());
+    deferNavigation(() => router.back());
   }
 
   return (

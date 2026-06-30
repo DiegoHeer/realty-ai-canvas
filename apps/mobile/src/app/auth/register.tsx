@@ -1,9 +1,11 @@
 import { useTranslation } from '@realty/i18n';
+import { AUTH_ENABLED } from '@realty/data';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import {
+  authErrorKey,
   AuthField,
   AuthScaffold,
   AuthSwitchLink,
@@ -15,6 +17,7 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { deferNavigation } from '@/lib/navigation';
 
 /**
  * Register screen (pushed from the profile guest card). Supports creating an
@@ -31,17 +34,12 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
+  const [formError, setFormError] = useState<string | undefined>();
+  const [submitting, setSubmitting] = useState(false);
 
   const provider = defaultOAuthProvider();
 
-  // See the note in `login.tsx`: defer the pop a frame so the auth-state change
-  // and navigation don't share a frame (Android recycled-bitmap crash).
-  function completeAndDismiss(action: () => void) {
-    action();
-    requestAnimationFrame(() => router.back());
-  }
-
-  function submit() {
+  async function submit() {
     const next: { name?: string; email?: string; password?: string } = {};
     if (!name.trim()) next.name = t('auth.errorNameRequired');
     if (!email.trim()) next.email = t('auth.errorEmailRequired');
@@ -50,9 +48,23 @@ export default function RegisterScreen() {
     else if (password.length < MIN_PASSWORD_LENGTH) next.password = t('auth.errorPasswordTooShort');
 
     setErrors(next);
+    setFormError(undefined);
     if (next.name || next.email || next.password) return;
 
-    completeAndDismiss(() => registerWithEmail({ name, email }));
+    setSubmitting(true);
+    const outcome = await registerWithEmail({ name, email, password });
+    setSubmitting(false);
+
+    if (outcome.ok === 'verifyPending') {
+      router.push('/auth/verify');
+    } else if (outcome.ok === true) {
+      // Defer the pop to avoid react-native-screens' "recycled bitmap" crash on
+      // Android when a global state change and the navigation happen in the same
+      // frame (same reason the settings screens defer their `router.back()`).
+      deferNavigation(() => router.back());
+    } else {
+      setFormError(t(authErrorKey(outcome.code)));
+    }
   }
 
   return (
@@ -92,17 +104,28 @@ export default function RegisterScreen() {
           onSubmitEditing={submit}
           returnKeyType="go"
         />
-        <PrimaryButton label={t('auth.registerCta')} onPress={submit} />
+        {formError ? (
+          <Text className="text-sm text-red-600 dark:text-red-400">{formError}</Text>
+        ) : null}
+        <PrimaryButton
+          label={submitting ? t('auth.submitting') : t('auth.registerCta')}
+          onPress={submit}
+        />
       </View>
 
-      <OrDivider />
-
-      <OAuthButton
-        provider={provider}
-        onPress={() =>
-          completeAndDismiss(provider === 'apple' ? signInWithApple : signInWithGoogle)
-        }
-      />
+      {!AUTH_ENABLED ? (
+        <>
+          <OrDivider />
+          <OAuthButton
+            provider={provider}
+            onPress={() => {
+              const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
+              action();
+              deferNavigation(() => router.back());
+            }}
+          />
+        </>
+      ) : null}
 
       <AuthSwitchLink
         prompt={t('auth.haveAccountPrompt')}
