@@ -1,80 +1,8 @@
-import { getAreas, getListing, getListings } from '../client';
-import { mockListings } from '../mocks';
+import { getAreas, getListings } from '../client';
 
-// ---- Mock-mode tests ----
-// By default USE_MOCKS is true when EXPO_PUBLIC_API_URL is empty.
-
-describe('client (mock mode)', () => {
-  describe('getListings', () => {
-    it('returns all mock listings when no query is given', async () => {
-      const listings = await getListings();
-      expect(listings).toHaveLength(mockListings.length);
-    });
-
-    it('filters by status', async () => {
-      const listings = await getListings({ status: 'for_sale' });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.status === 'for_sale')).toBe(true);
-    });
-
-    it('filters by minPrice', async () => {
-      const listings = await getListings({ minPrice: 1000000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.price >= 1000000)).toBe(true);
-    });
-
-    it('filters by maxPrice', async () => {
-      const listings = await getListings({ maxPrice: 600000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.price <= 600000)).toBe(true);
-    });
-
-    it('filters by price range', async () => {
-      const listings = await getListings({ minPrice: 500000, maxPrice: 700000 });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(listings.every((l) => l.price >= 500000 && l.price <= 700000)).toBe(true);
-    });
-
-    it('filters by case-insensitive search', async () => {
-      const listings = await getListings({ search: 'canal' });
-      expect(listings.length).toBeGreaterThan(0);
-      expect(
-        listings.every((l) => {
-          const haystack = `${l.title} ${l.address.line1} ${l.address.city}`.toLowerCase();
-          return haystack.includes('canal');
-        }),
-      ).toBe(true);
-    });
-
-    it('returns empty array when search matches nothing', async () => {
-      const listings = await getListings({ search: 'xyznonexistent' });
-      expect(listings).toEqual([]);
-    });
-  });
-
-  describe('getListing', () => {
-    it('returns the matching listing by id', async () => {
-      const listing = await getListing('lst_001');
-      expect(listing.id).toBe('lst_001');
-      expect(listing.title).toBe('Bright canal-side apartment');
-    });
-
-    it('throws when listing is not found', async () => {
-      await expect(getListing('nonexistent')).rejects.toThrow('not found');
-    });
-  });
-
-  describe('getAreas', () => {
-    it('returns an empty array when no backend is configured', async () => {
-      const areas = await getAreas();
-      expect(areas).toEqual([]);
-    });
-  });
-});
-
-// ---- API-mode tests ----
-// These tests need a fresh module graph with USE_MOCKS=false.
-// We use jest.mock to override the env module before client.ts imports it.
+// The client always talks to the real backend now (mocks have been removed).
+// These tests mock `fetch` so they exercise URL construction and the
+// residence → listing transform without a live API.
 
 describe('client (API mode)', () => {
   const mockResidences = [
@@ -131,7 +59,6 @@ describe('client (API mode)', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.mock('../env', () => ({
-      USE_MOCKS: false,
       API_BASE: 'https://api.example.com',
       API_URL: 'https://api.example.com',
     }));

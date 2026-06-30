@@ -29,7 +29,8 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build web export
-        run: EXPO_PUBLIC_USE_MOCKS=true bun run export:web
+        # Mocks have been removed; the export pulls live data from the staging API.
+        run: EXPO_PUBLIC_API_URL=https://api-staging.realty-ai.nl bun run export:web
 
       - name: Install Playwright
         run: bunx playwright install --with-deps chromium

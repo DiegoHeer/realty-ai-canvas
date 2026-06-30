@@ -3,7 +3,7 @@ name: android-release
 description: >-
   Build a signed Android release APK from apps/mobile/android and sideload it onto the
   connected device. Use when asked to "make a release build", produce an installable APK,
-  build against a specific API/env (e.g. staging with mocks off), or install/run a release
+  build against a specific API/env (e.g. staging), or install/run a release
   build on a phone. Covers the Gradle release build, the EXPO_PUBLIC_* bundle-caching trap,
   the debug-keystore signing caveat, and the adb sideload + launch flow.
 ---
@@ -26,7 +26,7 @@ minified, signed APK. Use `bun`/`bunx`, never `npm`/`npx` (project rule).
 | JDK | Java 21 (works) |
 | Build config | Hermes on, new arch on, all 4 ABIs (`reactNativeArchitectures` in `gradle.properties`) |
 | Release APK out | `apps/mobile/android/app/build/outputs/apk/release/app-release.apk` (universal, ~142 MB) |
-| Env source | `apps/mobile/.env.local` (gitignored) — `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_USE_MOCKS` |
+| Env source | `apps/mobile/.env.local` (gitignored) — `EXPO_PUBLIC_API_URL` |
 
 Re-derive if changed: `grep -E '"package"|"scheme"' apps/mobile/app.json`,
 `grep sdk.dir apps/mobile/android/local.properties`.
@@ -39,28 +39,22 @@ runs fine for **sideloading / QA / testing**, but it is **NOT Play-Store-uploada
 that needs a real upload keystore and a proper `release` signingConfig. Always state this
 when handing over a release build. Verify the signer with `apksigner` (step 4).
 
-## How env / mocks work — the build assumes staging + mocks off
+## How env works — the build needs a staging API URL
 
 `EXPO_PUBLIC_*` vars are **inlined into the JS bundle at build time** from `.env.local`.
-Unless the user says otherwise, **build against the staging API with mocks off** —
+There are **no mocks** — the app fetches all data from `EXPO_PUBLIC_API_URL`, so this must
+be set or the app renders empty. Unless the user says otherwise, **build against staging** —
 `apps/mobile/.env.local` should read:
 
 ```
 EXPO_PUBLIC_API_URL=https://api-staging.realty-ai.nl
-EXPO_PUBLIC_USE_MOCKS=false
 ```
 
-Data flow is gated by `API_URL`, **not** by `USE_MOCKS`:
-
-- `packages/data/src/env.ts`: `USE_LISTING_MOCKS = (API_URL === '')`. With `API_URL` set to
-  staging, listings (`/v1/residences`) hit the **live API**, and `/v1/shapes/*` + `/v1/stats/*`
-  have **no mock branch at all** — they always hit it.
-- `USE_MOCKS` is an **inert export** (only re-exported from `@realty/data`; no runtime
-  consumer — `client.ts` branches on `USE_LISTING_MOCKS`). Its value never changes app
-  behavior; we set it `false` purely so `.env.local` honestly reflects "talks to staging."
-- The **only** way to serve bundled mock data is to leave `API_URL` **empty** (that flips
-  `USE_LISTING_MOCKS` on — this is what the CI web export / visual-regression run relies on).
-  That is **not** the release-build default.
+- `packages/data/src/env.ts` exposes `API_URL` (and `API_BASE`). With it set to staging,
+  listings (`/v1/residences`), `/v1/shapes/*`, and `/v1/stats/*` all hit the **live API** —
+  there are no mock branches anywhere.
+- Leaving `API_URL` empty doesn't fall back to bundled data anymore: shapes/stats return
+  empty arrays and listings fail to fetch. Always point it at a real backend.
 
 If you change any `EXPO_PUBLIC_*` var, force a re-bundle (next section).
 
@@ -85,9 +79,8 @@ Native compilation (CMake, in `.cxx/` + `build/`) stays cached, so the rebuild i
 ## 1. Build the release APK
 
 ```bash
-# Standard data source = staging + mocks off. Confirm apps/mobile/.env.local reads:
+# Standard data source = staging. Confirm apps/mobile/.env.local reads:
 #   EXPO_PUBLIC_API_URL=https://api-staging.realty-ai.nl
-#   EXPO_PUBLIC_USE_MOCKS=false
 # If you changed any EXPO_PUBLIC_* var, force a re-bundle first (see trap above).
 
 cd apps/mobile/android
@@ -164,8 +157,7 @@ network/logs, use the `verifier-android` skill.
 
 ## Cleanup
 
-The assumed baseline for `apps/mobile/.env.local` is **staging + mocks off** (the two lines
-in the env section). If you temporarily changed it for a one-off build — pointed
-`EXPO_PUBLIC_API_URL` elsewhere, or emptied it to bundle offline mocks — **restore it to that
-baseline** afterward and tell the user. (Flipping `USE_MOCKS` does nothing; the real mock
-toggle is an empty `API_URL`.)
+The assumed baseline for `apps/mobile/.env.local` is **staging** (the line in the env
+section). If you temporarily changed it for a one-off build — pointed `EXPO_PUBLIC_API_URL`
+elsewhere — **restore it to that baseline** afterward and tell the user. Leaving `API_URL`
+empty no longer bundles offline data; it just leaves the app without data.

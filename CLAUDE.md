@@ -42,9 +42,9 @@ e2e/tests/                         # Playwright visual regression specs
 
 ### Visual regression
 
-- Web export is built with `EXPO_PUBLIC_USE_MOCKS=true` for deterministic screenshots.
+- Web export is built against the staging API (`EXPO_PUBLIC_API_URL=https://api-staging.realty-ai.nl`). Mocks have been removed, so listing screenshots reflect **live data** and are not fully deterministic — treat the data-driven specs (explore/map/listing-detail) as smoke checks and expect to regenerate their baselines.
 - Baselines live in `e2e/screenshots/` and are committed to git.
-- External images (Unsplash) are intercepted and replaced with empty responses for determinism.
+- External images are intercepted and replaced with empty responses to reduce variance.
 - After intentional UI changes, run `bun run test:update-snapshots` and commit the new baselines.
 
 ### Principle
