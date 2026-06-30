@@ -160,6 +160,24 @@ describe('use-auth (real mode)', () => {
     });
   });
 
+  it('register surfaces the email_taken code from a coded AuthError', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      jest
+        .spyOn(authData, 'signup')
+        .mockRejectedValue(new authData.AuthError('That email is already registered.', 'email_taken'));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { registerWithEmail, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await registerWithEmail({ name: 'Ada', email: 'ada@example.com', password: 'pw' });
+
+      expect(outcome).toEqual({ ok: false, code: 'email_taken' });
+      expect(getCurrentUser()).toBeNull();
+    });
+  });
+
   it('login surfaces the invalid_credentials code from a coded AuthError', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
