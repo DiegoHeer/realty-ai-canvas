@@ -48,17 +48,38 @@ describe('VerifyScreen', () => {
     expect(router.dismissAll).not.toHaveBeenCalled();
   });
 
-  it('verifies the code and dismisses the auth stack on success', async () => {
+  it('normalizes a typed code into allauth\'s XXXX-XXXX form and submits that', async () => {
+    const verifyEmail = jest.fn().mockResolvedValue({ ok: false, code: 'invalid_code' });
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({ verifyEmail });
+
+    const { getByTestId, getByPlaceholderText, getByDisplayValue } = await renderScreen('en');
+
+    // Lowercase + a stray dash; the field canonicalizes to ABCD-1234 as we type.
+    await typeInto(getByPlaceholderText('XXXX-XXXX'), 'abcd-1234');
+    expect(getByDisplayValue('ABCD-1234')).toBeTruthy();
+
+    await tap(getByTestId('auth-submit'));
+
+    await waitFor(() => expect(verifyEmail).toHaveBeenCalledWith('ABCD-1234'));
+  });
+
+  it('shows the success screen on a verified code, then Continue dismisses the auth stack', async () => {
     const { mockDismissAll } = require('../../../test-setup');
     const verifyEmail = jest.fn().mockResolvedValue({ ok: true });
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({ verifyEmail });
 
-    const { getByTestId, getByPlaceholderText } = await renderScreen('en');
+    const { getByTestId, getByPlaceholderText, findByText } = await renderScreen('en');
 
-    await typeInto(getByPlaceholderText('6-digit code'), '123456');
+    await typeInto(getByPlaceholderText('XXXX-XXXX'), 'ABCDEFGH');
     await tap(getByTestId('auth-submit'));
 
-    await waitFor(() => expect(verifyEmail).toHaveBeenCalledWith('123456'));
+    await waitFor(() => expect(verifyEmail).toHaveBeenCalledWith('ABCD-EFGH'));
+
+    // Success view replaces the form; the stack is NOT dismissed until Continue.
+    expect(await findByText('Email verified')).toBeOnTheScreen();
+    expect(mockDismissAll).not.toHaveBeenCalled();
+
+    await tap(getByTestId('auth-continue'));
     await waitFor(() => expect(mockDismissAll).toHaveBeenCalled());
   });
 
@@ -69,7 +90,7 @@ describe('VerifyScreen', () => {
 
     const { getByTestId, getByPlaceholderText, findByText } = await renderScreen('en');
 
-    await typeInto(getByPlaceholderText('6-digit code'), '000000');
+    await typeInto(getByPlaceholderText('XXXX-XXXX'), 'ZZZZZZZZ');
     fireEvent.press(getByTestId('auth-submit'));
 
     expect(await findByText('That code is invalid or expired.')).toBeOnTheScreen();
@@ -86,7 +107,7 @@ describe('VerifyScreen', () => {
 
     const { getByTestId, getByPlaceholderText, findByText } = await renderScreen('en');
 
-    await typeInto(getByPlaceholderText('6-digit code'), '000000');
+    await typeInto(getByPlaceholderText('XXXX-XXXX'), 'ZZZZZZZZ');
     fireEvent.press(getByTestId('auth-submit'));
 
     // code "invalid" on the "key" param resolves to the localized code-invalid copy.

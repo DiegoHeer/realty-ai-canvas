@@ -46,6 +46,24 @@ export function isValidEmail(email: string): boolean {
 }
 
 /**
+ * Normalize a typed/pasted code into the shape allauth emails: uppercase,
+ * alphanumerics only, capped at 8 chars, grouped as `XXXX-XXXX`. (Mirrors
+ * allauth's `generate_user_code` default — 8 chars, `dashed=True`, which stores
+ * and emails the dashed string.) Submitting the dashed form matches the stored
+ * code verbatim regardless of server-side normalization, so it's the robust
+ * thing to send; input stays lenient (lowercase, spaces, a missing/extra dash
+ * all collapse to the same canonical code). Shared by the email-verify and
+ * password-reset screens, which both take this code.
+ */
+export function formatVerificationCode(raw: string): string {
+  const cleaned = raw
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 8);
+  return cleaned.length > 4 ? `${cleaned.slice(0, 4)}-${cleaned.slice(4)}` : cleaned;
+}
+
+/**
  * Screen scaffold shared by the login and register screens: a keyboard-aware,
  * scrollable column with a heading, an optional subtitle, and the form content.
  * Background and insets match the other pushed screens (settings).
@@ -108,15 +126,46 @@ export function AuthField({
 }
 
 /** The screen's primary call-to-action (filled blue), matching the guest card. */
-export function PrimaryButton({ label, onPress }: { label: string; onPress: () => void }) {
+export function PrimaryButton({
+  label,
+  onPress,
+  testID = 'auth-submit',
+}: {
+  label: string;
+  onPress: () => void;
+  testID?: string;
+}) {
   return (
     <Pressable
-      testID="auth-submit"
+      testID={testID}
       onPress={onPress}
       accessibilityRole="button"
       className="items-center rounded-xl bg-blue-600 py-3.5 active:opacity-80">
       <Text className="text-base font-semibold text-white">{label}</Text>
     </Pressable>
+  );
+}
+
+/**
+ * Decorative green check on a tinted circle, shown on the success views (email
+ * verified, password reset). Hidden from the accessibility tree — the heading
+ * carries the meaning.
+ */
+export function SuccessBadge() {
+  return (
+    <View accessible={false} className="items-center py-2">
+      <View className="h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40">
+        <Svg width={40} height={40} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M20 6 9 17l-5-5"
+            stroke="#16a34a"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </View>
+    </View>
   );
 }
 

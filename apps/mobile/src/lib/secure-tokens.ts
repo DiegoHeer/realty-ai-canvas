@@ -21,6 +21,13 @@ const TOKENS_KEY = 'realty.tokens';
 // eviction would otherwise lose it and dead-end the verify screen.
 const PENDING_SESSION_KEY = 'realty.pending_session';
 
+// The allauth session token handed back by `password/request` while a reset is
+// pending. Persisted for the same reason as the verify token: reading the
+// emailed reset code usually means backgrounding the app, and an OS eviction
+// would otherwise lose it and dead-end the reset screen. Kept separate from the
+// verify token so a reset in progress never collides with a signup verification.
+const PENDING_RESET_KEY = 'realty.pending_reset';
+
 export async function loadTokens(): Promise<StoredTokens | null> {
   try {
     const raw = await SecureStore.getItemAsync(TOKENS_KEY);
@@ -68,6 +75,30 @@ export async function savePendingSession(token: string): Promise<void> {
 export async function clearPendingSession(): Promise<void> {
   try {
     await SecureStore.deleteItemAsync(PENDING_SESSION_KEY);
+  } catch {
+    // Best-effort.
+  }
+}
+
+export async function loadPendingReset(): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(PENDING_RESET_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export async function savePendingReset(token: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(PENDING_RESET_KEY, token);
+  } catch {
+    // Best-effort.
+  }
+}
+
+export async function clearPendingReset(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(PENDING_RESET_KEY);
   } catch {
     // Best-effort.
   }

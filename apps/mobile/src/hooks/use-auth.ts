@@ -10,16 +10,21 @@ import {
   logout as authLogout,
   queryClient,
   refresh as authRefresh,
+  requestPasswordReset as authRequestPasswordReset,
+  resetPassword as authResetPassword,
   signup as authSignup,
   verifyEmail as authVerifyEmail,
   type AllauthFieldError,
   type AuthUserDto,
 } from '@realty/data';
 import {
+  clearPendingReset,
   clearPendingSession,
   clearTokens,
+  loadPendingReset,
   loadPendingSession,
   loadTokens,
+  savePendingReset,
   savePendingSession,
   saveTokens,
 } from '@/lib/secure-tokens';
@@ -59,6 +64,8 @@ interface UseAuthReturn {
   signInWithEmail: (email: string, password?: string) => Promise<AuthOutcome>;
   registerWithEmail: (p: { name: string; email: string; password?: string }) => Promise<AuthOutcome>;
   verifyEmail: (code: string) => Promise<AuthOutcome>;
+  requestPasswordReset: (email: string) => Promise<AuthOutcome>;
+  resetPassword: (p: { code: string; password: string }) => Promise<AuthOutcome>;
   signOut: () => Promise<void>;
   signIn: () => void;
   signInWithGoogle: () => void;
@@ -73,6 +80,7 @@ let currentUser: AuthUser | null = null;
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
 let pendingSessionToken: string | null = null;
+let pendingResetToken: string | null = null;
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -196,6 +204,37 @@ async function realVerify(code: string): Promise<AuthOutcome> {
   }
 }
 
+/** Password reset step 1 (real): request the emailed code, stash the session token. */
+async function realRequestPasswordReset(email: string): Promise<AuthOutcome> {
+  try {
+    const { sessionToken } = await authRequestPasswordReset({ email: email.trim() });
+    pendingResetToken = sessionToken;
+    // Persist so the reset survives the app being backgrounded/evicted while the
+    // user fetches the emailed code (mirrors the verify session token).
+    await savePendingReset(sessionToken);
+    return { ok: true };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/** Password reset step 2 (real): submit code + new password; on success auto-signs in. */
+async function realResetPassword(code: string, password: string): Promise<AuthOutcome> {
+  // Fall back to the persisted token if the process was evicted since the request.
+  const sessionToken = pendingResetToken ?? (await loadPendingReset());
+  if (!sessionToken) return { ok: false, code: 'generic' };
+  pendingResetToken = sessionToken;
+  try {
+    const session = await authResetPassword({ code: code.trim(), password, sessionToken });
+    await applySession(toAuthUser(session.user), session.tokens);
+    pendingResetToken = null;
+    await clearPendingReset();
+    return { ok: true };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
 /** Interceptor refresh: rotate tokens, or tear down the session on failure. */
 async function realRefresh(): Promise<string | null> {
   if (!refreshToken) return null;
@@ -217,9 +256,11 @@ async function realSignOut(): Promise<void> {
   accessToken = null;
   refreshToken = null;
   pendingSessionToken = null;
+  pendingResetToken = null;
   emit();
   await clearTokens();
   await clearPendingSession();
+  await clearPendingReset();
   await removeKey(StorageKeys.session);
   queryClient.clear();
   if (token) {
@@ -304,6 +345,22 @@ function mockRegisterWithEmail(params: { name: string; email: string }) {
   mockSetSession({ name: params.name.trim(), email: params.email.trim() });
 }
 
+// The email captured during a mock password-reset request, so the reset step can
+// synthesize a session for it (the auto-login UX a real backend would return).
+let mockResetEmail: string | null = null;
+
+/** Password reset step 1 (mock): remember the email to sign in on reset. */
+function mockRequestPasswordReset(email: string) {
+  mockResetEmail = email.trim();
+}
+
+/** Password reset step 2 (mock): auto-sign-in the account whose reset was requested. */
+function mockResetPassword() {
+  const email = mockResetEmail ?? 'user@example.com';
+  mockSetSession({ name: nameFromEmail(email), email });
+  mockResetEmail = null;
+}
+
 /**
  * Google sign-in (mock). A real integration would launch the Google OAuth flow
  * (e.g. expo-auth-session) and exchange the result for a session; with no
@@ -374,6 +431,18 @@ export function verifyEmail(code: string): Promise<AuthOutcome> {
   return Promise.resolve({ ok: true });
 }
 
+export function requestPasswordReset(email: string): Promise<AuthOutcome> {
+  if (AUTH_ENABLED) return realRequestPasswordReset(email);
+  mockRequestPasswordReset(email);
+  return Promise.resolve({ ok: true });
+}
+
+export function resetPassword(p: { code: string; password: string }): Promise<AuthOutcome> {
+  if (AUTH_ENABLED) return realResetPassword(p.code, p.password);
+  mockResetPassword();
+  return Promise.resolve({ ok: true });
+}
+
 export function signOut(): Promise<void> {
   if (AUTH_ENABLED) return realSignOut();
   mockSignOut();
@@ -397,6 +466,8 @@ export function useAuth(): UseAuthReturn {
     signInWithEmail,
     registerWithEmail,
     verifyEmail,
+    requestPasswordReset,
+    resetPassword,
     signOut,
     // Social sign-in: no-ops in real mode (removed when backend OAuth lands); mock behavior in mock mode.
     signIn,

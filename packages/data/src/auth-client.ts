@@ -1,7 +1,18 @@
-import { API_BASE } from './env';
+import { API_URL } from './env';
 
-/** allauth headless app-client base (HEADLESS_CLIENTS=("app",)). */
-const AUTH_BASE = `${API_BASE}/_allauth/app/v1`;
+/**
+ * allauth headless app-client base (HEADLESS_CLIENTS=("app",)).
+ *
+ * Built from the absolute `API_URL` (EXPO_PUBLIC_API_URL), NOT the web-dev proxy
+ * (`API_BASE` → `/realty-api`, i.e. the localhost dev server). The proxy exists
+ * for the listings GETs and rewrites requests with a fixed header set, dropping
+ * the ones auth relies on (`Content-Type`, `X-Session-Token`, `Authorization`) —
+ * so signup/verify would hit `localhost` and silently fail. Talking to `API_URL`
+ * directly preserves those headers and reaches the real backend. On web this is a
+ * cross-origin call, so the backend's `_allauth` endpoints must send CORS headers
+ * for the dev origin.
+ */
+const AUTH_BASE = `${API_URL}/_allauth/app/v1`;
 
 export interface AuthUserDto {
   id: number;
@@ -169,6 +180,55 @@ export async function verifyEmail(input: {
   });
   // Stable code so the UI can localize this case; the message is dev-facing.
   // The structured errors[] are carried through for field-level rendering.
+  if (!env.meta?.is_authenticated) {
+    throw new AuthError(
+      env.errors?.[0]?.message ?? 'That code is invalid or expired.',
+      'invalid_code',
+      parseAllauthErrors(env),
+    );
+  }
+  return toSession(env);
+}
+
+/**
+ * Step 1 of password reset: ask allauth to email a reset code. The backend
+ * starts a pending reset flow and returns an AuthenticationResponse carrying a
+ * `meta.session_token` (HTTP 401 — the caller isn't authenticated yet, the token
+ * just tracks the in-progress reset). That token threads into the reset call,
+ * exactly like signup → verify. Returns the session token on success.
+ */
+export async function requestPasswordReset(input: { email: string }): Promise<{
+  sessionToken: string;
+}> {
+  const env = await call('/auth/password/request', {
+    method: 'POST',
+    body: JSON.stringify({ email: input.email }),
+  });
+  if (env.meta?.session_token) return { sessionToken: env.meta.session_token };
+  // No session token means the request itself was rejected (e.g. a malformed
+  // email); surface the backend's message + structured field errors.
+  throw firstError(env, 'Could not start the password reset.');
+}
+
+/**
+ * Step 2 of password reset: submit the emailed code + new password, carrying the
+ * session token from {@link requestPasswordReset} via `X-Session-Token` (mirrors
+ * email verification). On success allauth completes the flow and returns an
+ * authenticated session (access + refresh tokens), logging the user straight in.
+ */
+export async function resetPassword(input: {
+  code: string;
+  password: string;
+  sessionToken: string;
+}): Promise<AuthSession> {
+  const env = await call('/auth/password/reset', {
+    method: 'POST',
+    headers: { 'X-Session-Token': input.sessionToken },
+    body: JSON.stringify({ key: input.code, password: input.password }),
+  });
+  // Stable code so the UI can localize the bad-code case; the message is
+  // dev-facing. The structured errors[] (e.g. a `password` validator or a `key`
+  // error) are carried through for field-level rendering.
   if (!env.meta?.is_authenticated) {
     throw new AuthError(
       env.errors?.[0]?.message ?? 'That code is invalid or expired.',

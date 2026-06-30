@@ -86,6 +86,50 @@ export interface ChoroplethOptions {
   selectValue?: AreaStatSelector;
 }
 
+/** The sequential blue ramp (low→high value) for the given basemap theme. */
+export function rampFor(scheme: ChoroplethScheme): string[] {
+  return scheme === 'dark' ? RAMP_DARK : RAMP_LIGHT;
+}
+
+/** Resolve each area's statistic in order; missing entry/suppressed value → null. */
+function resolveValues(
+  areas: AreaPolygon[],
+  statsByCode: Map<string, NeighborhoodStats>,
+  selectValue: AreaStatSelector,
+): (number | null)[] {
+  return areas.map((area) => {
+    const stats = statsByCode.get(area.id);
+    return stats ? selectValue(stats) : null;
+  });
+}
+
+/** Min/max across the present (non-null) values, or null when there are none. */
+function domainOf(values: (number | null)[]): { min: number; max: number } | null {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const v of values) {
+    if (v == null) continue;
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  return Number.isFinite(min) ? { min, max } : null;
+}
+
+/**
+ * The value range the choropleth spans across `areas` (one municipality) for the
+ * chosen statistic — the same min→max {@link colorAreasByStat} shades against, so
+ * a legend built from it lines up with the map fill. Returns null when there's no
+ * spread to plot: no data, a single area, or every area equal.
+ */
+export function statDomain(
+  areas: AreaPolygon[],
+  statsByCode: Map<string, NeighborhoodStats>,
+  selectValue: AreaStatSelector = selectInhabitants,
+): { min: number; max: number } | null {
+  const domain = domainOf(resolveValues(areas, statsByCode, selectValue));
+  return domain && domain.max > domain.min ? domain : null;
+}
+
 /**
  * Return the areas with their `color` replaced by a choropleth fill: each
  * polygon shaded by its statistic relative to the min/max across the passed set
@@ -98,30 +142,20 @@ export function colorAreasByStat(
   statsByCode: Map<string, NeighborhoodStats>,
   { scheme, selectValue = selectInhabitants }: ChoroplethOptions,
 ): AreaPolygon[] {
-  const ramp = scheme === 'dark' ? RAMP_DARK : RAMP_LIGHT;
+  const ramp = rampFor(scheme);
   const noData = scheme === 'dark' ? NO_DATA_DARK : NO_DATA_LIGHT;
 
   // Resolve every area's value up front so min/max span the whole municipality.
-  const values = areas.map((area) => {
-    const stats = statsByCode.get(area.id);
-    return stats ? selectValue(stats) : null;
-  });
-
-  let min = Infinity;
-  let max = -Infinity;
-  for (const v of values) {
-    if (v == null) continue;
-    if (v < min) min = v;
-    if (v > max) max = v;
-  }
-  const span = max - min;
+  const values = resolveValues(areas, statsByCode, selectValue);
+  const domain = domainOf(values);
+  const span = domain ? domain.max - domain.min : 0;
 
   return areas.map((area, i) => {
     const v = values[i];
     if (v == null) return { ...area, color: noData };
     // A single value (or all-equal municipality) has no spread to show — sit at
     // the middle of the ramp rather than implying an extreme.
-    const t = span > 0 ? (v - min) / span : 0.5;
+    const t = span > 0 && domain ? (v - domain.min) / span : 0.5;
     return { ...area, color: interpolateRamp(ramp, t) };
   });
 }

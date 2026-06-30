@@ -12,7 +12,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
-import { clearPendingSession, clearTokens, loadTokens } from '@/lib/secure-tokens';
+import { clearPendingReset, clearPendingSession, clearTokens, loadTokens } from '@/lib/secure-tokens';
 import { useAuth } from '@/hooks/use-auth';
 import { StorageKeys } from '@/lib/storage';
 
@@ -115,6 +115,7 @@ describe('use-auth (real mode)', () => {
   afterEach(async () => {
     await clearTokens();
     await clearPendingSession();
+    await clearPendingReset();
     await AsyncStorage.clear();
     jest.restoreAllMocks();
   });
@@ -381,6 +382,77 @@ describe('use-auth (real mode)', () => {
       expect(outcome).toEqual({ ok: true });
       expect(authData.verifyEmail).toHaveBeenCalledWith({ code: '123456', sessionToken: 'ST-evicted' });
       expect(getCurrentUser()).toMatchObject({ email: 'ada@example.com' });
+    });
+  });
+
+  it('requestPasswordReset persists the pending reset token', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      jest.spyOn(authData, 'requestPasswordReset').mockResolvedValue({ sessionToken: 'RST-1' });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { requestPasswordReset } = require('@/hooks/use-auth');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { loadPendingReset } = require('@/lib/secure-tokens');
+
+      const outcome = await requestPasswordReset('ada@example.com');
+
+      expect(outcome).toEqual({ ok: true });
+      expect(authData.requestPasswordReset).toHaveBeenCalledWith({ email: 'ada@example.com' });
+      expect(await loadPendingReset()).toBe('RST-1');
+    });
+  });
+
+  it('resetPassword recovers the pending token, applies the session, and clears the token', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+
+      // Simulate a process restart: token persisted previously, in-memory state empty.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { savePendingReset } = require('@/lib/secure-tokens');
+      await savePendingReset('RST-evicted');
+
+      jest.spyOn(authData, 'resetPassword').mockResolvedValue({
+        user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' },
+        tokens: { accessToken: 'AT', refreshToken: 'RT' },
+      });
+      jest.spyOn(authData, 'logout').mockResolvedValue(undefined);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { resetPassword, getCurrentUser } = require('@/hooks/use-auth');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { loadPendingReset } = require('@/lib/secure-tokens');
+
+      const outcome = await resetPassword({ code: 'ABCD-EFGH', password: 'newpw1234' });
+
+      expect(outcome).toEqual({ ok: true });
+      expect(authData.resetPassword).toHaveBeenCalledWith({
+        code: 'ABCD-EFGH',
+        password: 'newpw1234',
+        sessionToken: 'RST-evicted',
+      });
+      expect(getCurrentUser()).toMatchObject({ name: 'Ada Lovelace', email: 'ada@example.com' });
+      expect(await loadTokens()).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
+      // The pending reset token is consumed (cleared) on success.
+      expect(await loadPendingReset()).toBeNull();
+    });
+  });
+
+  it('resetPassword returns generic when there is no pending reset token', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      const resetSpy = jest.spyOn(authData, 'resetPassword');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { resetPassword } = require('@/hooks/use-auth');
+
+      const outcome = await resetPassword({ code: 'ABCD-EFGH', password: 'newpw1234' });
+
+      expect(outcome).toEqual({ ok: false, code: 'generic' });
+      expect(resetSpy).not.toHaveBeenCalled();
     });
   });
 });

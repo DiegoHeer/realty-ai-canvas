@@ -2,7 +2,7 @@ import { initI18n } from '@realty/i18n';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { I18nextProvider } from 'react-i18next';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 import ProfileScreen from '@/app/(tabs)/profile';
 import { signIn, signOut } from '@/hooks/use-auth';
@@ -92,4 +92,63 @@ describe('ProfileScreen', () => {
     expect(confirm?.text).toBe('Sign out');
     expect(confirm?.onPress).toBe(signOut);
   });
+
+  // On web, react-native-web's Alert.alert is a no-op — the dialog never
+  // renders and sign-out can never be confirmed (the original bug). The screen
+  // falls back to the browser's window.confirm there. We drive Platform.OS to
+  // 'web' and stub window.confirm because the jest env defines window but not
+  // confirm; both are restored afterward so other tests stay on iOS.
+  function withWebConfirm(result: boolean, run: (confirmSpy: jest.Mock) => Promise<void>) {
+    return async () => {
+      const originalOS = Platform.OS;
+      const originalConfirm = window.confirm;
+      const confirmSpy = jest.fn(() => result);
+      // @ts-expect-error override the platform for this test
+      Platform.OS = 'web';
+      window.confirm = confirmSpy;
+      try {
+        await run(confirmSpy);
+      } finally {
+        // @ts-expect-error restore the platform
+        Platform.OS = originalOS;
+        window.confirm = originalConfirm;
+      }
+    };
+  }
+
+  it(
+    'on web, confirms via window.confirm and signs out when accepted',
+    withWebConfirm(true, async (confirmSpy) => {
+      const { getByText, queryByText } = await renderScreen('en');
+
+      await act(async () => {
+        fireEvent.press(getByText('Sign out'));
+      });
+
+      // The browser confirm is shown with both localized lines…
+      expect(confirmSpy).toHaveBeenCalledTimes(1);
+      expect(confirmSpy.mock.calls[0][0]).toContain('Sign out?');
+      expect(confirmSpy.mock.calls[0][0]).toContain('Are you sure you want to sign out?');
+
+      // …and accepting it actually signs the user out, so the button is gone
+      // and the guest call-to-action takes its place.
+      expect(queryByText('Sign out')).toBeNull();
+      expect(queryByText('Log in')).toBeTruthy();
+    }),
+  );
+
+  it(
+    'on web, does not sign out when the confirm is dismissed',
+    withWebConfirm(false, async (confirmSpy) => {
+      const { getByText, queryByText } = await renderScreen('en');
+
+      await act(async () => {
+        fireEvent.press(getByText('Sign out'));
+      });
+
+      expect(confirmSpy).toHaveBeenCalledTimes(1);
+      // Dismissing leaves the session intact — the button is still on screen.
+      expect(queryByText('Sign out')).toBeTruthy();
+    }),
+  );
 });

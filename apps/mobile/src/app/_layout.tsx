@@ -122,6 +122,14 @@ export default function RootLayout() {
                 name="auth/verify"
                 options={{ headerShown: true, title: t('auth.verifyTitle') }}
               />
+              <Stack.Screen
+                name="auth/forgot-password"
+                options={{ headerShown: true, title: t('auth.forgotTitle') }}
+              />
+              <Stack.Screen
+                name="auth/reset-password"
+                options={{ headerShown: true, title: t('auth.resetTitle') }}
+              />
             </Stack>
           </ThemeProvider>
         </DataProvider>

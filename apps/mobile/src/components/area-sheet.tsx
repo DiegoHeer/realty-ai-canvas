@@ -4,10 +4,12 @@
    the same value is also written in an effect. */
 import { useTranslation } from '@realty/i18n';
 import type { AreaPolygon, NeighborhoodStats } from '@realty/types';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Extrapolation,
+  interpolate,
   runOnJS,
   useAnimatedProps,
   useAnimatedScrollHandler,
@@ -18,10 +20,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AreaLegend, type AreaLegendData } from '@/components/area-legend';
 import { AreaStats } from '@/components/area-stats';
 
 const SPRING = { damping: 24, stiffness: 220, mass: 0.7 } as const;
 const CLOSE_DURATION = 220;
+// Gap between the legend's bottom edge and the sheet's top edge at peek.
+const LEGEND_GAP = 10;
 
 export interface AreaSheetProps {
   /** The area to show. When null the sheet is hidden. */
@@ -30,6 +35,11 @@ export interface AreaSheetProps {
   stats?: NeighborhoodStats | null;
   /** Municipality the area belongs to, prefixed to its name (e.g. "Den Haag · Singels"). */
   municipality?: string;
+  /**
+   * Choropleth scale to show above the sheet at peek (with `value` marking the
+   * selected area). Null hides the legend — e.g. no spread across the municipality.
+   */
+  legend?: AreaLegendData | null;
   /** Called once the sheet has fully dismissed (dragged off the bottom). */
   onClose: () => void;
 }
@@ -48,7 +58,7 @@ export interface AreaSheetProps {
  *
  * Requires a `GestureHandlerRootView` ancestor (provided at the app root).
  */
-export function AreaSheet({ area, stats, municipality, onClose }: AreaSheetProps) {
+export function AreaSheet({ area, stats, municipality, legend, onClose }: AreaSheetProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
@@ -61,10 +71,24 @@ export function AreaSheet({ area, stats, municipality, onClose }: AreaSheetProps
   const translateY = useSharedValue(offscreenY);
   const startY = useSharedValue(offscreenY);
   const scrollY = useSharedValue(0);
+  // Measured legend height, so it can be anchored just above the sheet's top
+  // edge. Seeded with an estimate; corrected on first layout.
+  const legendH = useSharedValue(84);
 
-  // Slide up from the bottom whenever a new area is selected.
+  // Tracks whether the sheet is currently open, so the entrance animation can
+  // tell a fresh open (closed → open) apart from switching areas (open → open).
+  const isOpenRef = useRef(false);
+
+  // Slide up from the bottom only when the sheet first opens. Picking a different
+  // area while it's already open just swaps the content in place at the sheet's
+  // current position — replaying the entrance animation on every switch is jarring.
   useEffect(() => {
-    if (!area) return;
+    if (!area) {
+      isOpenRef.current = false;
+      return;
+    }
+    if (isOpenRef.current) return;
+    isOpenRef.current = true;
     translateY.value = offscreenY;
     translateY.value = withSpring(collapsedY, SPRING);
     // collapsedY/offscreenY derive from screen size; re-running on area change is enough.
@@ -131,6 +155,19 @@ export function AreaSheet({ area, stats, municipality, onClose }: AreaSheetProps
     transform: [{ translateY: translateY.value }],
   }));
 
+  // The legend rides just above the sheet's top edge and shares its motion:
+  // fully shown at peek, fading to 0 as the sheet expands toward full screen (and
+  // fading back in 0→1 as it slides up from off screen, so it never flashes).
+  const legendStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      translateY.value,
+      [expandedY/5 + collapsedY/5*4 , collapsedY, (collapsedY + offscreenY) / 2],
+      [0, 1, 0],
+      Extrapolation.CLAMP,
+    ),
+    transform: [{ translateY: translateY.value - legendH.value - LEGEND_GAP }],
+  }));
+
   if (!area) return null;
 
   // Prefix the neighborhood name with its municipality, e.g. "Den Haag · Singels".
@@ -172,6 +209,16 @@ export function AreaSheet({ area, stats, municipality, onClose }: AreaSheetProps
           </View>
         </Animated.View>
       </GestureDetector>
+      {legend ? (
+        <Animated.View
+          pointerEvents="none"
+          onLayout={(e) => {
+            legendH.value = e.nativeEvent.layout.height;
+          }}
+          style={[styles.legend, legendStyle]}>
+          <AreaLegend min={legend.min} max={legend.max} value={legend.value} ramp={legend.ramp} />
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -186,6 +233,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
+  },
+  legend: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
   },
   scroll: {
     flex: 1,

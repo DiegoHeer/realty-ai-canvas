@@ -1,4 +1,13 @@
-import { AuthError, login, parseAllauthErrors, signup, verifyEmail, refresh } from '../auth-client';
+import {
+  AuthError,
+  login,
+  parseAllauthErrors,
+  requestPasswordReset,
+  resetPassword,
+  signup,
+  verifyEmail,
+  refresh,
+} from '../auth-client';
 
 function mockFetch(status: number, body: unknown) {
   global.fetch = jest.fn().mockResolvedValue({
@@ -116,6 +125,71 @@ describe('auth-client', () => {
       fieldErrors: [
         { code: 'password_too_similar', param: 'password' },
       ],
+    });
+  });
+
+  it('requestPasswordReset returns the session token from the pending (401) flow', async () => {
+    mockFetch(401, {
+      status: 401,
+      data: { flows: [{ id: 'password_reset_by_code', is_pending: true }] },
+      meta: { is_authenticated: false, session_token: 'RST' },
+    });
+    const result = await requestPasswordReset({ email: 'ada@example.com' });
+    expect(result).toEqual({ sessionToken: 'RST' });
+    const call = (global.fetch as jest.Mock).mock.calls[0];
+    expect(call[0]).toMatch(/\/auth\/password\/request$/);
+    expect(JSON.parse(call[1].body)).toEqual({ email: 'ada@example.com' });
+  });
+
+  it('requestPasswordReset throws AuthError when the request is rejected (no session token)', async () => {
+    mockFetch(400, {
+      status: 400,
+      errors: [{ message: 'Enter a valid email address.', code: 'invalid', param: 'email' }],
+    });
+    await expect(requestPasswordReset({ email: 'bad' })).rejects.toMatchObject({
+      name: 'AuthError',
+      fieldErrors: [{ message: 'Enter a valid email address.', code: 'invalid', param: 'email' }],
+    });
+  });
+
+  it('resetPassword sends the session token + key/password and returns an authenticated session', async () => {
+    mockFetch(200, {
+      status: 200,
+      data: { user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' } },
+      meta: { is_authenticated: true, access_token: 'AT3', refresh_token: 'RT3' },
+    });
+    const session = await resetPassword({ code: 'ABCD-EFGH', password: 'newpw1234', sessionToken: 'RST' });
+    expect(session.tokens).toEqual({ accessToken: 'AT3', refreshToken: 'RT3' });
+    const call = (global.fetch as jest.Mock).mock.calls[0];
+    expect(call[0]).toMatch(/\/auth\/password\/reset$/);
+    expect(call[1].headers['X-Session-Token']).toBe('RST');
+    expect(JSON.parse(call[1].body)).toEqual({ key: 'ABCD-EFGH', password: 'newpw1234' });
+  });
+
+  it('resetPassword throws AuthError "invalid_code" carrying the key field error on a bad code', async () => {
+    mockFetch(400, {
+      status: 400,
+      errors: [{ message: 'Invalid or expired key.', code: 'invalid', param: 'key' }],
+    });
+    await expect(
+      resetPassword({ code: '0000-0000', password: 'newpw1234', sessionToken: 'RST' }),
+    ).rejects.toMatchObject({
+      name: 'AuthError',
+      code: 'invalid_code',
+      fieldErrors: [{ message: 'Invalid or expired key.', code: 'invalid', param: 'key' }],
+    });
+  });
+
+  it('resetPassword carries a password-validator field error from the 400 body', async () => {
+    mockFetch(400, {
+      status: 400,
+      errors: [{ message: 'This password is too short.', code: 'password_too_short', param: 'password' }],
+    });
+    await expect(
+      resetPassword({ code: 'ABCD-EFGH', password: 'short', sessionToken: 'RST' }),
+    ).rejects.toMatchObject({
+      name: 'AuthError',
+      fieldErrors: [{ code: 'password_too_short', param: 'password' }],
     });
   });
 });
