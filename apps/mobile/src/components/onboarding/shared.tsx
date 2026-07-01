@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Animated, Pressable, ScrollView, Text, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { useEffectiveColorScheme } from '@/components/map-style';
@@ -63,14 +63,19 @@ export function OnboardingHeader({
   );
 }
 
-/** Row of progress dots; the active page's dot is elongated and brand-blue. */
+/**
+ * Row of progress dots; the active page's dot is elongated and brand-blue.
+ * `progress` is the pager's continuous position in page units (scroll x /
+ * page width), so each dot's width and colour interpolate live mid-swipe
+ * instead of snapping when a page settles.
+ */
 export function ProgressDots({
   count,
-  index,
+  progress,
   label,
 }: {
   count: number;
-  index: number;
+  progress: Animated.AnimatedInterpolation<number> | Animated.Value;
   label: string;
 }) {
   const isDark = useEffectiveColorScheme() === 'dark';
@@ -78,13 +83,21 @@ export function ProgressDots({
   return (
     <View className="flex-row items-center gap-2" accessibilityLabel={label}>
       {Array.from({ length: count }).map((_, i) => (
-        <View
+        <Animated.View
           key={i}
           style={{
-            width: i === index ? 22 : 8,
+            width: progress.interpolate({
+              inputRange: [i - 1, i, i + 1],
+              outputRange: [8, 22, 8],
+              extrapolate: 'clamp',
+            }),
             height: 8,
             borderRadius: 4,
-            backgroundColor: i === index ? Brand.blue : inactive,
+            backgroundColor: progress.interpolate({
+              inputRange: [i - 1, i, i + 1],
+              outputRange: [inactive, Brand.blue, inactive],
+              extrapolate: 'clamp',
+            }),
           }}
         />
       ))}

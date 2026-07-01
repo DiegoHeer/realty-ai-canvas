@@ -4,6 +4,7 @@ import { initI18n } from '@realty/i18n';
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { I18nextProvider } from 'react-i18next';
+import { Dimensions } from 'react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
 
 import OnboardingScreen from '@/app/onboarding';
@@ -76,6 +77,47 @@ describe('OnboardingScreen', () => {
 
     // Final page: the primary action becomes "Get started".
     expect(getByText('Get started')).toBeTruthy();
+  });
+
+  it('flips one page per tap on the left/right page edges, ignoring the middle', async () => {
+    const { getByTestId, getByLabelText, queryByTestId } = await renderScreen('en');
+    const width = Dimensions.get('window').width;
+
+    // Taps are throttled so a burst can't skip pages; step the clock past the
+    // throttle window between taps.
+    let clock = 1_000_000;
+    const nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => clock);
+    const tapAt = async (cell: number, fraction: number) => {
+      clock += 1000;
+      await act(async () => {
+        fireEvent.press(getByTestId(`onboarding-page-${cell}`), {
+          nativeEvent: { pageX: width * fraction },
+        });
+      });
+    };
+
+    try {
+      // A tap on the right third advances one page.
+      await tapAt(0, 0.8);
+      expect(getByTestId('onboarding-back')).toBeTruthy();
+      expect(getByLabelText('Step 2 of 5')).toBeTruthy();
+
+      // A second tap inside the throttle window is swallowed (no page skip).
+      clock += 100 - 1000;
+      await tapAt(1, 0.8); // tapAt adds 1000 → net +100ms since the last tap
+      expect(getByLabelText('Step 2 of 5')).toBeTruthy();
+
+      // The middle third is a dead zone (reserved for page content).
+      await tapAt(1, 0.5);
+      expect(getByLabelText('Step 2 of 5')).toBeTruthy();
+
+      // A tap on the left third goes back.
+      await tapAt(1, 0.2);
+      expect(queryByTestId('onboarding-back')).toBeNull();
+      expect(getByLabelText('Step 1 of 5')).toBeTruthy();
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 
   it('goes back to the previous page with the Back button', async () => {
