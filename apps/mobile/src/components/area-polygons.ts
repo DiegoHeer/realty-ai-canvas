@@ -91,12 +91,5 @@ export function selectedFilter(selectedId: string): FilterSpecification {
   return ['==', ['get', 'id'], selectedId];
 }
 
-/**
- * Where a selected area's center should sit on screen, as a fraction from the
- * top (0.4 = two-fifths down). Horizontally it stays centered. Shared by both
- * map implementations so the framing matches.
- */
-export const AREA_FOCUS_ANCHOR_Y = 0.4;
-
 // The layer to insert the polygons below lives in `map-style.ts` as
 // `polygonsBeforeId` — it depends on the active basemap.

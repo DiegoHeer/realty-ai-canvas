@@ -155,17 +155,11 @@ export default function MapScreen() {
 
   // Selecting an area and a listing are mutually exclusive — the area sheet and
   // the listing card both anchor to the bottom, so showing one dismisses the other.
-  const handleSelectPolygon = useCallback(
-    (id: string) => {
-      setSelectedAreaId(id);
-      setSelectedId(null);
-      // Pan (no zoom) so the area sits two-fifths down, clear of the sheet below.
-      const area = areas.find((a) => a.id === id);
-      const center = area ? areasCenter([area]) : null;
-      if (center) mapRef.current?.focusArea(center);
-    },
-    [areas],
-  );
+  // The camera deliberately stays put — selection must not pan the map.
+  const handleSelectPolygon = useCallback((id: string) => {
+    setSelectedAreaId(id);
+    setSelectedId(null);
+  }, []);
 
   // Find which city a coordinate lands in and switch to it (loading its
   // neighborhoods). A hit on the already-selected city is a no-op (its own
