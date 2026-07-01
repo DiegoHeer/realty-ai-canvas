@@ -152,17 +152,22 @@ describe('auth-client', () => {
     });
   });
 
-  it('resetPassword sends the session token + key/password and returns an authenticated session', async () => {
-    mockFetch(200, {
-      status: 200,
-      data: { user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' } },
-      meta: { is_authenticated: true, access_token: 'AT3', refresh_token: 'RT3' },
+  it('resetPassword succeeds on an unauthenticated 401 with no errors (reset-by-code does not log in)', async () => {
+    // allauth reset-by-code changes the password but does not authenticate, so a
+    // successful reset comes back as an unauthenticated 401 with the flow done
+    // and no errors[]. This must NOT be treated as a failure.
+    mockFetch(401, {
+      status: 401,
+      data: { flows: [{ id: 'password_reset_by_code', is_pending: false }] },
+      meta: { is_authenticated: false },
     });
-    const session = await resetPassword({ code: 'ABCD-EFGH', password: 'newpw1234', sessionToken: 'RST' });
-    expect(session.tokens).toEqual({ accessToken: 'AT3', refreshToken: 'RT3' });
+    await expect(
+      resetPassword({ code: 'ABCD-EFGH', password: 'newpw1234', sessionToken: 'RST' }),
+    ).resolves.toBeUndefined();
     const call = (global.fetch as jest.Mock).mock.calls[0];
     expect(call[0]).toMatch(/\/auth\/password\/reset$/);
     expect(call[1].headers['X-Session-Token']).toBe('RST');
+    // Body is {key, password} — no email; the session token identifies the account.
     expect(JSON.parse(call[1].body)).toEqual({ key: 'ABCD-EFGH', password: 'newpw1234' });
   });
 

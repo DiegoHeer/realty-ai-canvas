@@ -80,17 +80,33 @@ export async function clearPendingSession(): Promise<void> {
   }
 }
 
-export async function loadPendingReset(): Promise<string | null> {
+/**
+ * A pending password reset: the allauth session token tracking the flow plus the
+ * account email. Both are needed to complete the reset — the backend's
+ * `password/reset` requires the email alongside the code + new password — so they
+ * are persisted together and survive the app being evicted while the user fetches
+ * the emailed code.
+ */
+export interface PendingReset {
+  sessionToken: string;
+  email: string;
+}
+
+export async function loadPendingReset(): Promise<PendingReset | null> {
   try {
-    return await SecureStore.getItemAsync(PENDING_RESET_KEY);
+    const raw = await SecureStore.getItemAsync(PENDING_RESET_KEY);
+    if (raw == null) return null;
+    const parsed = JSON.parse(raw) as Partial<PendingReset>;
+    if (!parsed.sessionToken || !parsed.email) return null;
+    return { sessionToken: parsed.sessionToken, email: parsed.email };
   } catch {
     return null;
   }
 }
 
-export async function savePendingReset(token: string): Promise<void> {
+export async function savePendingReset(pending: PendingReset): Promise<void> {
   try {
-    await SecureStore.setItemAsync(PENDING_RESET_KEY, token);
+    await SecureStore.setItemAsync(PENDING_RESET_KEY, JSON.stringify(pending));
   } catch {
     // Best-effort.
   }

@@ -81,6 +81,7 @@ let accessToken: string | null = null;
 let refreshToken: string | null = null;
 let pendingSessionToken: string | null = null;
 let pendingResetToken: string | null = null;
+let pendingResetEmail: string | null = null;
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -204,30 +205,48 @@ async function realVerify(code: string): Promise<AuthOutcome> {
   }
 }
 
-/** Password reset step 1 (real): request the emailed code, stash the session token. */
+/** Password reset step 1 (real): request the emailed code, stash the session token + email. */
 async function realRequestPasswordReset(email: string): Promise<AuthOutcome> {
+  const trimmedEmail = email.trim();
   try {
-    const { sessionToken } = await authRequestPasswordReset({ email: email.trim() });
+    const { sessionToken } = await authRequestPasswordReset({ email: trimmedEmail });
     pendingResetToken = sessionToken;
-    // Persist so the reset survives the app being backgrounded/evicted while the
-    // user fetches the emailed code (mirrors the verify session token).
-    await savePendingReset(sessionToken);
+    pendingResetEmail = trimmedEmail;
+    // Persist both so the reset survives the app being backgrounded/evicted while
+    // the user fetches the emailed code — the reset call (step 2) needs the email
+    // too, not just the session token.
+    await savePendingReset({ sessionToken, email: trimmedEmail });
     return { ok: true };
   } catch (error) {
     return failure(error);
   }
 }
 
-/** Password reset step 2 (real): submit code + new password; on success auto-signs in. */
+/** Password reset step 2 (real): change the password, then sign in with it (auto-login). */
 async function realResetPassword(code: string, password: string): Promise<AuthOutcome> {
-  // Fall back to the persisted token if the process was evicted since the request.
-  const sessionToken = pendingResetToken ?? (await loadPendingReset());
-  if (!sessionToken) return { ok: false, code: 'generic' };
+  // Recover the session token + email from memory, falling back to the persisted
+  // store if the process was evicted since the request. The token completes the
+  // reset; the email signs the user in afterwards.
+  let sessionToken = pendingResetToken;
+  let email = pendingResetEmail;
+  if (!sessionToken || !email) {
+    const stored = await loadPendingReset();
+    sessionToken = sessionToken ?? stored?.sessionToken ?? null;
+    email = email ?? stored?.email ?? null;
+  }
+  if (!sessionToken || !email) return { ok: false, code: 'generic' };
   pendingResetToken = sessionToken;
+  pendingResetEmail = email;
   try {
-    const session = await authResetPassword({ code: code.trim(), password, sessionToken });
+    await authResetPassword({ code: code.trim(), password, sessionToken });
+    // Reset-by-code changes the password but does NOT authenticate (the backend's
+    // ACCOUNT_LOGIN_ON_PASSWORD_RESET is off), so sign in with the new
+    // credentials to land the user in the app — the auto-login UX. This also
+    // confirms the reset actually took effect.
+    const session = await authLogin({ email, password });
     await applySession(toAuthUser(session.user), session.tokens);
     pendingResetToken = null;
+    pendingResetEmail = null;
     await clearPendingReset();
     return { ok: true };
   } catch (error) {
@@ -257,6 +276,7 @@ async function realSignOut(): Promise<void> {
   refreshToken = null;
   pendingSessionToken = null;
   pendingResetToken = null;
+  pendingResetEmail = null;
   emit();
   await clearTokens();
   await clearPendingSession();

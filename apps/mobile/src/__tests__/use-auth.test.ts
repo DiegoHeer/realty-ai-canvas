@@ -400,22 +400,27 @@ describe('use-auth (real mode)', () => {
 
       expect(outcome).toEqual({ ok: true });
       expect(authData.requestPasswordReset).toHaveBeenCalledWith({ email: 'ada@example.com' });
-      expect(await loadPendingReset()).toBe('RST-1');
+      // Both the session token and the email are persisted (the reset needs both).
+      expect(await loadPendingReset()).toEqual({ sessionToken: 'RST-1', email: 'ada@example.com' });
     });
   });
 
-  it('resetPassword recovers the pending token, applies the session, and clears the token', async () => {
+  it('resetPassword recovers the token + email, resets, then signs in with the new password', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const authData = require('@realty/data');
       Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
 
-      // Simulate a process restart: token persisted previously, in-memory state empty.
+      // Simulate a process restart: token + email persisted previously (during the
+      // request step), in-memory state empty.
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { savePendingReset } = require('@/lib/secure-tokens');
-      await savePendingReset('RST-evicted');
+      await savePendingReset({ sessionToken: 'RST-evicted', email: 'ada@example.com' });
 
-      jest.spyOn(authData, 'resetPassword').mockResolvedValue({
+      // Reset-by-code changes the password but does NOT authenticate (resolves void).
+      jest.spyOn(authData, 'resetPassword').mockResolvedValue(undefined);
+      // The hook then signs in with the new credentials to establish the session.
+      jest.spyOn(authData, 'login').mockResolvedValue({
         user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' },
         tokens: { accessToken: 'AT', refreshToken: 'RT' },
       });
@@ -428,15 +433,42 @@ describe('use-auth (real mode)', () => {
       const outcome = await resetPassword({ code: 'ABCD-EFGH', password: 'newpw1234' });
 
       expect(outcome).toEqual({ ok: true });
+      // Reset sends just the code + password + session token (no email).
       expect(authData.resetPassword).toHaveBeenCalledWith({
         code: 'ABCD-EFGH',
         password: 'newpw1234',
         sessionToken: 'RST-evicted',
       });
+      // Then it logs in with the recovered email + the new password (auto-login).
+      expect(authData.login).toHaveBeenCalledWith({ email: 'ada@example.com', password: 'newpw1234' });
       expect(getCurrentUser()).toMatchObject({ name: 'Ada Lovelace', email: 'ada@example.com' });
       expect(await loadTokens()).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
-      // The pending reset token is consumed (cleared) on success.
+      // The pending reset (token + email) is consumed (cleared) on success.
       expect(await loadPendingReset()).toBeNull();
+    });
+  });
+
+  it('resetPassword fails if the post-reset sign-in fails', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { savePendingReset } = require('@/lib/secure-tokens');
+      await savePendingReset({ sessionToken: 'RST', email: 'ada@example.com' });
+
+      jest.spyOn(authData, 'resetPassword').mockResolvedValue(undefined);
+      jest
+        .spyOn(authData, 'login')
+        .mockRejectedValue(new authData.AuthError('Invalid email or password.', 'invalid_credentials'));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { resetPassword, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await resetPassword({ code: 'ABCD-EFGH', password: 'newpw1234' });
+
+      expect(outcome).toEqual({ ok: false, code: 'invalid_credentials' });
+      expect(getCurrentUser()).toBeNull();
     });
   });
 

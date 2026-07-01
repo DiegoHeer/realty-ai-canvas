@@ -211,32 +211,40 @@ export async function requestPasswordReset(input: { email: string }): Promise<{
 }
 
 /**
- * Step 2 of password reset: submit the emailed code + new password, carrying the
- * session token from {@link requestPasswordReset} via `X-Session-Token` (mirrors
- * email verification). On success allauth completes the flow and returns an
- * authenticated session (access + refresh tokens), logging the user straight in.
+ * Step 2 of password reset: submit the emailed `code` (`key`) and the new
+ * `password`, carrying the session token from {@link requestPasswordReset} via
+ * `X-Session-Token` (mirrors email verification).
+ *
+ * IMPORTANT: allauth's reset-by-code changes the password but does NOT log the
+ * user in (`ACCOUNT_LOGIN_ON_PASSWORD_RESET` is off on the backend). So a
+ * *successful* reset returns an unauthenticated `401` AuthenticationResponse
+ * with the flow completed and NO `errors[]` — it is NOT a failure. Only a bad or
+ * expired code, or a rejected password, comes back as a `400` carrying
+ * `errors[]`. We therefore key success off the absence of errors, not off
+ * `is_authenticated`. Resolves on success; the caller signs in separately to
+ * establish a session. (`email` is deliberately not sent — the backend's reset
+ * input is `{key, password}`; the session token identifies the account.)
  */
 export async function resetPassword(input: {
   code: string;
   password: string;
   sessionToken: string;
-}): Promise<AuthSession> {
+}): Promise<void> {
   const env = await call('/auth/password/reset', {
     method: 'POST',
     headers: { 'X-Session-Token': input.sessionToken },
     body: JSON.stringify({ key: input.code, password: input.password }),
   });
-  // Stable code so the UI can localize the bad-code case; the message is
-  // dev-facing. The structured errors[] (e.g. a `password` validator or a `key`
-  // error) are carried through for field-level rendering.
-  if (!env.meta?.is_authenticated) {
+  // A rejected code/password carries structured errors[] (HTTP 400); surface
+  // them (with the stable `invalid_code` fallback) for field-level UI. No
+  // errors means the reset took — even though the response is unauthenticated.
+  if (env.errors?.length) {
     throw new AuthError(
-      env.errors?.[0]?.message ?? 'That code is invalid or expired.',
+      env.errors[0]?.message ?? 'That code is invalid or expired.',
       'invalid_code',
       parseAllauthErrors(env),
     );
   }
-  return toSession(env);
 }
 
 export async function getSession(accessToken: string): Promise<AuthUserDto> {
