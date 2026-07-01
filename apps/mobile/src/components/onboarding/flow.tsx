@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
-  Easing,
   Platform,
   Pressable,
   Text,
@@ -71,9 +70,9 @@ function compactEuro(v: number): string {
  * anchors into place via `pagingEnabled`, and one swipe never skips past the
  * adjacent page) or by tapping the left/right edge of a page — there is no
  * per-page Continue; the last page carries the single finishing action. The
- * dots track the live scroll position, so they morph mid-swipe; a page's
- * content floats up into view on arrival, and a page left idle briefly nudges
- * sideways to hint at swiping. The
+ * dots track the live scroll position, so they morph mid-swipe; each page's
+ * content fades up in step with how much of the page is scrolled into view,
+ * and a page left idle briefly nudges sideways to hint at swiping. The
  * user's buy/rent + price choices and selected cities are staged locally and
  * only applied on finish — committing the filters to the live store and asking
  * the map to focus the first city — so nothing changes under the user mid-tour.
@@ -190,47 +189,36 @@ export function OnboardingFlow() {
     if (index >= PAGE_COUNT - 1) return; // nothing to peek at past the last page
     peekTimer.current = setTimeout(() => {
       peekTimer.current = null;
+      // JS driver (also on native): peekX feeds the entranceProgress graph
+      // below alongside the JS-driven scrollX, and a native-driven value
+      // wouldn't update its JS-side consumers mid-animation.
       Animated.sequence([
         Animated.timing(peekX, {
           toValue: -PEEK_DISTANCE,
           duration: 320,
-          useNativeDriver: Platform.OS !== 'web',
+          useNativeDriver: false,
         }),
         Animated.delay(140),
         Animated.spring(peekX, {
           toValue: 0,
           friction: 6,
-          useNativeDriver: Platform.OS !== 'web',
+          useNativeDriver: false,
         }),
       ]).start();
     }, PEEK_DELAY_MS);
     return cancelPeek;
   }, [index, peekX, cancelPeek]);
 
-  // Float-in on arrival: the current page's content fades up (opacity with a
-  // small translateY) every time it becomes the current page — including the
-  // first page on mount. One value per page so leaving and returning replays
-  // the entrance while neighbours stay fully visible when peeked or swiped
-  // past. Leaving mid-entrance snaps the old page back to its rest state so a
-  // later peek can't reveal it half-faded.
-  const [pageAnims] = useState(() =>
-    Array.from({ length: PAGE_COUNT }, () => new Animated.Value(1)),
+  // Float-in tied to the scroll, not to arrival: each page's content fades up
+  // (opacity + a small translateY) in proportion to how much of the page is in
+  // view, so a swipe reveals it progressively and scrubbing back and forth
+  // scrubs the animation too. The basis subtracts the peek offset (peekX is
+  // negative while nudging), so the sliver the idle hint exposes also fades in
+  // as it comes into view. Pure interpolation — no timers, nothing to cancel.
+  const entranceProgress = useMemo(
+    () => Animated.divide(Animated.subtract(scrollX, peekX), pageWidthAnim),
+    [scrollX, peekX, pageWidthAnim],
   );
-  useEffect(() => {
-    const anim = pageAnims[index];
-    anim.setValue(0);
-    const entrance = Animated.timing(anim, {
-      toValue: 1,
-      duration: 450,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: Platform.OS !== 'web',
-    });
-    entrance.start();
-    return () => {
-      entrance.stop();
-      anim.setValue(1);
-    };
-  }, [index, pageAnims]);
 
   // Story-style tap navigation: a tap on the left/right third of a page flips
   // one page back/forward. The tap zone sits *behind* the page content —
@@ -505,12 +493,17 @@ export function OnboardingFlow() {
                   <Animated.View
                     style={{
                       flex: 1,
-                      opacity: pageAnims[i],
+                      opacity: entranceProgress.interpolate({
+                        inputRange: [i - 1, i, i + 1],
+                        outputRange: [0, 1, 0],
+                        extrapolate: 'clamp',
+                      }),
                       transform: [
                         {
-                          translateY: pageAnims[i].interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [24, 0],
+                          translateY: entranceProgress.interpolate({
+                            inputRange: [i - 1, i, i + 1],
+                            outputRange: [24, 0, 24],
+                            extrapolate: 'clamp',
                           }),
                         },
                       ],
