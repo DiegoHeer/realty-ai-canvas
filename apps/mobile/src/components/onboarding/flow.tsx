@@ -1,8 +1,17 @@
 import { useCityNames } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { PanResponder, Pressable, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  Platform,
+  Pressable,
+  Text,
+  View,
+  type GestureResponderEvent,
+  type ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FilterSection, SelectPills } from '@/components/filter-controls';
@@ -33,6 +42,20 @@ import { useAuth } from '@/hooks/use-auth';
 
 const PAGE_COUNT = 5;
 
+/** How long a page must sit idle before the swipe-hint nudge plays. */
+const PEEK_DELAY_MS = 7000;
+/** How far the pages slide over to let the next page peek in. */
+const PEEK_DISTANCE = 56;
+/** Taps closer together than this collapse into one page flip. */
+const TAP_THROTTLE_MS = 350;
+
+// Web only: marks each page cell so global.css can put scroll-snap-stop on its
+// snap wrapper — the CSS equivalent of `disableIntervalMomentum`
+// (react-native-web has no momentum to disable, but browsers honour
+// scroll-snap-stop, and RNW strips it from inline styles).
+const webSnapStopMarker =
+  Platform.OS === 'web' ? ({ dataSet: { pagesnap: 'always' } } as Record<string, unknown>) : null;
+
 /** Compact euro label for the price summary: €1450 / €675k / €1.2M. */
 function compactEuro(v: number): string {
   if (v >= 1_000_000) return `€${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`;
@@ -41,14 +64,19 @@ function compactEuro(v: number): string {
 }
 
 /**
- * The intro tour: five swipeable pages with a progress indicator, a per-page
- * Continue/Back, and a "Skip tour" shortcut. One page shows at a time; a left/
- * right swipe (PanResponder) or the Continue/Back buttons flip between them. The
- * user's buy/rent + price choices and selected cities are staged locally and only
- * applied on finish — committing
- * the filters to the live store and asking the map to focus the first city — so
- * nothing changes under the user mid-tour. Skipping (or finishing) marks the tour
- * done so it never auto-shows again.
+ * The intro tour: five pages laid out side-by-side in one horizontal, paging
+ * ScrollView, a "Skip tour" shortcut on top, and a bottom bar holding Back and
+ * the progress dots. The user moves through the tour by swiping (each page
+ * anchors into place via `pagingEnabled`, and one swipe never skips past the
+ * adjacent page) or by tapping the left/right edge of a page — there is no
+ * per-page Continue; the last page carries the single finishing action. The
+ * dots track the live scroll position, so they morph mid-swipe; each page's
+ * content fades up in step with how much of the page is scrolled into view,
+ * and a page left idle briefly nudges sideways to hint at swiping. The
+ * user's buy/rent + price choices and selected cities are staged locally and
+ * only applied on finish — committing the filters to the live store and asking
+ * the map to focus the first city — so nothing changes under the user mid-tour.
+ * Skipping (or finishing) marks the tour done so it never auto-shows again.
  */
 export function OnboardingFlow() {
   const { t } = useTranslation();
@@ -78,45 +106,179 @@ export function OnboardingFlow() {
     );
   }, []);
 
-  // A thumb drag on the price slider must not also page the tour sideways.
-  const pagerEnabledRef = useRef(true);
+  // Pager geometry, measured by onLayout. Deliberately starts at 0 — the same
+  // value the static web export renders on the server — so hydration matches
+  // and the 0 → real-width state change re-renders (and actually patches) the
+  // cells. Seeding from Dimensions here breaks the exported site: the client
+  // state then equals what onLayout measures, React bails out, and the
+  // server's width-0 markup stays on screen forever.
+  const [pageWidth, setPageWidth] = useState(0);
+  const pageWidthRef = useRef(pageWidth);
+  useEffect(() => {
+    pageWidthRef.current = pageWidth;
+  }, [pageWidth]);
+  // For gesture math before onLayout has fired (and in Jest, where layout
+  // events never fire), fall back to the window width.
+  const pagerWidth = useCallback(
+    () => pageWidthRef.current || Dimensions.get('window').width || 1,
+    [],
+  );
+
+  // Live scroll offset, and the same value in page units (offset / page width)
+  // for the progress dots to interpolate against. Held in state, not refs, so
+  // they're never read during render (mirrors components/range-slider.tsx).
+  const scrollRef = useRef<ScrollView>(null);
+  const [scrollX] = useState(() => new Animated.Value(0));
+  const [pageWidthAnim] = useState(() => new Animated.Value(Math.max(1, pageWidth)));
+  useEffect(() => {
+    pageWidthAnim.setValue(Math.max(1, pageWidth));
+  }, [pageWidth, pageWidthAnim]);
+  const progress = useMemo(() => Animated.divide(scrollX, pageWidthAnim), [scrollX, pageWidthAnim]);
+
+  // A thumb drag on the price slider must not also drag the pager sideways.
+  const [pagerEnabled, setPagerEnabled] = useState(true);
 
   const goTo = useCallback(
     (next: number) => {
       const clamped = Math.max(0, Math.min(PAGE_COUNT - 1, next));
+      indexRef.current = clamped; // sync now — the effect above lags a render
       setIndex(clamped);
       setOnboardingPage(clamped);
+      scrollRef.current?.scrollTo({ x: clamped * pagerWidth(), animated: true });
     },
-    [setOnboardingPage],
+    [setOnboardingPage, pagerWidth],
   );
-  const goToRef = useRef(goTo);
-  useEffect(() => {
-    goToRef.current = goTo;
-  }, [goTo]);
 
-  // Swipe paging. We render one page at a time inside a PanResponder rather than
-  // a measured-width horizontal ScrollView: a left/right swipe past a threshold
-  // flips the page, exactly like Back/Continue. This avoids depending on viewport
-  // measurement (which hydrates as 0 on web) and keeps every page full-bleed via
-  // flex. A horizontal swipe only claims the gesture when it clearly beats
-  // vertical movement, so a page's own vertical scroll still works.
-  //
-  // The responder is built in an effect and held in state (mirrors
-  // components/range-slider.tsx) so the refs it closes over are only read off the
-  // render path.
-  const [pan, setPan] = useState<ReturnType<typeof PanResponder.create> | null>(null);
+  // Track which page a swipe lands on. Only offsets *at rest on a page anchor*
+  // count — mid-flight values (button animations, momentum) are ignored, so
+  // `index` can't flicker while a scroll is in motion. Settling is detectable
+  // without a momentum-end event (react-native-web has none): the native pager
+  // and CSS snap both always come to rest exactly on an anchor.
   useEffect(() => {
-    setPan(
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_e, g) =>
-          pagerEnabledRef.current && Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-        onPanResponderRelease: (_e, g) => {
-          if (g.dx <= -50) goToRef.current(indexRef.current + 1);
-          else if (g.dx >= 50) goToRef.current(indexRef.current - 1);
-        },
-      }),
-    );
-  }, []);
+    const id = scrollX.addListener(({ value }) => {
+      const width = pagerWidth();
+      const nearest = Math.max(0, Math.min(PAGE_COUNT - 1, Math.round(value / width)));
+      if (Math.abs(value - nearest * width) > 2) return; // still in motion
+      if (nearest !== indexRef.current) {
+        indexRef.current = nearest;
+        setIndex(nearest);
+        setOnboardingPage(nearest);
+      }
+    });
+    return () => scrollX.removeListener(id);
+  }, [scrollX, setOnboardingPage, pagerWidth]);
+
+  // Idle swipe hint: 7 s after landing on a page (bar the last), slide the
+  // pages over so the next one peeks in, then spring back. The nudge is a
+  // translateX on the page cells — not a scroll — so it can't disturb the
+  // scroll position or the settle tracking above. One nudge per page visit;
+  // touching the pager (or starting a slider drag) cancels it.
+  const [peekX] = useState(() => new Animated.Value(0));
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelPeek = useCallback(() => {
+    if (peekTimer.current !== null) {
+      clearTimeout(peekTimer.current);
+      peekTimer.current = null;
+    }
+    // Snap straight back rather than animating: this also runs as effect
+    // cleanup on unmount, where starting a new animation would throw.
+    peekX.stopAnimation();
+    peekX.setValue(0);
+  }, [peekX]);
+  useEffect(() => {
+    if (index >= PAGE_COUNT - 1) return; // nothing to peek at past the last page
+    peekTimer.current = setTimeout(() => {
+      peekTimer.current = null;
+      // JS driver (also on native): peekX feeds the entranceProgress graph
+      // below alongside the JS-driven scrollX, and a native-driven value
+      // wouldn't update its JS-side consumers mid-animation.
+      Animated.sequence([
+        Animated.timing(peekX, {
+          toValue: -PEEK_DISTANCE,
+          duration: 320,
+          useNativeDriver: false,
+        }),
+        Animated.delay(140),
+        Animated.spring(peekX, {
+          toValue: 0,
+          friction: 6,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    }, PEEK_DELAY_MS);
+    return cancelPeek;
+  }, [index, peekX, cancelPeek]);
+
+  // Float-in tied to the scroll, not to arrival: each page's content fades up
+  // (opacity + a small translateY) in proportion to how much of the page is in
+  // view, so a swipe reveals it progressively and scrubbing back and forth
+  // scrubs the animation too. The basis subtracts the peek offset (peekX is
+  // negative while nudging), so the sliver the idle hint exposes also fades in
+  // as it comes into view. Pure interpolation — no timers, nothing to cancel.
+  const entranceProgress = useMemo(
+    () => Animated.divide(Animated.subtract(scrollX, peekX), pageWidthAnim),
+    [scrollX, peekX, pageWidthAnim],
+  );
+
+  // Story-style tap navigation: a tap on the left/right third of a page flips
+  // one page back/forward. The tap zone sits *behind* the page content —
+  // buttons, pills, inputs and the slider claim their touches first, so only
+  // taps on passive areas navigate. Taps are throttled so a burst (an eager
+  // double-tap, or web dispatching pointer+click for one gesture) can never
+  // flip more than one page.
+  const lastTapAt = useRef(0);
+  const onPageTap = useCallback(
+    (e: GestureResponderEvent) => {
+      const now = Date.now();
+      if (now - lastTapAt.current < TAP_THROTTLE_MS) return;
+      // Web only: a click on an interactive element (the city search input, a
+      // slider thumb, a role-less pressable like the search-clear ✕) bubbles
+      // to this handler even though the responder path excludes it on native —
+      // walk the DOM path and skip anything interactive between the click
+      // target and the page cell. Interactive means a form control tag, an
+      // actionable ARIA role, or an *explicit* tabindex — the tabIndex
+      // property is useless here because Chrome reflects 0 for any scrollable
+      // container (the page body itself).
+      if (Platform.OS === 'web') {
+        const INTERACTIVE_TAGS = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'];
+        const INTERACTIVE_ROLES = ['button', 'slider', 'link', 'textbox', 'checkbox', 'switch'];
+        let node = e.target as unknown as HTMLElement | null;
+        const root = e.currentTarget as unknown as HTMLElement;
+        while (node && node !== root && typeof node.tagName === 'string') {
+          const role = node.getAttribute?.('role');
+          if (
+            INTERACTIVE_TAGS.includes(node.tagName) ||
+            (role != null && INTERACTIVE_ROLES.includes(role)) ||
+            (node.hasAttribute?.('tabindex') && node.tabIndex >= 0)
+          ) {
+            return;
+          }
+          node = node.parentElement;
+        }
+      }
+      const width = pagerWidth();
+      // Some web press paths deliver coordinates on changedTouches instead.
+      const x = e.nativeEvent.pageX ?? e.nativeEvent.changedTouches?.[0]?.pageX;
+      if (typeof x !== 'number') return;
+      // Only navigate (and arm the throttle) when there's somewhere to go.
+      if (x < width / 3 && indexRef.current > 0) {
+        lastTapAt.current = now;
+        goTo(indexRef.current - 1);
+      } else if (x > (width * 2) / 3 && indexRef.current < PAGE_COUNT - 1) {
+        lastTapAt.current = now;
+        goTo(indexRef.current + 1);
+      }
+    },
+    [goTo, pagerWidth],
+  );
+
+  // Park the pager on the current page whenever the page width changes: places
+  // the resume page once the first layout lands and keeps the offset in sync
+  // across web resizes / device rotation (offsets scale with width).
+  useEffect(() => {
+    if (pageWidth <= 0) return; // not measured yet
+    scrollRef.current?.scrollTo({ x: indexRef.current * pageWidth, animated: false });
+  }, [pageWidth]);
 
   function leaveToApp() {
     // Defer the navigation one frame: committing global state and popping the
@@ -149,8 +311,6 @@ export function OnboardingFlow() {
     price[0] === null && price[1] === null
       ? t('filtersPage.any')
       : `${compactEuro(priceValues[0])} – ${compactEuro(priceValues[1])}`;
-
-  const isLast = index === PAGE_COUNT - 1;
 
   const pages = [
     <OnboardingPage key="welcome">
@@ -215,10 +375,15 @@ export function OnboardingFlow() {
             setPrice([lo <= priceCfg.min ? null : lo, hi >= priceCfg.max ? null : hi])
           }
           onDragStart={() => {
-            pagerEnabledRef.current = false;
+            cancelPeek();
+            setPagerEnabled(false);
+            // A grab of a thumb also emits a click on web — swallow it so
+            // fiddling with the slider can't tap-navigate the pager.
+            lastTapAt.current = Date.now();
           }}
           onDragEnd={() => {
-            pagerEnabledRef.current = true;
+            setPagerEnabled(true);
+            lastTapAt.current = Date.now();
           }}
         />
       </FilterSection>
@@ -239,10 +404,17 @@ export function OnboardingFlow() {
         subtitle={t('onboarding.account.subtitle')}
       />
       {isAuthenticated && user ? (
-        <View className="items-center rounded-2xl bg-blue-50 p-4 dark:bg-blue-950">
-          <Text className="text-base font-medium text-blue-700 dark:text-blue-300">
-            {t('onboarding.account.signedInAs', { name: user.name })}
-          </Text>
+        <View className="gap-3">
+          <View className="items-center rounded-2xl bg-blue-50 p-4 dark:bg-blue-950">
+            <Text className="text-base font-medium text-blue-700 dark:text-blue-300">
+              {t('onboarding.account.signedInAs', { name: user.name })}
+            </Text>
+          </View>
+          <PrimaryButton
+            testID="onboarding-get-started"
+            label={t('onboarding.getStarted')}
+            onPress={finish}
+          />
         </View>
       ) : (
         <View className="gap-3">
@@ -260,6 +432,15 @@ export function OnboardingFlow() {
               {t('onboarding.account.logIn')}
             </Text>
           </Pressable>
+          <Pressable
+            testID="onboarding-get-started"
+            onPress={finish}
+            accessibilityRole="button"
+            className="items-center py-3.5 active:opacity-60">
+            <Text className="text-base font-medium text-neutral-500 dark:text-neutral-400">
+              {t('onboarding.account.getStartedWithoutAccount')}
+            </Text>
+          </Pressable>
         </View>
       )}
     </OnboardingPage>,
@@ -268,39 +449,92 @@ export function OnboardingFlow() {
   return (
     <View className="flex-1 bg-white dark:bg-black">
       <SafeAreaView edges={['top', 'bottom']} className="flex-1">
-        {/* Top bar: centered progress dots with a persistent "Skip tour". */}
-        <View className="h-12 flex-row items-center justify-between px-4">
-          <View className="flex-1" />
+        {/* Top bar: just the persistent "Skip tour". */}
+        <View className="h-12 flex-row items-center justify-end px-4">
+          <TextButton testID="skip-tour" label={t('onboarding.skipTour')} onPress={skip} />
+        </View>
+
+        {/* The pager: all pages side-by-side, one viewport wide each, snapping
+            page-by-page. Swipes and the Back/Continue buttons drive the same
+            scroll position. */}
+        <View
+          className="flex-1"
+          onLayout={(e) => setPageWidth(e.nativeEvent.layout.width)}>
+          <Animated.ScrollView
+            ref={scrollRef}
+            style={{ flex: 1 }}
+            horizontal
+            pagingEnabled
+            // A single fling stops at the adjacent page instead of skipping
+            // ahead (iOS/Android; the web pendant is `webSnapStop` per cell).
+            disableIntervalMomentum
+            scrollEnabled={pagerEnabled}
+            showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            scrollEventThrottle={16}
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+              useNativeDriver: false,
+            })}
+            onTouchStart={cancelPeek}
+            onScrollBeginDrag={cancelPeek}>
+            {pages.map((page, i) => (
+              <Animated.View
+                key={i}
+                {...webSnapStopMarker}
+                // height 100%: on web the cell sits inside RNW's stretched
+                // snap wrapper and would otherwise collapse to its content's
+                // height, leaving the tap zones covering only part of the page.
+                style={{ width: pageWidth, height: '100%', transform: [{ translateX: peekX }] }}>
+                <Pressable
+                  testID={`onboarding-page-${i}`}
+                  accessible={false}
+                  onPress={onPageTap}
+                  style={{ flex: 1 }}>
+                  <Animated.View
+                    style={{
+                      flex: 1,
+                      opacity: entranceProgress.interpolate({
+                        inputRange: [i - 1, i, i + 1],
+                        outputRange: [0, 1, 0],
+                        extrapolate: 'clamp',
+                      }),
+                      transform: [
+                        {
+                          translateY: entranceProgress.interpolate({
+                            inputRange: [i - 1, i, i + 1],
+                            outputRange: [24, 0, 24],
+                            extrapolate: 'clamp',
+                          }),
+                        },
+                      ],
+                    }}>
+                    {page}
+                  </Animated.View>
+                </Pressable>
+              </Animated.View>
+            ))}
+          </Animated.ScrollView>
+        </View>
+
+        {/* Bottom bar: Back (after the first page) on the left with the
+            progress dots centred. Pages advance by swiping or edge-tapping;
+            the last page carries the single finishing action. */}
+        <View className="h-16 flex-row items-center px-4">
+          <View className="flex-1 items-start">
+            {index > 0 ? (
+              <TextButton
+                testID="onboarding-back"
+                label={t('onboarding.back')}
+                onPress={() => goTo(index - 1)}
+              />
+            ) : null}
+          </View>
           <ProgressDots
             count={PAGE_COUNT}
-            index={index}
+            progress={progress}
             label={t('onboarding.stepOf', { current: index + 1, total: PAGE_COUNT })}
           />
-          <View className="flex-1 items-end">
-            <TextButton testID="skip-tour" label={t('onboarding.skipTour')} onPress={skip} />
-          </View>
-        </View>
-
-        <View className="flex-1" {...(pan?.panHandlers ?? {})}>
-          {pages[index]}
-        </View>
-
-        {/* Bottom bar: Back (after the first page) + Continue / Get started. */}
-        <View className="h-16 flex-row items-center justify-between px-4">
-          {index > 0 ? (
-            <TextButton
-              testID="onboarding-back"
-              label={t('onboarding.back')}
-              onPress={() => goTo(index - 1)}
-            />
-          ) : (
-            <View />
-          )}
-          <PrimaryButton
-            testID="onboarding-next"
-            label={isLast ? t('onboarding.getStarted') : t('onboarding.continue')}
-            onPress={() => (isLast ? finish() : goTo(index + 1))}
-          />
+          <View className="flex-1" />
         </View>
       </SafeAreaView>
     </View>

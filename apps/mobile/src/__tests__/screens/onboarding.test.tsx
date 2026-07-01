@@ -4,6 +4,7 @@ import { initI18n } from '@realty/i18n';
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { I18nextProvider } from 'react-i18next';
+import { Dimensions } from 'react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
 
 import OnboardingScreen from '@/app/onboarding';
@@ -32,10 +33,29 @@ async function tap(element: ReactTestInstance) {
   });
 }
 
-/** Advance from the first page to the last (4 Continue presses). */
+// There is no Continue button — pages advance by tapping the left/right third
+// of the current page. Taps are throttled on Date.now, so the mocked clock
+// steps past the throttle window before every tap.
+let clock = 0;
+let nowSpy: ReturnType<typeof jest.spyOn> | undefined;
+
+async function tapPage(
+  getByTestId: (id: string) => ReactTestInstance,
+  cell: number,
+  fraction: number,
+) {
+  clock += 1000;
+  await act(async () => {
+    fireEvent.press(getByTestId(`onboarding-page-${cell}`), {
+      nativeEvent: { pageX: Dimensions.get('window').width * fraction },
+    });
+  });
+}
+
+/** Advance from the first page to the last (4 right-edge taps). */
 async function advanceToLastPage(getByTestId: (id: string) => ReactTestInstance) {
   for (let i = 0; i < 4; i++) {
-    await tap(getByTestId('onboarding-next'));
+    await tapPage(getByTestId, i, 0.8);
   }
 }
 
@@ -46,6 +66,12 @@ beforeEach(async () => {
   resetFilters();
   signOut();
   clearMapFocus();
+  clock = 1_000_000;
+  nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => clock) as ReturnType<typeof jest.spyOn>;
+});
+
+afterEach(() => {
+  nowSpy?.mockRestore();
 });
 
 afterEach(() => {
@@ -53,35 +79,61 @@ afterEach(() => {
 });
 
 describe('OnboardingScreen', () => {
-  it('opens on the welcome page with skip + continue and no back button', async () => {
+  it('opens on the welcome page with skip and no back button or Continue', async () => {
     const { getByText, getByTestId, queryByTestId } = await renderScreen('en');
 
     expect(getByText('Welcome to Realty AI Canvas')).toBeTruthy();
     expect(getByTestId('skip-tour')).toBeTruthy();
-    expect(getByTestId('onboarding-next')).toBeTruthy();
+    // Navigation is swipe/tap-only — there is no per-page Continue button.
+    expect(queryByTestId('onboarding-next')).toBeNull();
     // The first page has nothing to go back to.
     expect(queryByTestId('onboarding-back')).toBeNull();
   });
 
-  it('advances through the pages and shows "Get started" on the last one', async () => {
-    const { getByText, getByTestId } = await renderScreen('en');
+  it('advances through the pages; the last one carries the finishing action', async () => {
+    const { getByText, getByTestId, getByLabelText } = await renderScreen('en');
 
-    await tap(getByTestId('onboarding-next'));
+    await tapPage(getByTestId, 0, 0.8);
     // Back appears once we've left the first page.
     expect(getByTestId('onboarding-back')).toBeTruthy();
 
-    await tap(getByTestId('onboarding-next'));
-    await tap(getByTestId('onboarding-next'));
-    await tap(getByTestId('onboarding-next'));
+    await tapPage(getByTestId, 1, 0.8);
+    await tapPage(getByTestId, 2, 0.8);
+    await tapPage(getByTestId, 3, 0.8);
 
-    // Final page: the primary action becomes "Get started".
-    expect(getByText('Get started')).toBeTruthy();
+    // Final page: the single finishing action (no account yet → the
+    // account-less variant).
+    expect(getByLabelText('Step 5 of 5')).toBeTruthy();
+    expect(getByText('Get started without account')).toBeTruthy();
+  });
+
+  it('flips one page per tap on the left/right page edges, ignoring the middle', async () => {
+    const { getByTestId, getByLabelText, queryByTestId } = await renderScreen('en');
+
+    // A tap on the right third advances one page.
+    await tapPage(getByTestId, 0, 0.8);
+    expect(getByTestId('onboarding-back')).toBeTruthy();
+    expect(getByLabelText('Step 2 of 5')).toBeTruthy();
+
+    // A second tap inside the throttle window is swallowed (no page skip).
+    clock -= 900; // tapPage adds 1000 → net +100ms since the last tap
+    await tapPage(getByTestId, 1, 0.8);
+    expect(getByLabelText('Step 2 of 5')).toBeTruthy();
+
+    // The middle third is a dead zone (reserved for page content).
+    await tapPage(getByTestId, 1, 0.5);
+    expect(getByLabelText('Step 2 of 5')).toBeTruthy();
+
+    // A tap on the left third goes back.
+    await tapPage(getByTestId, 1, 0.2);
+    expect(queryByTestId('onboarding-back')).toBeNull();
+    expect(getByLabelText('Step 1 of 5')).toBeTruthy();
   });
 
   it('goes back to the previous page with the Back button', async () => {
     const { getByTestId, queryByTestId } = await renderScreen('en');
 
-    await tap(getByTestId('onboarding-next'));
+    await tapPage(getByTestId, 0, 0.8);
     expect(getByTestId('onboarding-back')).toBeTruthy();
 
     await tap(getByTestId('onboarding-back'));
@@ -122,9 +174,9 @@ describe('OnboardingScreen', () => {
     const { getByTestId } = await renderScreen('en');
 
     // Walk to the cities step (welcome → features → filters → cities).
-    await tap(getByTestId('onboarding-next'));
-    await tap(getByTestId('onboarding-next'));
-    await tap(getByTestId('onboarding-next'));
+    await tapPage(getByTestId, 0, 0.8);
+    await tapPage(getByTestId, 1, 0.8);
+    await tapPage(getByTestId, 2, 0.8);
 
     // Search the full list and select Amsterdam (code 0363).
     await act(async () => {
@@ -133,9 +185,9 @@ describe('OnboardingScreen', () => {
     await waitFor(() => expect(getByTestId('city-result-0363')).toBeTruthy());
     await tap(getByTestId('city-result-0363'));
 
-    // Continue to the account step, then finish.
-    await tap(getByTestId('onboarding-next'));
-    await tap(getByTestId('onboarding-next')); // "Get started" → finish
+    // On to the account step, then finish without an account.
+    await tapPage(getByTestId, 3, 0.8);
+    await tap(getByTestId('onboarding-get-started'));
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
 

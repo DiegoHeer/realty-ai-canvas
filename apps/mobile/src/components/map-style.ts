@@ -1,5 +1,12 @@
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
-import { useColorScheme } from 'react-native';
+
+// The two-phase hook, not RN's raw one: on the static web export the server
+// renders light, and raw useColorScheme reports 'dark' from the very first
+// client render — hydration then adopts the server's light inline styles while
+// the virtual tree already says dark, so nothing ever patches them. The
+// two-phase hook returns 'light' during hydration and flips after mount,
+// which re-renders every consumer with changed values and repairs the DOM.
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 import { useAppearance } from '../lib/appearance';
 import darkStyle from './dark-style.json';

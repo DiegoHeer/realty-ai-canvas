@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* One fling never skips a page in the onboarding pager. The snap cells are
+   react-native-web's pagingEnabled wrapper divs (the parents of our marked
+   page views); RNW strips scroll-snap-stop from inline styles, so the rule
+   lives here. See components/onboarding/flow.tsx. */
+div:has(> [data-pagesnap='always']) {
+  scroll-snap-stop: always;
+}
+
 :root {
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,

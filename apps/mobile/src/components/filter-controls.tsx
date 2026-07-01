@@ -66,8 +66,13 @@ export function SelectPills({
             key={opt.key}
             accessibilityRole="button"
             accessibilityState={{ selected: active, disabled }}
-            disabled={disabled}
-            onPress={() => onToggle(opt.key)}
+            // A no-op press instead of `disabled`: a disabled Pressable gives
+            // the touch up entirely, letting it fall through to whatever sits
+            // behind the pill (e.g. the onboarding pager's tap-to-navigate
+            // zones). Swallow it here so tapping a dimmed pill does nothing.
+            onPress={() => {
+              if (!disabled) onToggle(opt.key);
+            }}
             style={{
               backgroundColor: bg,
               borderColor: active ? bg : borderColor,
@@ -77,7 +82,7 @@ export function SelectPills({
               flexBasis: stretch ? 0 : 'auto',
               alignItems: stretch ? 'center' : undefined,
             }}
-            className="rounded-full px-4 py-2 active:opacity-80">
+            className={disabled ? 'rounded-full px-4 py-2' : 'rounded-full px-4 py-2 active:opacity-80'}>
             <Text style={{ color: fg }} className="text-base font-medium">
               {opt.label}
             </Text>
