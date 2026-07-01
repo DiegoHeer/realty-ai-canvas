@@ -351,7 +351,8 @@
       "subtitle": "Create an account to save homes, searches and your cities — or skip for now.",
       "createAccount": "Create account",
       "logIn": "Log in",
-      "signedInAs": "Signed in as {{name}}"
+      "signedInAs": "Signed in as {{name}}",
+      "getStartedWithoutAccount": "Get started without account"
     }
   }
 }

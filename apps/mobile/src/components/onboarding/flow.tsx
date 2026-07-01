@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
+  Easing,
   Platform,
   Pressable,
   Text,
@@ -65,12 +66,14 @@ function compactEuro(v: number): string {
 
 /**
  * The intro tour: five pages laid out side-by-side in one horizontal, paging
- * ScrollView, with a progress indicator, a per-page Continue/Back, and a "Skip
- * tour" shortcut. The user swipes freely between pages (each page anchors into
- * place via `pagingEnabled`, and one swipe never skips past the adjacent page),
- * taps the left/right edge of a page, or uses the buttons — all of which drive
- * the same scroll position; the progress dots track it live, so they morph
- * mid-swipe. A page left idle briefly nudges sideways to hint at swiping. The
+ * ScrollView, a "Skip tour" shortcut on top, and a bottom bar holding Back and
+ * the progress dots. The user moves through the tour by swiping (each page
+ * anchors into place via `pagingEnabled`, and one swipe never skips past the
+ * adjacent page) or by tapping the left/right edge of a page — there is no
+ * per-page Continue; the last page carries the single finishing action. The
+ * dots track the live scroll position, so they morph mid-swipe; a page's
+ * content floats up into view on arrival, and a page left idle briefly nudges
+ * sideways to hint at swiping. The
  * user's buy/rent + price choices and selected cities are staged locally and
  * only applied on finish — committing the filters to the live store and asking
  * the map to focus the first city — so nothing changes under the user mid-tour.
@@ -204,6 +207,31 @@ export function OnboardingFlow() {
     return cancelPeek;
   }, [index, peekX, cancelPeek]);
 
+  // Float-in on arrival: the current page's content fades up (opacity with a
+  // small translateY) every time it becomes the current page — including the
+  // first page on mount. One value per page so leaving and returning replays
+  // the entrance while neighbours stay fully visible when peeked or swiped
+  // past. Leaving mid-entrance snaps the old page back to its rest state so a
+  // later peek can't reveal it half-faded.
+  const [pageAnims] = useState(() =>
+    Array.from({ length: PAGE_COUNT }, () => new Animated.Value(1)),
+  );
+  useEffect(() => {
+    const anim = pageAnims[index];
+    anim.setValue(0);
+    const entrance = Animated.timing(anim, {
+      toValue: 1,
+      duration: 450,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: Platform.OS !== 'web',
+    });
+    entrance.start();
+    return () => {
+      entrance.stop();
+      anim.setValue(1);
+    };
+  }, [index, pageAnims]);
+
   // Story-style tap navigation: a tap on the left/right third of a page flips
   // one page back/forward. The tap zone sits *behind* the page content —
   // buttons, pills, inputs and the slider claim their touches first, so only
@@ -295,8 +323,6 @@ export function OnboardingFlow() {
     price[0] === null && price[1] === null
       ? t('filtersPage.any')
       : `${compactEuro(priceValues[0])} – ${compactEuro(priceValues[1])}`;
-
-  const isLast = index === PAGE_COUNT - 1;
 
   const pages = [
     <OnboardingPage key="welcome">
@@ -390,10 +416,17 @@ export function OnboardingFlow() {
         subtitle={t('onboarding.account.subtitle')}
       />
       {isAuthenticated && user ? (
-        <View className="items-center rounded-2xl bg-blue-50 p-4 dark:bg-blue-950">
-          <Text className="text-base font-medium text-blue-700 dark:text-blue-300">
-            {t('onboarding.account.signedInAs', { name: user.name })}
-          </Text>
+        <View className="gap-3">
+          <View className="items-center rounded-2xl bg-blue-50 p-4 dark:bg-blue-950">
+            <Text className="text-base font-medium text-blue-700 dark:text-blue-300">
+              {t('onboarding.account.signedInAs', { name: user.name })}
+            </Text>
+          </View>
+          <PrimaryButton
+            testID="onboarding-get-started"
+            label={t('onboarding.getStarted')}
+            onPress={finish}
+          />
         </View>
       ) : (
         <View className="gap-3">
@@ -411,6 +444,15 @@ export function OnboardingFlow() {
               {t('onboarding.account.logIn')}
             </Text>
           </Pressable>
+          <Pressable
+            testID="onboarding-get-started"
+            onPress={finish}
+            accessibilityRole="button"
+            className="items-center py-3.5 active:opacity-60">
+            <Text className="text-base font-medium text-neutral-500 dark:text-neutral-400">
+              {t('onboarding.account.getStartedWithoutAccount')}
+            </Text>
+          </Pressable>
         </View>
       )}
     </OnboardingPage>,
@@ -419,17 +461,9 @@ export function OnboardingFlow() {
   return (
     <View className="flex-1 bg-white dark:bg-black">
       <SafeAreaView edges={['top', 'bottom']} className="flex-1">
-        {/* Top bar: centered progress dots with a persistent "Skip tour". */}
-        <View className="h-12 flex-row items-center justify-between px-4">
-          <View className="flex-1" />
-          <ProgressDots
-            count={PAGE_COUNT}
-            progress={progress}
-            label={t('onboarding.stepOf', { current: index + 1, total: PAGE_COUNT })}
-          />
-          <View className="flex-1 items-end">
-            <TextButton testID="skip-tour" label={t('onboarding.skipTour')} onPress={skip} />
-          </View>
+        {/* Top bar: just the persistent "Skip tour". */}
+        <View className="h-12 flex-row items-center justify-end px-4">
+          <TextButton testID="skip-tour" label={t('onboarding.skipTour')} onPress={skip} />
         </View>
 
         {/* The pager: all pages side-by-side, one viewport wide each, snapping
@@ -468,29 +502,46 @@ export function OnboardingFlow() {
                   accessible={false}
                   onPress={onPageTap}
                   style={{ flex: 1 }}>
-                  {page}
+                  <Animated.View
+                    style={{
+                      flex: 1,
+                      opacity: pageAnims[i],
+                      transform: [
+                        {
+                          translateY: pageAnims[i].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [24, 0],
+                          }),
+                        },
+                      ],
+                    }}>
+                    {page}
+                  </Animated.View>
                 </Pressable>
               </Animated.View>
             ))}
           </Animated.ScrollView>
         </View>
 
-        {/* Bottom bar: Back (after the first page) + Continue / Get started. */}
-        <View className="h-16 flex-row items-center justify-between px-4">
-          {index > 0 ? (
-            <TextButton
-              testID="onboarding-back"
-              label={t('onboarding.back')}
-              onPress={() => goTo(index - 1)}
-            />
-          ) : (
-            <View />
-          )}
-          <PrimaryButton
-            testID="onboarding-next"
-            label={isLast ? t('onboarding.getStarted') : t('onboarding.continue')}
-            onPress={() => (isLast ? finish() : goTo(index + 1))}
+        {/* Bottom bar: Back (after the first page) on the left with the
+            progress dots centred. Pages advance by swiping or edge-tapping;
+            the last page carries the single finishing action. */}
+        <View className="h-16 flex-row items-center px-4">
+          <View className="flex-1 items-start">
+            {index > 0 ? (
+              <TextButton
+                testID="onboarding-back"
+                label={t('onboarding.back')}
+                onPress={() => goTo(index - 1)}
+              />
+            ) : null}
+          </View>
+          <ProgressDots
+            count={PAGE_COUNT}
+            progress={progress}
+            label={t('onboarding.stepOf', { current: index + 1, total: PAGE_COUNT })}
           />
+          <View className="flex-1" />
         </View>
       </SafeAreaView>
     </View>

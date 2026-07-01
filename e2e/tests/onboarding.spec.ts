@@ -29,24 +29,27 @@ test.describe('Onboarding tour', () => {
     await pageSettled(page, 'Welcome to Realty AI Canvas');
     await expect(page).toHaveScreenshot('onboarding-welcome.png');
 
-    // Bottom-bar primary button; exact match avoids the account page's
-    // "Create account" / "Log in" buttons.
-    const next = page.getByText('Continue', { exact: true });
+    // There is no Continue button — advance one page per tap on the right
+    // third of the page, on a passive spot below the content (1280×720
+    // viewport: x > 853 is the right zone, y 600 sits above the bottom bar).
+    const next = () => page.mouse.click(1150, 600);
 
-    await next.click();
+    await next();
     await pageSettled(page, 'Everything you need to explore');
     await expect(page).toHaveScreenshot('onboarding-features.png');
 
-    await next.click();
+    await next();
     await pageSettled(page, 'What are you looking for?');
     await expect(page).toHaveScreenshot('onboarding-filters.png');
 
-    await next.click();
+    await next();
     await pageSettled(page, 'Pick your cities');
     await expect(page).toHaveScreenshot('onboarding-cities.png');
 
-    await next.click();
+    await next();
     await pageSettled(page, 'Save your search');
+    // The tour's single finishing action lives on this last page.
+    await expect(page.getByText('Get started without account')).toBeVisible();
     await expect(page).toHaveScreenshot('onboarding-account.png');
   });
 
