@@ -8,11 +8,10 @@ import {
   Marker,
 } from '@maplibre/maplibre-react-native';
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  AREA_FOCUS_ANCHOR_Y,
   areasCenter,
   fillOpacityFor,
   outlineWidthFor,
@@ -99,11 +98,6 @@ export interface ListingMapProps {
 /** Imperative handle for driving the camera, e.g. flying to a search result. */
 export interface ListingMapRef {
   flyTo: (target: { longitude: number; latitude: number; zoom?: number }) => void;
-  /**
-   * Pan (no zoom change) so the coordinate sits two-fifths down / centered
-   * horizontally — leaving room for the area sheet below it.
-   */
-  focusArea: (target: { longitude: number; latitude: number }) => void;
 }
 
 /**
@@ -119,7 +113,6 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   // Timestamp of the last marker tap; see MARKER_TAP_GRACE_MS.
   const markerTapAtRef = useRef(0);
   const insets = useSafeAreaInsets();
-  const { height: screenH } = useWindowDimensions();
   const { mapStyle, polygonsBeforeId, scheme } = useMapStyle();
   const { recentViews } = useRecentViews();
   const viewedIds = useMemo(
@@ -129,19 +122,10 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
 
   useImperativeHandle(ref, () => ({
     flyTo: ({ longitude, latitude, zoom }) =>
-      // Reset any focus padding so search results recenter normally.
       cameraRef.current?.flyTo({
         center: [longitude, latitude],
         zoom,
-        padding: { top: 0, right: 0, bottom: 0, left: 0 },
         duration: 1200,
-      }),
-    focusArea: ({ longitude, latitude }) =>
-      // Bottom padding pushes the centered coordinate up to AREA_FOCUS_ANCHOR_Y.
-      cameraRef.current?.easeTo({
-        center: [longitude, latitude],
-        padding: { top: 0, right: 0, bottom: Math.round(screenH * (1 - 2 * AREA_FOCUS_ANCHOR_Y)), left: 0 },
-        duration: 600,
       }),
   }));
 
@@ -178,8 +162,8 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
         left: COMPASS_MARGIN,
       }}>
       {/* Uncontrolled initial framing only: applied once on load. Camera moves
-          are then driven solely by the imperative ref (search flyTo, area
-          focusArea) — loading a tapped city's neighborhoods must not move it. */}
+          are then driven solely by the imperative ref (search flyTo) — loading
+          a tapped city's neighborhoods or selecting an area must not move it. */}
       <Camera ref={cameraRef} initialViewState={{ center, zoom: 11 }} />
       {loadingPolygon && <PulsingCityOverlay polygon={loadingPolygon} beforeId={polygonsBeforeId} />}
       {polygons && polygons.length > 0 && (

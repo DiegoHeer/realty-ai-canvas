@@ -2,12 +2,10 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { AreaPolygon, Listing } from '@realty/types';
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
-import { useWindowDimensions } from 'react-native';
 import { Layer, Map, type MapRef, Marker, Source } from 'react-map-gl/maplibre';
 
 import type { ListingMapProps, ListingMapRef } from './listing-map';
 import {
-  AREA_FOCUS_ANCHOR_Y,
   areasCenter,
   fillOpacityFor,
   outlineWidthFor,
@@ -56,7 +54,6 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   ref,
 ) {
   const mapRef = useRef<MapRef>(null);
-  const { height: screenH } = useWindowDimensions();
   const { mapStyle, polygonsBeforeId, scheme } = useMapStyle();
   const { recentViews } = useRecentViews();
   const viewedIds = useMemo(
@@ -67,13 +64,6 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   useImperativeHandle(ref, () => ({
     flyTo: ({ longitude, latitude, zoom }) =>
       mapRef.current?.flyTo({ center: [longitude, latitude], zoom, duration: 1200 }),
-    focusArea: ({ longitude, latitude }) =>
-      // Negative y offset lifts the centered coordinate up to AREA_FOCUS_ANCHOR_Y.
-      mapRef.current?.easeTo({
-        center: [longitude, latitude],
-        offset: [0, Math.round(screenH * (AREA_FOCUS_ANCHOR_Y - 0.5))],
-        duration: 600,
-      }),
   }));
 
   // Prefer framing the polygons (the map's overlay focus); fall back to the
