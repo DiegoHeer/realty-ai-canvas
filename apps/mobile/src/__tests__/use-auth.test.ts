@@ -312,6 +312,64 @@ describe('use-auth (real mode)', () => {
     });
   });
 
+  it('signInWithGoogle establishes a session and persists tokens on success', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      Object.defineProperty(authData, 'GOOGLE_WEB_CLIENT_ID', { value: 'WEB-ID', configurable: true });
+      Object.defineProperty(authData, 'GOOGLE_IOS_CLIENT_ID', { value: 'IOS-ID', configurable: true });
+      jest.spyOn(authData, 'loginWithProviderToken').mockResolvedValue({
+        user: { id: 1, email: 'ada@gmail.com', name: 'Ada Lovelace' },
+        tokens: { accessToken: 'AT', refreshToken: 'RT' },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const gsi = require('@react-native-google-signin/google-signin');
+      gsi.GoogleSignin.hasPlayServices.mockResolvedValue(true);
+      gsi.GoogleSignin.signIn.mockResolvedValue({ data: { idToken: 'ID-TOKEN' } });
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithGoogle();
+
+      expect(outcome).toEqual({ ok: true });
+      expect(authData.loginWithProviderToken).toHaveBeenCalledWith({
+        provider: 'google',
+        idToken: 'ID-TOKEN',
+        clientId: 'WEB-ID',
+      });
+      expect(getCurrentUser()).toMatchObject({ name: 'Ada Lovelace', email: 'ada@gmail.com' });
+      expect(await loadTokens()).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
+    });
+  });
+
+  it('signInWithGoogle handles a user cancel gracefully (no session, cancelled code)', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      Object.defineProperty(authData, 'GOOGLE_WEB_CLIENT_ID', { value: 'WEB-ID', configurable: true });
+      const providerSpy = jest.spyOn(authData, 'loginWithProviderToken');
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const gsi = require('@react-native-google-signin/google-signin');
+      gsi.GoogleSignin.hasPlayServices.mockResolvedValue(true);
+      const cancelled = Object.assign(new Error('cancelled'), { code: gsi.statusCodes.SIGN_IN_CANCELLED });
+      gsi.GoogleSignin.signIn.mockRejectedValue(cancelled);
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithGoogle();
+
+      expect(outcome).toEqual({ ok: false, code: 'cancelled' });
+      expect(providerSpy).not.toHaveBeenCalled();
+      expect(getCurrentUser()).toBeNull();
+    });
+  });
+
   it('signOut clears user, tokens and calls queryClient.clear', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

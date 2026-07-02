@@ -1,12 +1,17 @@
 import { useSyncExternalStore } from 'react';
 
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+
 import {
   AUTH_ENABLED,
   AuthError,
   coalescedRefresh,
   configureAuthInterceptor,
   getSession as authGetSession,
+  GOOGLE_IOS_CLIENT_ID,
+  GOOGLE_WEB_CLIENT_ID,
   login as authLogin,
+  loginWithProviderToken as authLoginWithProviderToken,
   logout as authLogout,
   queryClient,
   refresh as authRefresh,
@@ -52,7 +57,12 @@ export interface AuthUser {
  * `fieldErrors` array is carried through so screens can render each message
  * under its `param`'s input (see `lib/auth-errors`).
  */
-export type AuthErrorCode = 'invalid_credentials' | 'invalid_code' | 'email_taken' | 'generic';
+export type AuthErrorCode =
+  | 'invalid_credentials'
+  | 'invalid_code'
+  | 'email_taken'
+  | 'cancelled'
+  | 'generic';
 export type AuthOutcome =
   | { ok: true }
   | { ok: false; code: AuthErrorCode; fieldErrors?: AllauthFieldError[] }
@@ -68,7 +78,7 @@ interface UseAuthReturn {
   resetPassword: (p: { code: string; password: string }) => Promise<AuthOutcome>;
   signOut: () => Promise<void>;
   signIn: () => void;
-  signInWithGoogle: () => void;
+  signInWithGoogle: () => Promise<AuthOutcome> | void;
   signInWithApple: () => void;
 }
 
@@ -156,6 +166,59 @@ function failure(error: unknown): AuthOutcome {
 async function realSignIn(email: string, password: string): Promise<AuthOutcome> {
   try {
     const session = await authLogin({ email: email.trim(), password });
+    await applySession(toAuthUser(session.user), session.tokens);
+    return { ok: true };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+// Configure the native Google Sign-In module exactly once. `webClientId` also
+// scopes the returned id_token's audience to the Web OAuth client the backend
+// expects; `iosClientId` is optional (empty on Android-only setups).
+let googleConfigured = false;
+function ensureGoogleConfigured() {
+  if (googleConfigured) return;
+  GoogleSignin.configure({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID || undefined,
+    scopes: ['email', 'profile'],
+  });
+  googleConfigured = true;
+}
+
+/**
+ * Native Google sign-in (real): run the Google flow, then exchange the id token
+ * with the backend (`provider/token`) for a session, reusing the same
+ * apply/persist path as password login. A user cancel is not an error — it
+ * resolves to a `cancelled` outcome the UI can ignore silently.
+ */
+async function realSignInWithGoogle(): Promise<AuthOutcome> {
+  ensureGoogleConfigured();
+  let idToken: string | null | undefined;
+  try {
+    await GoogleSignin.hasPlayServices();
+    const result = await GoogleSignin.signIn();
+    // google-signin v13+ wraps the payload in `{ type, data }`; older shapes put
+    // the fields at the top level. Read both so the token is found either way.
+    idToken =
+      (result as { data?: { idToken?: string | null } }).data?.idToken ??
+      (result as { idToken?: string | null }).idToken;
+  } catch (error) {
+    // A user-initiated cancel is expected, not a failure — surface a dedicated
+    // code so the UI stays silent; everything else collapses to generic.
+    if ((error as { code?: string })?.code === statusCodes.SIGN_IN_CANCELLED) {
+      return { ok: false, code: 'cancelled' };
+    }
+    return { ok: false, code: 'generic' };
+  }
+  if (!idToken) return { ok: false, code: 'generic' };
+  try {
+    const session = await authLoginWithProviderToken({
+      provider: 'google',
+      idToken,
+      clientId: GOOGLE_WEB_CLIENT_ID,
+    });
     await applySession(toAuthUser(session.user), session.tokens);
     return { ok: true };
   } catch (error) {
@@ -474,6 +537,17 @@ export function signIn(): void {
   if (!AUTH_ENABLED) mockSignIn();
 }
 
+/**
+ * Google sign-in. Real mode runs the native Google flow and exchanges the id
+ * token for a session; mock mode synthesizes a Google-style account (the
+ * visual-regression path). Real mode returns an {@link AuthOutcome}; mock mode
+ * returns void (fire-and-forget, matching the other mock helpers).
+ */
+export function signInWithGoogle(): Promise<AuthOutcome> | void {
+  if (AUTH_ENABLED) return realSignInWithGoogle();
+  mockSignInWithGoogle();
+}
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -491,7 +565,8 @@ export function useAuth(): UseAuthReturn {
     signOut,
     // Social sign-in: no-ops in real mode (removed when backend OAuth lands); mock behavior in mock mode.
     signIn,
-    signInWithGoogle: AUTH_ENABLED ? () => {} : mockSignInWithGoogle,
+    signInWithGoogle,
+    // Apple stays a no-op in real mode until native Sign in with Apple lands.
     signInWithApple: AUTH_ENABLED ? () => {} : mockSignInWithApple,
   };
 }

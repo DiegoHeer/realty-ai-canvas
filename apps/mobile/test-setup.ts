@@ -159,6 +159,22 @@ jest.mock('@/components/animated-icon', () => ({
   AnimatedSplashOverlay: () => null,
 }));
 
+// --- @react-native-google-signin/google-signin mock ---
+// The native module is unavailable under Jest. Expose a mockable GoogleSignin
+// plus the statusCodes the hook branches on (cancel handling).
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    hasPlayServices: jest.fn(async () => true),
+    signIn: jest.fn(),
+  },
+  statusCodes: {
+    SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
+  },
+}));
+
 // --- react-native-svg mock (render plain views for SVG icon primitives) ---
 jest.mock('react-native-svg', () => {
   const React = require('react');

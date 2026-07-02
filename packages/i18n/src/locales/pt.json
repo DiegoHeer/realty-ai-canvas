@@ -117,6 +117,7 @@
     "errorInvalidCredentials": "E-mail ou palavra-passe inválidos.",
     "errorCodeInvalid": "Esse código é inválido ou expirou.",
     "errorEmailTaken": "Esse e-mail já está registado.",
+    "errorSignInCancelled": "O início de sessão foi cancelado.",
     "submitting": "Aguarde…",
     "verifyTitle": "Verifique o seu e-mail",
     "verifySubtitle": "Introduza o código que lhe enviámos para concluir a criação da conta.",
