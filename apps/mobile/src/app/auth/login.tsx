@@ -35,7 +35,25 @@ export default function LoginScreen() {
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
 
-  const provider = defaultOAuthProvider();
+  // Mock mode surfaces the platform-default provider (Apple on iOS); real mode
+  // ships Google only for now (Apple lands in a later effort).
+  const provider = AUTH_ENABLED ? 'google' : defaultOAuthProvider();
+
+  async function onOAuthPress() {
+    setFormError(undefined);
+    if (!AUTH_ENABLED) {
+      const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
+      action();
+      deferNavigation(() => router.back());
+      return;
+    }
+    const outcome = await signInWithGoogle();
+    if (!outcome || outcome.ok === true) {
+      deferNavigation(() => router.back());
+    } else if (outcome.ok === false && outcome.code !== 'cancelled') {
+      setFormError(t(authErrorKey(outcome.code)));
+    }
+  }
 
   async function submit() {
     const next: { email?: string; password?: string } = {};
@@ -125,19 +143,9 @@ export default function LoginScreen() {
         />
       </View>
 
-      {!AUTH_ENABLED ? (
-        <>
-          <OrDivider />
-          <OAuthButton
-            provider={provider}
-            onPress={() => {
-              const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
-              action();
-              deferNavigation(() => router.back());
-            }}
-          />
-        </>
-      ) : null}
+      <OrDivider />
+      <OAuthButton provider={provider} onPress={onOAuthPress} />
+
 
       <AuthSwitchLink
         prompt={t('auth.noAccountPrompt')}

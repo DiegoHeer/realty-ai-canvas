@@ -175,7 +175,7 @@ describe('LoginScreen', () => {
     expect(await findByText('Invalid email or password.')).toBeOnTheScreen();
   });
 
-  it('hides the social button in real-auth mode', async () => {
+  it('shows the Google button in real-auth mode and signs in through it', async () => {
     // Babel compiles named imports as live property reads (_data.AUTH_ENABLED),
     // so updating the plain mock object is seen by the component at render time
     // without needing to reload modules (which would break React context).
@@ -183,7 +183,47 @@ describe('LoginScreen', () => {
     const authData = require('@realty/data');
     jest.replaceProperty(authData, 'AUTH_ENABLED', true);
 
-    const { queryByTestId } = await renderScreen('en');
-    expect(queryByTestId('oauth-button')).toBeNull();
+    const signInWithGoogle = jest.fn().mockResolvedValue({ ok: true });
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      signInWithEmail: jest.fn(),
+      signInWithGoogle,
+      signInWithApple: jest.fn(),
+    });
+
+    const { getByTestId, getByText } = await renderScreen('en');
+    // Real mode ships Google only.
+    expect(getByText('Continue with Google')).toBeTruthy();
+
+    await tap(getByTestId('oauth-button'));
+
+    expect(signInWithGoogle).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+  });
+
+  it('surfaces a Google sign-in error but stays silent on cancel', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const authData = require('@realty/data');
+    jest.replaceProperty(authData, 'AUTH_ENABLED', true);
+
+    const signInWithGoogle = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: false, code: 'cancelled' })
+      .mockResolvedValueOnce({ ok: false, code: 'generic' });
+    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
+      signInWithEmail: jest.fn(),
+      signInWithGoogle,
+      signInWithApple: jest.fn(),
+    });
+
+    const { getByTestId, queryByText, findByText } = await renderScreen('en');
+
+    // Cancel: no error banner, no navigation.
+    await tap(getByTestId('oauth-button'));
+    expect(queryByText('Something went wrong. Please try again.')).toBeNull();
+    expect(router.back).not.toHaveBeenCalled();
+
+    // Real failure: generic banner shown.
+    fireEvent.press(getByTestId('oauth-button'));
+    expect(await findByText('Something went wrong. Please try again.')).toBeOnTheScreen();
   });
 });
