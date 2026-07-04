@@ -40,6 +40,27 @@ const archipel: NeighborhoodStats = {
   },
 };
 
+const archipelWithElections: NeighborhoodStats = {
+  ...archipel,
+  electionStats: {
+    tk2025: {
+      totalVotes: 2000,
+      stationCount: 2,
+      source: 'buurt',
+      parties: {
+        D66: 500,
+        VVD: 400,
+        'GROENLINKS / Partij van de Arbeid (PvdA)': 300,
+        'PVV (Partij voor de Vrijheid)': 250,
+        CDA: 200,
+        'SP (Socialistische Partij)': 150,
+        DENK: 100,
+        Volt: 100,
+      },
+    },
+  },
+};
+
 describe('AreaStats', () => {
   it('shows the no-stats message when there are no stats', async () => {
     const { getByText } = await renderStats(null);
@@ -64,5 +85,35 @@ describe('AreaStats', () => {
   it('renders the suppressed-data state for a null metric (district heating)', async () => {
     const { getByText } = await renderStats(archipel);
     expect(getByText('Niet bekendgemaakt voor deze buurt')).toBeTruthy();
+  });
+
+  it('renders the election section with top parties, Overig row and footer', async () => {
+    const { getByText } = await renderStats(archipelWithElections);
+    expect(getByText('Verkiezingen TK2025')).toBeTruthy();
+    expect(getByText('GL-PvdA')).toBeTruthy(); // shortened label
+    expect(getByText('25,0%')).toBeTruthy(); // D66: 500/2000, nl decimal comma
+    expect(getByText('Overig')).toBeTruthy(); // DENK + Volt collapsed
+    expect(getByText(/2 stembureaus in deze buurt/)).toBeTruthy();
+    expect(getByText(/2[.,]000 stemmen/)).toBeTruthy();
+  });
+
+  it('shows the wijk caveat when the buurt has no own station', async () => {
+    const wijkFallback: NeighborhoodStats = {
+      ...archipel,
+      electionStats: {
+        tk2025: {
+          ...archipelWithElections.electionStats!.tk2025!,
+          source: 'wijk',
+        },
+      },
+    };
+    const { getByText, queryByText } = await renderStats(wijkFallback);
+    expect(getByText(/Cijfers van de wijk/)).toBeTruthy();
+    expect(queryByText(/stembureaus in deze buurt/)).toBeNull();
+  });
+
+  it('omits the election section without election data', async () => {
+    const { queryByText } = await renderStats(archipel);
+    expect(queryByText('Verkiezingen TK2025')).toBeNull();
   });
 });

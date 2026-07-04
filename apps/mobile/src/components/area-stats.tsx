@@ -5,6 +5,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Text, View, type DimensionValue } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
+import { deriveElectionStats, PARTY_FALLBACK_COLOR, type ElectionView } from '@/lib/election-stats';
 import {
   deriveNeighborhoodStats,
   type AgeRow,
@@ -162,6 +163,51 @@ function AgeBars({ rows }: { rows: AgeRow[] }) {
   );
 }
 
+/** Horizontal party bars; widths are relative to the largest share. */
+function ElectionBars({ view, fmt }: { view: ElectionView; fmt: Fmt }) {
+  const { t } = useTranslation();
+  const rows = [
+    ...view.rows,
+    ...(view.otherShare != null
+      ? [
+          {
+            key: 'other',
+            label: t('area.stats.electionOther'),
+            color: PARTY_FALLBACK_COLOR,
+            share: view.otherShare,
+          },
+        ]
+      : []),
+  ];
+  const max = Math.max(...rows.map((r) => r.share), 1);
+  return (
+    <View className="gap-3">
+      {rows.map((row) => (
+        <View key={row.key} className="flex-row items-center gap-3">
+          <Text
+            numberOfLines={1}
+            className="w-16 text-right text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+            {row.label}
+          </Text>
+          <View className="h-5 flex-1 justify-center">
+            <View
+              className="h-5 rounded-md"
+              style={{
+                width: widthPct((row.share / max) * 100),
+                minWidth: 4,
+                backgroundColor: row.color,
+              }}
+            />
+          </View>
+          <Text className="w-12 text-right text-xs font-bold text-neutral-900 dark:text-white">
+            {fmt.percent1(row.share)}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /** SVG donut whose arcs are drawn with stroke-dasharray, plus a center stat. */
 function Donut({ segments, center }: { segments: StatSegment[]; center?: string }) {
   const { colorScheme } = useColorScheme();
@@ -260,6 +306,7 @@ export function AreaStats({ stats }: AreaStatsProps) {
   const { t } = useTranslation();
   const fmt = useFmt();
   const view = useMemo(() => deriveNeighborhoodStats(stats), [stats]);
+  const election = useMemo(() => deriveElectionStats(stats), [stats]);
 
   if (!view || !stats) {
     return (
@@ -368,6 +415,22 @@ export function AreaStats({ stats }: AreaStatsProps) {
               ))}
             </View>
           ) : null}
+        </StatCard>
+      ) : null}
+
+      {election ? (
+        <StatCard title={t('area.stats.electionTitle')} hint={t('area.stats.electionHint')}>
+          <ElectionBars view={election} fmt={fmt} />
+          <Text className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+            {election.source === 'buurt'
+              ? t('area.stats.electionFooterBuurt', {
+                  count: election.stationCount,
+                  votes: fmt.grouped(election.totalVotes),
+                })
+              : t('area.stats.electionFooterWijk', {
+                  votes: fmt.grouped(election.totalVotes),
+                })}
+          </Text>
         </StatCard>
       ) : null}
 

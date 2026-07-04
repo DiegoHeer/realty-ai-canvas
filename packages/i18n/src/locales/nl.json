@@ -335,7 +335,13 @@
       "electricity": "Elektriciteit",
       "districtHeatingTitle": "Stadsverwarming",
       "districtHeatingHint": "Aandeel woningen met stadsverwarming",
-      "missing": "Niet bekendgemaakt voor deze buurt"
+      "missing": "Niet bekendgemaakt voor deze buurt",
+      "electionTitle": "Verkiezingen TK2025",
+      "electionHint": "Stemmen per stembureau; kiezers mogen overal in de gemeente stemmen",
+      "electionOther": "Overig",
+      "electionFooterBuurt_one": "{{count}} stembureau in deze buurt · {{votes}} stemmen",
+      "electionFooterBuurt_other": "{{count}} stembureaus in deze buurt · {{votes}} stemmen",
+      "electionFooterWijk": "Cijfers van de wijk (geen stembureau in deze buurt) · {{votes}} stemmen"
     }
   },
   "onboarding": {

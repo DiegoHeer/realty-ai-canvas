@@ -335,7 +335,13 @@
       "electricity": "Electricity",
       "districtHeatingTitle": "District heating",
       "districtHeatingHint": "Share of dwellings on district heating",
-      "missing": "Not disclosed for this neighborhood"
+      "missing": "Not disclosed for this neighborhood",
+      "electionTitle": "Elections TK2025",
+      "electionHint": "Votes by polling station; voters may vote anywhere in the municipality",
+      "electionOther": "Other",
+      "electionFooterBuurt_one": "{{count}} polling station in this neighborhood · {{votes}} votes",
+      "electionFooterBuurt_other": "{{count}} polling stations in this neighborhood · {{votes}} votes",
+      "electionFooterWijk": "District figures (no polling station in this neighborhood) · {{votes}} votes"
     }
   },
   "onboarding": {
