@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "Realty AI Canvas",
-    "slug": "realty-ai-canvas",
+    "name": "Huismus",
+    "slug": "huismus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "realtyaicanvas",
+    "scheme": "huismus",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.anonymous.realtyaicanvas"
+      "bundleIdentifier": "com.anonymous.huismus"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.realtyaicanvas"
+      "package": "com.anonymous.huismus"
     },
     "web": {
       "output": "static",

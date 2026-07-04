@@ -1,9 +1,7 @@
-# Realty AI Canvas
+# Huismus
 
 App-first real-estate app (map + house listings) built with **Expo + Expo Router**,
 exporting to the web for desktop users. Bun workspaces monorepo.
-
-> Working name — may change later.
 
 ## Stack
 

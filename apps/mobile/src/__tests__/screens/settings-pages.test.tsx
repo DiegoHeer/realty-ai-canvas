@@ -26,7 +26,7 @@ describe('PrivacySettingsScreen', () => {
 describe('AboutSettingsScreen', () => {
   it('shows the app name and version', async () => {
     const { getByText } = await renderScreen(<AboutSettingsScreen />);
-    expect(getByText('Realty AI Canvas')).toBeTruthy();
+    expect(getByText('Huismus')).toBeTruthy();
     expect(getByText('Version')).toBeTruthy();
     expect(getByText('1.0.0')).toBeTruthy();
   });

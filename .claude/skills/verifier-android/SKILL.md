@@ -22,8 +22,8 @@ Use `bun`/`bunx`, never `npm`/`npx` (project rule).
 
 | Thing | Value |
 |---|---|
-| Android package | `com.anonymous.realtyaicanvas` |
-| Deep-link scheme | `realtyaicanvas://` (e.g. `realtyaicanvas://profile`, `realtyaicanvas://settings/language`) |
+| Android package | `com.anonymous.huismus` |
+| Deep-link scheme | `huismus://` (e.g. `huismus://profile`, `huismus://settings/language`) |
 | Dev runner | `expo run:android` (dev build + Metro; check the port, e.g. `-p 8082`) |
 | `adb` | `/usr/bin/adb` |
 | Screen size | `adb shell wm size` (was `1280x2856` — coordinates are physical px) |
@@ -34,7 +34,7 @@ Re-derive these if they change: `grep -E '"package"|"scheme"' apps/mobile/app.js
 
 ```bash
 adb devices                                   # expect a device/emulator listed
-adb shell pidof com.anonymous.realtyaicanvas  # app running? (Metro must be up too)
+adb shell pidof com.anonymous.huismus  # app running? (Metro must be up too)
 ps aux | grep -i "expo run:android" | grep -v grep   # confirm Metro/dev build is live
 ```
 `
@@ -47,9 +47,9 @@ Metro Fast Refresh auto-applies JS edits, but for a deterministic test do a full
 so the device fetches a fresh bundle:
 
 ```bash
-adb shell am force-stop com.anonymous.realtyaicanvas
+adb shell am force-stop com.anonymous.huismus
 adb shell am start -W -a android.intent.action.VIEW \
-  -d "realtyaicanvas://profile" com.anonymous.realtyaicanvas
+  -d "huismus://profile" com.anonymous.huismus
 ```
 
 Wait for the JS to render (host `sleep` is blocked — use device-side `adb shell sleep`
@@ -85,7 +85,7 @@ adb shell input tap $(( (x1+x2)/2 )) $(( (y1+y2)/2 ))
 - **Emoji/flag prefixes** (e.g. `🇬🇧 English`, `🌙 Donker`) come through as XML entities
   (`&#127468;…`). Match a **substring** (`English`, `Donker`), not the whole label.
 - **Deep links** jump straight to a route: `adb shell am start -a android.intent.action.VIEW
-  -d "realtyaicanvas://settings/appearance" com.anonymous.realtyaicanvas`. But to test a
+  -d "huismus://settings/appearance" com.anonymous.huismus`. But to test a
   flow that calls `router.back()`, navigate from the **real screen** (tap in) so there's a
   back stack to pop — a deep-linked screen may have nowhere to go back to.
 - **Screenshots:** `adb exec-out screencap -p > "$SCRATCH/shot.png"` then `Read` it.

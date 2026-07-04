@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Realty AI Canvas",
+    "appName": "Huismus",
     "cancel": "Cancelar",
     "docs": "Documentação",
     "loading": "A carregar…"
@@ -43,7 +43,7 @@
     "noResaleBody": "Não recolhemos nem redistribuímos os seus filtros de pesquisa e preferências de imóveis. Aquilo que procura permanece privado."
   },
   "aboutPage": {
-    "intro": "A Realty AI Canvas ajuda-o a explorar imóveis à venda em todos os Países Baixos numa tela rápida e centrada no mapa — com informações detalhadas sobre os bairros ao seu alcance.",
+    "intro": "O Huismus ajuda-o a explorar imóveis à venda em todos os Países Baixos numa tela rápida e centrada no mapa — com informações detalhadas sobre os bairros ao seu alcance.",
     "mission": "Veja imóveis, compare bairros com estatísticas públicas sobre residentes, rendimento e consumo de energia, e verifique detalhes como o certificado energético e o risco de fundações antes de agendar uma visita.",
     "version": "Versão"
   },
@@ -318,12 +318,12 @@
     "stepOf": "Passo {{current}} de {{total}}",
     "replay": "Rever introdução",
     "welcome": {
-      "title": "Bem-vindo ao Realty AI Canvas",
+      "title": "Bem-vindo ao Huismus",
       "subtitle": "Encontre a sua próxima casa num mapa construído em torno dos bairros que lhe interessam."
     },
     "features": {
       "title": "Tudo o que precisa para explorar",
-      "subtitle": "Duas formas de o Realty AI o ajudar a pesquisar de forma mais inteligente.",
+      "subtitle": "Duas formas de o Huismus o ajudar a pesquisar de forma mais inteligente.",
       "map": {
         "title": "Mapa e estatísticas do bairro",
         "description": "Veja imóveis num mapa interativo e toque num bairro para ver estatísticas atuais."

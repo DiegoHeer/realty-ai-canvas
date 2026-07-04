@@ -82,7 +82,7 @@ describe('OnboardingScreen', () => {
   it('opens on the welcome page with skip and no back button or Continue', async () => {
     const { getByText, getByTestId, queryByTestId } = await renderScreen('en');
 
-    expect(getByText('Welcome to Realty AI Canvas')).toBeTruthy();
+    expect(getByText('Welcome to Huismus')).toBeTruthy();
     expect(getByTestId('skip-tour')).toBeTruthy();
     // Navigation is swipe/tap-only — there is no per-page Continue button.
     expect(queryByTestId('onboarding-next')).toBeNull();
@@ -204,6 +204,6 @@ describe('OnboardingScreen', () => {
   it('localizes its copy (Dutch)', async () => {
     const { getByText } = await renderScreen('nl');
     expect(getByText('Tour overslaan')).toBeTruthy();
-    expect(getByText('Welkom bij Realty AI Canvas')).toBeTruthy();
+    expect(getByText('Welkom bij Huismus')).toBeTruthy();
   });
 });
