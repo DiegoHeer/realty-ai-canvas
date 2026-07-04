@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Realty AI Canvas",
+    "appName": "Huismus",
     "cancel": "Annuleren",
     "docs": "Documentatie",
     "loading": "Laden…"
@@ -44,7 +44,7 @@
     "noResaleBody": "We verzamelen of verspreiden je zoekfilters en woningvoorkeuren niet. Waar je naar zoekt blijft privé."
   },
   "aboutPage": {
-    "intro": "Realty AI Canvas helpt je koopwoningen in heel Nederland te ontdekken op een snel, kaartgericht canvas — met rijke buurtinzichten binnen handbereik.",
+    "intro": "Huismus helpt je koopwoningen in heel Nederland te ontdekken op een snel, kaartgericht canvas — met rijke buurtinzichten binnen handbereik.",
     "mission": "Bekijk woningen, vergelijk buurten met openbare statistieken over bewoners, inkomen en energieverbruik, en controleer details zoals energielabels en funderingsrisico voordat je een bezichtiging plant.",
     "version": "Versie"
   },
@@ -324,12 +324,12 @@
     "stepOf": "Stap {{current}} van {{total}}",
     "replay": "Introductie opnieuw bekijken",
     "welcome": {
-      "title": "Welkom bij Realty AI Canvas",
+      "title": "Welkom bij Huismus",
       "subtitle": "Vind je volgende woning op een kaart, opgebouwd rond de buurten die er voor jou toe doen."
     },
     "features": {
       "title": "Alles om te ontdekken",
-      "subtitle": "Twee manieren waarop Realty AI je slimmer laat zoeken.",
+      "subtitle": "Twee manieren waarop Huismus je slimmer laat zoeken.",
       "map": {
         "title": "Kaart en buurtinzichten",
         "description": "Bekijk woningen op een interactieve kaart en tik op een buurt voor actuele statistieken."

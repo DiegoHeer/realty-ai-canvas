@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Realty AI Canvas",
+    "appName": "Huismus",
     "cancel": "Cancel",
     "docs": "Docs",
     "loading": "Loading…"
@@ -44,7 +44,7 @@
     "noResaleBody": "We don't collect or redistribute your search filters and house preferences. What you look for stays private to you."
   },
   "aboutPage": {
-    "intro": "Realty AI Canvas helps you explore homes for sale across the Netherlands on a fast, map-first canvas — with rich neighborhood insights at your fingertips.",
+    "intro": "Huismus helps you explore homes for sale across the Netherlands on a fast, map-first canvas — with rich neighborhood insights at your fingertips.",
     "mission": "Browse listings, compare neighborhoods with public statistics on residents, income and energy use, and check details like energy labels and foundation risk before you book a viewing.",
     "version": "Version"
   },
@@ -324,12 +324,12 @@
     "stepOf": "Step {{current}} of {{total}}",
     "replay": "Replay intro",
     "welcome": {
-      "title": "Welcome to Realty AI Canvas",
+      "title": "Welcome to Huismus",
       "subtitle": "Find your next home on a map built around the neighborhoods you care about."
     },
     "features": {
       "title": "Everything you need to explore",
-      "subtitle": "Two ways Realty AI helps you search smarter.",
+      "subtitle": "Two ways Huismus helps you search smarter.",
       "map": {
         "title": "Map & neighborhood insights",
         "description": "Browse homes on an interactive map and tap any neighborhood for live statistics."
