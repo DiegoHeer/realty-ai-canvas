@@ -1,5 +1,8 @@
 {
   "android": {
-    "package": "com.anonymous.realtyaicanvas"
+    "package": "com.anonymous.huismus"
+  },
+  "ios": {
+    "bundleIdentifier": "com.anonymous.huismus"
   }
 }
