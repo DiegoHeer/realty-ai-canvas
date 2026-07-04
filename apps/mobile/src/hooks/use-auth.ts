@@ -205,6 +205,10 @@ function ensureGoogleConfigured(GoogleSignin: typeof import('@react-native-googl
  * resolves to a `cancelled` outcome the UI can ignore silently.
  */
 async function realSignInWithGoogle(): Promise<AuthOutcome> {
+  // Without the web client id the returned id token has no valid audience and the
+  // backend rejects the exchange, so bail before touching the native module — and
+  // do NOT latch `googleConfigured`, so a later configured run still configures.
+  if (!GOOGLE_WEB_CLIENT_ID) return { ok: false, code: 'generic' };
   const { GoogleSignin } = loadGoogleSignin();
   ensureGoogleConfigured(GoogleSignin);
   let idToken: string | null | undefined;

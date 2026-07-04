@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import {
   authErrorKey,
+  availableOAuthProviders,
   AuthField,
   AuthScaffold,
   AuthSwitchLink,
@@ -35,9 +36,11 @@ export default function LoginScreen() {
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
 
-  // Mock mode surfaces the platform-default provider (Apple on iOS); real mode
-  // ships Google only for now (Apple lands in a later effort).
+  // Mock mode surfaces the platform-default provider (Apple on iOS) for the
+  // visual-regression path. Real mode only shows a provider when it's actually
+  // usable on this platform + config (see availableOAuthProviders).
   const provider = AUTH_ENABLED ? 'google' : defaultOAuthProvider();
+  const showOAuth = AUTH_ENABLED ? availableOAuthProviders().includes(provider) : true;
 
   async function onOAuthPress() {
     setFormError(undefined);
@@ -143,9 +146,12 @@ export default function LoginScreen() {
         />
       </View>
 
-      <OrDivider />
-      <OAuthButton provider={provider} onPress={onOAuthPress} />
-
+      {showOAuth ? (
+        <>
+          <OrDivider />
+          <OAuthButton provider={provider} onPress={onOAuthPress} />
+        </>
+      ) : null}
 
       <AuthSwitchLink
         prompt={t('auth.noAccountPrompt')}

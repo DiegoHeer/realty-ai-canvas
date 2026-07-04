@@ -182,6 +182,9 @@ describe('LoginScreen', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const authData = require('@realty/data');
     jest.replaceProperty(authData, 'AUTH_ENABLED', true);
+    // Configured native setup: both client ids set → google is available.
+    jest.replaceProperty(authData, 'GOOGLE_WEB_CLIENT_ID', 'WEB-ID');
+    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', 'IOS-ID');
 
     const signInWithGoogle = jest.fn().mockResolvedValue({ ok: true });
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
@@ -204,6 +207,8 @@ describe('LoginScreen', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const authData = require('@realty/data');
     jest.replaceProperty(authData, 'AUTH_ENABLED', true);
+    jest.replaceProperty(authData, 'GOOGLE_WEB_CLIENT_ID', 'WEB-ID');
+    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', 'IOS-ID');
 
     const signInWithGoogle = jest
       .fn()
@@ -225,5 +230,33 @@ describe('LoginScreen', () => {
     // Real failure: generic banner shown.
     fireEvent.press(getByTestId('oauth-button'));
     expect(await findByText('Something went wrong. Please try again.')).toBeOnTheScreen();
+  });
+
+  it('hides the OAuth button in real mode when Google is not configured', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const authData = require('@realty/data');
+    jest.replaceProperty(authData, 'AUTH_ENABLED', true);
+    // No client ids → availableOAuthProviders() is empty → no button ships.
+    jest.replaceProperty(authData, 'GOOGLE_WEB_CLIENT_ID', '');
+    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', '');
+
+    const { queryByTestId } = await renderScreen('en');
+
+    expect(queryByTestId('oauth-button')).toBeNull();
+  });
+
+  it('hides the OAuth button in real mode on web', async () => {
+    const Platform = require('react-native').Platform;
+    jest.replaceProperty(Platform, 'OS', 'web');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const authData = require('@realty/data');
+    jest.replaceProperty(authData, 'AUTH_ENABLED', true);
+    // Even fully configured, web has no usable provider (native web signIn throws).
+    jest.replaceProperty(authData, 'GOOGLE_WEB_CLIENT_ID', 'WEB-ID');
+    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', 'IOS-ID');
+
+    const { queryByTestId } = await renderScreen('en');
+
+    expect(queryByTestId('oauth-button')).toBeNull();
   });
 });

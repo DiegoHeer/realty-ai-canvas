@@ -372,6 +372,30 @@ describe('use-auth (real mode)', () => {
     });
   });
 
+  it('signInWithGoogle bails without touching the native module when the web client id is unset', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      Object.defineProperty(authData, 'GOOGLE_WEB_CLIENT_ID', { value: '', configurable: true });
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const gsi = require('@react-native-google-signin/google-signin');
+      const configureSpy = jest.spyOn(gsi.GoogleSignin, 'configure');
+      const signInSpy = jest.spyOn(gsi.GoogleSignin, 'signIn');
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithGoogle();
+
+      expect(outcome).toEqual({ ok: false, code: 'generic' });
+      expect(configureSpy).not.toHaveBeenCalled();
+      expect(signInSpy).not.toHaveBeenCalled();
+      expect(getCurrentUser()).toBeNull();
+    });
+  });
+
   it('signOut clears user, tokens and calls queryClient.clear', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

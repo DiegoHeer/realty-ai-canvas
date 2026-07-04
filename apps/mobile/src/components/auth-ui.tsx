@@ -1,3 +1,4 @@
+import { GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import { type ReactNode } from 'react';
 import {
@@ -191,6 +192,26 @@ export type OAuthProvider = 'apple' | 'google';
  */
 export function defaultOAuthProvider(): OAuthProvider {
   return Platform.OS === 'ios' ? 'apple' : 'google';
+}
+
+/**
+ * Which OAuth providers are actually usable in real (backend) mode, given the
+ * platform and the configured Google client ids. The native google-signin lib
+ * and the backend both have hard requirements, so a button that can't succeed
+ * must not be shown:
+ *   - web: none — the native lib's web `signIn()` throws (sponsors-only).
+ *   - iOS: `google` only when BOTH the web and iOS client ids are set (the iOS
+ *     flow needs the iOS client id; the web client id scopes the id token).
+ *   - Android: `google` only when the web client id is set — Android's native
+ *     side skips the id-token request when webClientId is empty (null idToken).
+ * Apple is intentionally absent until native Sign in with Apple lands.
+ */
+export function availableOAuthProviders(): OAuthProvider[] {
+  if (Platform.OS === 'web') return [];
+  if (Platform.OS === 'ios') {
+    return GOOGLE_WEB_CLIENT_ID && GOOGLE_IOS_CLIENT_ID ? ['google'] : [];
+  }
+  return GOOGLE_WEB_CLIENT_ID ? ['google'] : [];
 }
 
 /** Google's four-color "G" mark. */
