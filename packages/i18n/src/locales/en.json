@@ -117,7 +117,6 @@
     "errorInvalidCredentials": "Invalid email or password.",
     "errorCodeInvalid": "That code is invalid or expired.",
     "errorEmailTaken": "That email is already registered.",
-    "errorSignInCancelled": "Sign-in was cancelled.",
     "submitting": "Please wait…",
     "verifyTitle": "Verify your email",
     "verifySubtitle": "Enter the code we emailed you to finish creating your account.",

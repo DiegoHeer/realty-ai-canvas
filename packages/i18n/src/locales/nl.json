@@ -117,7 +117,6 @@
     "errorInvalidCredentials": "Ongeldig e-mailadres of wachtwoord.",
     "errorCodeInvalid": "Die code is ongeldig of verlopen.",
     "errorEmailTaken": "Dat e-mailadres is al geregistreerd.",
-    "errorSignInCancelled": "Aanmelden is geannuleerd.",
     "submitting": "Even geduld…",
     "verifyTitle": "Verifieer je e-mailadres",
     "verifySubtitle": "Voer de code in die we je hebben gemaild om je account aan te maken.",
