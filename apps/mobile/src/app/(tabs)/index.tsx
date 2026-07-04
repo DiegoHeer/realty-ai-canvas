@@ -13,12 +13,14 @@ import { ListingMap, type ListingMapRef } from '@/components/listing-map';
 import { LocationSearch, type LocationSearchRef } from '@/components/location-search';
 import { BUILDINGS_3D_PITCH } from '@/components/map-shared';
 import { useEffectiveColorScheme } from '@/components/map-style';
+import { OverlayLegend } from '@/components/overlay-legend';
 import { Brand } from '@/constants/theme';
 import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat, rampFor, selectInhabitants, statDomain } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
 import { countActiveFilters, filtersToQuery, useFilters } from '@/lib/filters';
 import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
+import { overlayById, type OverlayId } from '@/lib/map-overlays';
 import { useMapSettings } from '@/lib/map-settings';
 import { normalizeStats } from '@/lib/neighborhood-stats';
 import { type GeocodeResult, zoomForType } from '@/lib/pdok';
@@ -54,6 +56,16 @@ export default function MapScreen() {
       return next;
     });
   }, []);
+  // The active map overlay (noise, air quality, …) — one at a time: tapping an
+  // overlay pill swaps to it, tapping the active one turns it off.
+  const [overlayId, setOverlayId] = useState<OverlayId | null>(null);
+  const toggleOverlay = useCallback((id: OverlayId) => {
+    setOverlayId((prev) => (prev === id ? null : id));
+  }, []);
+  const overlay = overlayById(overlayId);
+  // Viewport zoom as of the last camera settle — drives the legend's "zoom in"
+  // hint for overlays that only render at building-level zooms.
+  const [mapZoom, setMapZoom] = useState(11);
   // No city is selected until the user taps one. Until then the map shows no
   // neighborhoods; tapping a city loads + shows that city's neighborhoods.
   const [selectedCity, setSelectedCity] = useState<
@@ -201,6 +213,7 @@ export default function MapScreen() {
   // glance doesn't keep swapping cities underfoot.
   const handleCameraIdle = useCallback(
     ({ longitude, latitude, zoom }: { longitude: number; latitude: number; zoom: number }) => {
+      setMapZoom(zoom);
       if (zoom < AUTO_LOAD_AREAS_ZOOM) return;
       selectCityAt({ longitude, latitude });
     },
@@ -231,6 +244,7 @@ export default function MapScreen() {
         onCameraIdle={handleCameraIdle}
         loadingPolygon={loadingCityPolygon}
         selectedPolygonId={selectedAreaId}
+        overlay={overlay}
         buildings3D={buildings3D}
       />
       {/* Full-screen backdrop: while the search is active, a tap anywhere
@@ -258,8 +272,15 @@ export default function MapScreen() {
           onResult={handleSearchResult}
         />
         <View className="mt-2">
-          <FilterPills selected={activeFilters} onToggle={toggleFilter} />
+          <FilterPills
+            selected={activeFilters}
+            onToggle={toggleFilter}
+            activeOverlay={overlayId}
+            onToggleOverlay={toggleOverlay}
+          />
         </View>
+        {/* Legend for the active overlay, explaining the colors it paints. */}
+        {overlay && <OverlayLegend overlay={overlay} zoom={mapZoom} />}
         {/* While a tapped city's neighborhoods download, show a spinner centered
             below the pills. Cached cities resolve instantly, so it rarely shows. */}
         {selectedCity && areasFetching && (
