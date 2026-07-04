@@ -341,7 +341,7 @@
       "electionOther": "Outros",
       "electionFooterBuurt_one": "{{count}} assembleia de voto neste bairro · {{votes}} votos",
       "electionFooterBuurt_other": "{{count}} assembleias de voto neste bairro · {{votes}} votos",
-      "electionFooterWijk": "Números do bairro vizinho (sem assembleia de voto neste bairro) · {{votes}} votos"
+      "electionFooterWijk": "Números do distrito (sem assembleia de voto neste bairro) · {{votes}} votos"
     }
   },
   "onboarding": {
