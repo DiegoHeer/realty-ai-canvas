@@ -142,6 +142,8 @@ jest.mock('@maplibre/maplibre-react-native', () => {
     Camera: () => null,
     Marker: ({ children }: any) => children,
     GeoJSONSource: ({ children }: any) => children,
+    RasterSource: ({ children }: any) => children,
+    VectorSource: ({ children }: any) => children,
     Layer: () => null,
   };
 });

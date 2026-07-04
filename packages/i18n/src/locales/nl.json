@@ -163,6 +163,26 @@
     "new": "Nieuw",
     "sold": "Verkocht"
   },
+  "layers": {
+    "noise": "Geluid",
+    "airQuality": "Luchtkwaliteit",
+    "energyLabels": "Energielabels",
+    "buildingAge": "Bouwjaar",
+    "zoning": "Bestemming",
+    "treeHeight": "Musjes",
+    "zoomHint": "Zoom in om deze laag te zien",
+    "legend": {
+      "residential": "Wonen",
+      "centre": "Centrum",
+      "mixed": "Gemengd",
+      "business": "Bedrijf",
+      "public": "Maatschappelijk",
+      "green": "Groen",
+      "water": "Water",
+      "agricultural": "Agrarisch",
+      "traffic": "Verkeer"
+    }
+  },
   "filtersPage": {
     "title": "Filters",
     "reset": "Wissen",

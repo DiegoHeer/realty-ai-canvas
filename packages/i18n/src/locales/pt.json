@@ -163,6 +163,26 @@
     "new": "Novos",
     "sold": "Vendidos"
   },
+  "layers": {
+    "noise": "Ruído",
+    "airQuality": "Qualidade do ar",
+    "energyLabels": "Certificados energéticos",
+    "buildingAge": "Ano de construção",
+    "zoning": "Zoneamento",
+    "treeHeight": "Pardais",
+    "zoomHint": "Aproxime para ver esta camada",
+    "legend": {
+      "residential": "Residencial",
+      "centre": "Centro",
+      "mixed": "Misto",
+      "business": "Empresarial",
+      "public": "Serviços públicos",
+      "green": "Verde",
+      "water": "Água",
+      "agricultural": "Agrícola",
+      "traffic": "Tráfego"
+    }
+  },
   "filtersPage": {
     "title": "Filtros",
     "reset": "Limpar",

@@ -19,6 +19,7 @@ import { useMapStyle } from './map-style';
 import { DEFAULT_CENTER, priceLabel } from './map-shared';
 import { usePulseOpacity } from './use-pulse-opacity';
 import { outlineColorFor } from '../lib/area-choropleth';
+import { BAG_PAND_SOURCE_LAYER, BUILDING_AGE_FILL } from '../lib/map-overlays';
 import { useRecentViews } from '../lib/recent-views';
 import { Brand } from '../constants/theme';
 
@@ -50,11 +51,11 @@ function PulsingCityOverlay({ polygon, beforeId }: { polygon: AreaPolygon; befor
 
 /** Web map via react-map-gl (MapLibre GL JS). Selected by Metro on web. */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, onCameraIdle, loadingPolygon },
+  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, onCameraIdle, loadingPolygon, overlay },
   ref,
 ) {
   const mapRef = useRef<MapRef>(null);
-  const { mapStyle, polygonsBeforeId, scheme } = useMapStyle();
+  const { mapStyle, polygonsBeforeId, overlayBeforeId, scheme } = useMapStyle();
   const { recentViews } = useRecentViews();
   const viewedIds = useMemo(
     () => new Set(recentViews.map((listing) => listing.id)),
@@ -97,6 +98,44 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
         // A click off any area overlay → hit-test which city it lands in.
         onMapPress?.({ longitude: e.lngLat.lng, latitude: e.lngLat.lat });
       }}>
+      {/* Active data overlay. Source/layer ids are unique per overlay: the new
+          overlay's layer is created during render, before the old source's
+          cleanup runs — a shared id would attach it to the outgoing source (or
+          update that source in place with mismatched type/zoom bounds). */}
+      {overlay && overlay.kind === 'raster' && (
+        <Source
+          key={overlay.id}
+          id={`overlay-${overlay.id}`}
+          type="raster"
+          tiles={overlay.tiles}
+          tileSize={512}
+          minzoom={overlay.minzoom}
+          maxzoom={overlay.maxzoom}>
+          <Layer
+            id={`overlay-${overlay.id}-raster`}
+            type="raster"
+            beforeId={overlayBeforeId}
+            paint={{ 'raster-opacity': overlay.opacity }}
+          />
+        </Source>
+      )}
+      {overlay && overlay.kind === 'buildings' && (
+        <Source
+          key={overlay.id}
+          id={`overlay-${overlay.id}`}
+          type="vector"
+          tiles={overlay.tiles}
+          minzoom={overlay.minzoom}
+          maxzoom={overlay.maxzoom}>
+          <Layer
+            id={`overlay-${overlay.id}-buildings`}
+            type="fill"
+            source-layer={BAG_PAND_SOURCE_LAYER}
+            beforeId={overlayBeforeId}
+            paint={{ 'fill-color': BUILDING_AGE_FILL, 'fill-opacity': overlay.opacity }}
+          />
+        </Source>
+      )}
       {loadingPolygon && <PulsingCityOverlay polygon={loadingPolygon} beforeId={polygonsBeforeId} />}
       {polygons && polygons.length > 0 && (
         <Source id="area-polygons" type="geojson" data={toFeatureCollection(polygons)}>

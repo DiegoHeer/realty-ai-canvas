@@ -163,6 +163,26 @@
     "new": "New",
     "sold": "Sold"
   },
+  "layers": {
+    "noise": "Noise",
+    "airQuality": "Air quality",
+    "energyLabels": "Energy labels",
+    "buildingAge": "Building age",
+    "zoning": "Zoning",
+    "treeHeight": "Sparrows",
+    "zoomHint": "Zoom in to see this layer",
+    "legend": {
+      "residential": "Residential",
+      "centre": "Centre",
+      "mixed": "Mixed",
+      "business": "Business",
+      "public": "Public services",
+      "green": "Green",
+      "water": "Water",
+      "agricultural": "Agricultural",
+      "traffic": "Traffic"
+    }
+  },
   "filtersPage": {
     "title": "Filters",
     "reset": "Reset",

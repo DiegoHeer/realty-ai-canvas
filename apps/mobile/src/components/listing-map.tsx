@@ -6,6 +6,8 @@ import {
   Layer,
   Map,
   Marker,
+  RasterSource,
+  VectorSource,
 } from '@maplibre/maplibre-react-native';
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -25,6 +27,7 @@ import { useMapStyle } from './map-style';
 import { DEFAULT_CENTER, priceLabel } from './map-shared';
 import { usePulseOpacity } from './use-pulse-opacity';
 import { outlineColorFor } from '../lib/area-choropleth';
+import { BAG_PAND_SOURCE_LAYER, BUILDING_AGE_FILL, type MapOverlay } from '../lib/map-overlays';
 import { useRecentViews } from '../lib/recent-views';
 import { Brand } from '../constants/theme';
 
@@ -93,6 +96,11 @@ export interface ListingMapProps {
    * it (data arrived, or no city is loading).
    */
   loadingPolygon?: AreaPolygon | null;
+  /**
+   * Active data overlay (noise, air quality, energy labels, …) drawn above the
+   * basemap's buildings but below its labels. Null shows none.
+   */
+  overlay?: MapOverlay | null;
 }
 
 /** Imperative handle for driving the camera, e.g. flying to a search result. */
@@ -106,14 +114,14 @@ export interface ListingMapRef {
  * The web implementation lives in `listing-map.web.tsx`.
  */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, onCameraIdle, loadingPolygon },
+  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, onCameraIdle, loadingPolygon, overlay },
   ref,
 ) {
   const cameraRef = useRef<CameraRef>(null);
   // Timestamp of the last marker tap; see MARKER_TAP_GRACE_MS.
   const markerTapAtRef = useRef(0);
   const insets = useSafeAreaInsets();
-  const { mapStyle, polygonsBeforeId, scheme } = useMapStyle();
+  const { mapStyle, polygonsBeforeId, overlayBeforeId, scheme } = useMapStyle();
   const { recentViews } = useRecentViews();
   const viewedIds = useMemo(
     () => new Set(recentViews.map((listing) => listing.id)),
@@ -165,6 +173,42 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
           are then driven solely by the imperative ref (search flyTo) — loading
           a tapped city's neighborhoods or selecting an area must not move it. */}
       <Camera ref={cameraRef} initialViewState={{ center, zoom: 11 }} />
+      {/* Active data overlay. Source/layer ids are unique per overlay: the new
+          overlay's layer can be created before the old source is torn down — a
+          shared id would attach it to the outgoing source (or update that
+          source in place with mismatched type/zoom bounds). */}
+      {overlay && overlay.kind === 'raster' && (
+        <RasterSource
+          key={overlay.id}
+          id={`overlay-${overlay.id}`}
+          tiles={overlay.tiles}
+          tileSize={512}
+          minzoom={overlay.minzoom}
+          maxzoom={overlay.maxzoom}>
+          <Layer
+            id={`overlay-${overlay.id}-raster`}
+            type="raster"
+            beforeId={overlayBeforeId}
+            paint={{ 'raster-opacity': overlay.opacity }}
+          />
+        </RasterSource>
+      )}
+      {overlay && overlay.kind === 'buildings' && (
+        <VectorSource
+          key={overlay.id}
+          id={`overlay-${overlay.id}`}
+          tiles={overlay.tiles}
+          minzoom={overlay.minzoom}
+          maxzoom={overlay.maxzoom}>
+          <Layer
+            id={`overlay-${overlay.id}-buildings`}
+            type="fill"
+            source-layer={BAG_PAND_SOURCE_LAYER}
+            beforeId={overlayBeforeId}
+            paint={{ 'fill-color': BUILDING_AGE_FILL, 'fill-opacity': overlay.opacity }}
+          />
+        </VectorSource>
+      )}
       {loadingPolygon && <PulsingCityOverlay polygon={loadingPolygon} beforeId={polygonsBeforeId} />}
       {polygons && polygons.length > 0 && (
         <GeoJSONSource
