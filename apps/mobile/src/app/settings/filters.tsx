@@ -15,9 +15,10 @@ import {
   DEFAULT_FILTERS,
   ENERGY_LABELS,
   filtersToQuery,
+  nearestPriceIndex,
   PRICE_DISTRIBUTION_BUY,
   PRICE_DISTRIBUTION_RENT,
-  priceDomain,
+  priceSteps,
   SORT_OPTIONS,
   useFilters,
   YEAR_DOMAIN,
@@ -96,13 +97,22 @@ export default function FiltersScreen() {
   // Bedrooms/bathrooms render as discrete 0–6 sliders; 0 reads as "Any", n as "+n".
   const roomCountLabel = (v: number) => (v === 0 ? anyLabel : `+${v}`);
 
-  // Price — domain (and the availability histogram) depend on buy vs. rent.
-  const price = priceDomain(draft.mode);
-  const priceValues = [draft.minPrice ?? price.min, draft.maxPrice ?? price.max];
+  // Price — the slider runs on the indices of a log-ish ladder of stops (fine
+  // near the bottom, coarse at the top; buy and rent each have their own, as
+  // with the histogram). The topmost stop is open-ended: parking the max thumb
+  // there means "€5M+" (no max constraint).
+  const steps = priceSteps(draft.mode);
+  const topIndex = steps.length - 1;
+  const priceIndices = [
+    draft.minPrice === null ? 0 : nearestPriceIndex(steps, draft.minPrice),
+    draft.maxPrice === null ? topIndex : nearestPriceIndex(steps, draft.maxPrice),
+  ];
   const priceLabel =
     draft.minPrice === null && draft.maxPrice === null
       ? anyLabel
-      : `${compactEuro(priceValues[0])} – ${compactEuro(priceValues[1])}`;
+      : `${compactEuro(steps[priceIndices[0]])} – ${compactEuro(steps[priceIndices[1]])}${
+          draft.maxPrice === null ? '+' : ''
+        }`;
 
   const areaValues = [draft.minAreaSqm ?? AREA_DOMAIN.min, draft.maxAreaSqm ?? AREA_DOMAIN.max];
   const areaLabel =
@@ -132,7 +142,7 @@ export default function FiltersScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: 24, gap: 16 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <FilterSection title={t('filtersPage.mode')}>
+        <View className="gap-2">
           <SelectPills
             stretch
             // Rent is a placeholder until the backend supports it (deal_type=rent);
@@ -145,19 +155,22 @@ export default function FiltersScreen() {
             selected={[draft.mode]}
             onToggle={(key) => update({ mode: key as ListingMode, minPrice: null, maxPrice: null })}
           />
-        </FilterSection>
+          <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+            {t('filtersPage.rentComingSoon')}
+          </Text>
+        </View>
 
         <FilterSection title={t('filtersPage.price')} value={priceLabel}>
           <RangeSlider
-            min={price.min}
-            max={price.max}
-            step={price.step}
-            values={priceValues}
+            min={0}
+            max={topIndex}
+            step={1}
+            values={priceIndices}
             distribution={draft.mode === 'rent' ? PRICE_DISTRIBUTION_RENT : PRICE_DISTRIBUTION_BUY}
             onChange={([lo, hi]) =>
               update({
-                minPrice: lo <= price.min ? null : lo,
-                maxPrice: hi >= price.max ? null : hi,
+                minPrice: lo <= 0 ? null : steps[lo],
+                maxPrice: hi >= topIndex ? null : steps[hi],
               })
             }
             {...sliderDrag}

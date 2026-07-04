@@ -16,7 +16,7 @@ import {
   toFeatureCollection,
 } from './area-polygons';
 import { useMapStyle } from './map-style';
-import { DEFAULT_CENTER, priceLabel } from './map-shared';
+import { BUILDINGS_3D_MIN_ZOOM, BUILDINGS_3D_PITCH, buildings3DPaint, DEFAULT_CENTER, priceLabel } from './map-shared';
 import { usePulseOpacity } from './use-pulse-opacity';
 import { outlineColorFor } from '../lib/area-choropleth';
 import { BAG_PAND_SOURCE_LAYER, BUILDING_AGE_FILL } from '../lib/map-overlays';
@@ -51,7 +51,18 @@ function PulsingCityOverlay({ polygon, beforeId }: { polygon: AreaPolygon; befor
 
 /** Web map via react-map-gl (MapLibre GL JS). Selected by Metro on web. */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, onCameraIdle, loadingPolygon, overlay },
+  {
+    listings,
+    polygons,
+    onSelect,
+    onSelectPolygon,
+    selectedPolygonId,
+    onMapPress,
+    onCameraIdle,
+    loadingPolygon,
+    overlay,
+    buildings3D,
+  },
   ref,
 ) {
   const mapRef = useRef<MapRef>(null);
@@ -65,6 +76,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   useImperativeHandle(ref, () => ({
     flyTo: ({ longitude, latitude, zoom }) =>
       mapRef.current?.flyTo({ center: [longitude, latitude], zoom, duration: 1200 }),
+    setPitch: (pitch) => mapRef.current?.flyTo({ pitch, duration: 500 }),
   }));
 
   // Prefer framing the polygons (the map's overlay focus); fall back to the
@@ -79,7 +91,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   return (
     <Map
       ref={mapRef}
-      initialViewState={{ ...center, zoom: 11 }}
+      initialViewState={{ ...center, zoom: 11, pitch: buildings3D ? BUILDINGS_3D_PITCH : 0 }}
       mapStyle={mapStyle}
       style={{ width: '100%', height: '100%' }}
       interactiveLayerIds={polygons && polygons.length > 0 ? ['area-polygons-fill'] : []}
@@ -98,6 +110,16 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
         // A click off any area overlay → hit-test which city it lands in.
         onMapPress?.({ longitude: e.lngLat.lng, latitude: e.lngLat.lat });
       }}>
+      {buildings3D && (
+        <Layer
+          id="buildings-3d"
+          source="openmaptiles"
+          source-layer="building"
+          type="fill-extrusion"
+          minzoom={BUILDINGS_3D_MIN_ZOOM}
+          paint={buildings3DPaint(scheme)}
+        />
+      )}
       {/* Active data overlay. Source/layer ids are unique per overlay: the new
           overlay's layer is created during render, before the old source's
           cleanup runs — a shared id would attach it to the outgoing source (or

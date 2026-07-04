@@ -30,9 +30,10 @@ import {
 import { RangeSlider } from '@/components/range-slider';
 import { cityDisplayName } from '@/lib/city-search';
 import {
+  nearestPriceIndex,
   PRICE_DISTRIBUTION_BUY,
   PRICE_DISTRIBUTION_RENT,
-  priceDomain,
+  priceSteps,
   useFilters,
   type ListingMode,
 } from '@/lib/filters';
@@ -304,13 +305,21 @@ export function OnboardingFlow() {
     leaveToApp();
   }
 
-  // Price slider domain + summary track the (currently buy-only) mode.
-  const priceCfg = priceDomain(mode);
-  const priceValues = [price[0] ?? priceCfg.min, price[1] ?? priceCfg.max];
+  // Price slider stops + summary track the (currently buy-only) mode. The
+  // slider runs on the indices of a log-ish ladder — fine steps low, big leaps
+  // high — whose topmost stop is the open-ended "€5M+" (no max constraint).
+  const steps = priceSteps(mode);
+  const topIndex = steps.length - 1;
+  const priceIndices = [
+    price[0] === null ? 0 : nearestPriceIndex(steps, price[0]),
+    price[1] === null ? topIndex : nearestPriceIndex(steps, price[1]),
+  ];
   const priceLabel =
     price[0] === null && price[1] === null
       ? t('filtersPage.any')
-      : `${compactEuro(priceValues[0])} – ${compactEuro(priceValues[1])}`;
+      : `${compactEuro(steps[priceIndices[0]])} – ${compactEuro(steps[priceIndices[1]])}${
+          price[1] === null ? '+' : ''
+        }`;
 
   const pages = [
     <OnboardingPage key="welcome">
@@ -347,7 +356,7 @@ export function OnboardingFlow() {
         title={t('onboarding.filtersStep.title')}
         subtitle={t('onboarding.filtersStep.subtitle')}
       />
-      <FilterSection title={t('filtersPage.mode')}>
+      <View className="gap-2">
         <SelectPills
           stretch
           // Rent is a placeholder until the backend supports it; keep Buy the
@@ -363,16 +372,19 @@ export function OnboardingFlow() {
             setPrice([null, null]);
           }}
         />
-      </FilterSection>
+        <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+          {t('filtersPage.rentComingSoon')}
+        </Text>
+      </View>
       <FilterSection title={t('filtersPage.price')} value={priceLabel}>
         <RangeSlider
-          min={priceCfg.min}
-          max={priceCfg.max}
-          step={priceCfg.step}
-          values={priceValues}
+          min={0}
+          max={topIndex}
+          step={1}
+          values={priceIndices}
           distribution={mode === 'rent' ? PRICE_DISTRIBUTION_RENT : PRICE_DISTRIBUTION_BUY}
           onChange={([lo, hi]) =>
-            setPrice([lo <= priceCfg.min ? null : lo, hi >= priceCfg.max ? null : hi])
+            setPrice([lo <= 0 ? null : steps[lo], hi >= topIndex ? null : steps[hi]])
           }
           onDragStart={() => {
             cancelPeek();

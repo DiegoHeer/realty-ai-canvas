@@ -26,7 +26,7 @@ async function pageSettled(page: Page, heading: string) {
 test.describe('Onboarding tour', () => {
   test('walks through the five intro pages', async ({ page }) => {
     await page.goto('/onboarding');
-    await pageSettled(page, 'Welcome to Realty AI Canvas');
+    await pageSettled(page, 'Welcome to Huismus');
     await expect(page).toHaveScreenshot('onboarding-welcome.png');
 
     // There is no Continue button — advance one page per tap on the right
@@ -55,7 +55,7 @@ test.describe('Onboarding tour', () => {
 
   test('swiping the pager anchors to the next page', async ({ page }) => {
     await page.goto('/onboarding');
-    await pageSettled(page, 'Welcome to Realty AI Canvas');
+    await pageSettled(page, 'Welcome to Huismus');
 
     // A horizontal wheel gesture over the pager: past the midpoint the snap
     // anchors the next page, exactly like a touch swipe.
@@ -65,6 +65,6 @@ test.describe('Onboarding tour', () => {
 
     // Back also stays in lockstep with the scroll position after a swipe.
     await page.getByText('Back', { exact: true }).click();
-    await pageSettled(page, 'Welcome to Realty AI Canvas');
+    await pageSettled(page, 'Welcome to Huismus');
   });
 });

@@ -24,7 +24,7 @@ import {
   toFeatureCollection,
 } from './area-polygons';
 import { useMapStyle } from './map-style';
-import { DEFAULT_CENTER, priceLabel } from './map-shared';
+import { BUILDINGS_3D_MIN_ZOOM, BUILDINGS_3D_PITCH, buildings3DPaint, DEFAULT_CENTER, priceLabel } from './map-shared';
 import { usePulseOpacity } from './use-pulse-opacity';
 import { outlineColorFor } from '../lib/area-choropleth';
 import { BAG_PAND_SOURCE_LAYER, BUILDING_AGE_FILL, type MapOverlay } from '../lib/map-overlays';
@@ -101,11 +101,15 @@ export interface ListingMapProps {
    * basemap's buildings but below its labels. Null shows none.
    */
   overlay?: MapOverlay | null;
+  /** Extrude the basemap's buildings to their real height and tilt the camera. */
+  buildings3D?: boolean;
 }
 
 /** Imperative handle for driving the camera, e.g. flying to a search result. */
 export interface ListingMapRef {
   flyTo: (target: { longitude: number; latitude: number; zoom?: number }) => void;
+  /** Tilts the camera to the given pitch (degrees) without moving it otherwise. */
+  setPitch: (pitch: number) => void;
 }
 
 /**
@@ -114,7 +118,18 @@ export interface ListingMapRef {
  * The web implementation lives in `listing-map.web.tsx`.
  */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, onCameraIdle, loadingPolygon, overlay },
+  {
+    listings,
+    polygons,
+    onSelect,
+    onSelectPolygon,
+    selectedPolygonId,
+    onMapPress,
+    onCameraIdle,
+    loadingPolygon,
+    overlay,
+    buildings3D,
+  },
   ref,
 ) {
   const cameraRef = useRef<CameraRef>(null);
@@ -135,6 +150,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
         zoom,
         duration: 1200,
       }),
+    setPitch: (pitch) => cameraRef.current?.setStop({ pitch, duration: 500 }),
   }));
 
   // Prefer framing the polygons (the map's overlay focus); fall back to the
@@ -170,9 +186,23 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
         left: COMPASS_MARGIN,
       }}>
       {/* Uncontrolled initial framing only: applied once on load. Camera moves
-          are then driven solely by the imperative ref (search flyTo) — loading
-          a tapped city's neighborhoods or selecting an area must not move it. */}
-      <Camera ref={cameraRef} initialViewState={{ center, zoom: 11 }} />
+          are then driven solely by the imperative ref (search flyTo, and the
+          pitch tilt when 3D buildings toggle) — loading a tapped city's
+          neighborhoods or selecting an area must not move it. */}
+      <Camera
+        ref={cameraRef}
+        initialViewState={{ center, zoom: 11, pitch: buildings3D ? BUILDINGS_3D_PITCH : 0 }}
+      />
+      {buildings3D && (
+        <Layer
+          id="buildings-3d"
+          source="openmaptiles"
+          source-layer="building"
+          type="fill-extrusion"
+          minzoom={BUILDINGS_3D_MIN_ZOOM}
+          paint={buildings3DPaint(scheme)}
+        />
+      )}
       {/* Active data overlay. Source/layer ids are unique per overlay: the new
           overlay's layer can be created before the old source is torn down — a
           shared id would attach it to the outgoing source (or update that
