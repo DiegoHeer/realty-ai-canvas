@@ -1,4 +1,4 @@
-import type { AreaPolygon, CityShape, Listing, ListingQuery, NeighborhoodStats } from '@realty/types';
+import type { AreaPolygon, CityShape, ElectionResult, Listing, ListingQuery, NeighborhoodStats } from '@realty/types';
 
 import { API_BASE, API_URL, API_VERSION } from './env';
 import {
@@ -288,6 +288,7 @@ interface NeighborhoodStatsShape {
   code: string;
   stats_year: number;
   stats: Record<string, number>;
+  election_stats: Record<string, ElectionResult> | null;
 }
 
 /**
@@ -304,6 +305,7 @@ export async function getStats(city: string = DEN_HAAG_CITY_CODE): Promise<Neigh
     code: entry.code,
     statsYear: entry.stats_year,
     stats: entry.stats ?? {},
+    electionStats: entry.election_stats ?? undefined,
   }));
 }
 

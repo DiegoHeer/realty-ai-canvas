@@ -114,6 +114,18 @@ export interface CityShape {
   geometry: Polygon | MultiPolygon;
 }
 
+/** Aggregated election result for one area and one election (e.g. TK2025). */
+export interface ElectionResult {
+  /** All votes counted toward this area's aggregate. */
+  totalVotes: number;
+  /** Number of polling stations behind the aggregate. */
+  stationCount: number;
+  /** 'buurt' = own stations, 'wijk' = inherited district totals, 'gemeente' = city-level. */
+  source: 'buurt' | 'wijk' | 'gemeente';
+  /** Absolute vote counts keyed by party name as the Kiesraad prints it. */
+  parties: Record<string, number>;
+}
+
 /**
  * CBS statistics for a single neighborhood. Matched to an {@link AreaPolygon}
  * by `code` === the polygon's `id`.
@@ -125,6 +137,8 @@ export interface NeighborhoodStats {
   statsYear: number;
   /** Raw CBS metrics keyed by field name. Values are counts, percentages, etc. */
   stats: Record<string, number>;
+  /** Election results keyed by election id (e.g. `tk2025`); absent when none are loaded. */
+  electionStats?: Record<string, ElectionResult>;
 }
 
 /** Transaction kind. Maps to the API's `deal_type`; buy→`sale`, rent→`rent`. */

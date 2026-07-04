@@ -328,6 +328,43 @@ describe('client (API mode)', () => {
     ]);
   });
 
+  it('getStats maps election_stats → electionStats', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        {
+          code: 'BU05180546',
+          stats_year: 2023,
+          stats: { AantalInwoners_5: 6285 },
+          election_stats: {
+            tk2025: {
+              totalVotes: 20,
+              stationCount: 1,
+              source: 'buurt',
+              parties: { D66: 12, VVD: 8 },
+            },
+          },
+        },
+      ],
+    });
+
+    const stats = await getStatsApi('0518');
+    expect(stats[0]!.electionStats!.tk2025!.parties).toEqual({ D66: 12, VVD: 8 });
+    expect(stats[0]!.electionStats!.tk2025!.source).toBe('buurt');
+  });
+
+  it('getStats leaves electionStats undefined when the backend sends null', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        { code: 'BU05180546', stats_year: 2023, stats: {}, election_stats: null },
+      ],
+    });
+
+    const stats = await getStatsApi('0518');
+    expect(stats[0]!.electionStats).toBeUndefined();
+  });
+
   it('request throws on non-ok response', async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
