@@ -1,5 +1,4 @@
 import { useTranslation } from '@realty/i18n';
-import { AUTH_ENABLED } from '@realty/data';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -9,7 +8,6 @@ import {
   AuthField,
   AuthScaffold,
   AuthSwitchLink,
-  defaultOAuthProvider,
   isValidEmail,
   LoginSuccessView,
   OAuthButton,
@@ -17,8 +15,8 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { useOAuthSignIn } from '@/hooks/use-oauth-sign-in';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
-import { isGoogleSignInAvailable } from '@/lib/google-auth';
 import { popOrReplace } from '@/lib/navigation';
 
 /**
@@ -29,37 +27,23 @@ import { popOrReplace } from '@/lib/navigation';
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { signInWithEmail, signInWithGoogle, signInWithApple } = useAuth();
+  const { signInWithEmail } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
-  const [oauthBusy, setOauthBusy] = useState(false);
   const [oauthSuccess, setOauthSuccess] = useState(false);
 
-  // Mock mode keeps the platform-styled demo button; real mode offers Google
-  // only (the sole provider the backend supports), and only on platforms where
-  // a client id is configured — today that's web (see lib/google-auth).
-  const provider = AUTH_ENABLED ? 'google' : defaultOAuthProvider();
-  const showOAuth = AUTH_ENABLED ? isGoogleSignInAvailable() : true;
-
-  async function submitOAuth() {
-    if (oauthBusy) return;
-    setOauthBusy(true);
-    setFormError(undefined);
-    const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
-    const outcome = await action();
-    setOauthBusy(false);
-    if (outcome.ok === true) {
-      // Flip to the in-place success landing (mirrors the verify/reset flows);
-      // its Continue button performs the actual navigation on a later gesture.
-      setOauthSuccess(true);
-    } else if (outcome.ok === false) {
-      setFormError(t(authErrorKey(outcome.code)));
-    }
-  }
+  // On success, flip to the in-place landing view (mirrors the verify/reset
+  // flows); its Continue button performs the actual navigation on a later
+  // gesture.
+  const { provider, showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
+    onSuccess: () => setOauthSuccess(true),
+    onError: (code) => setFormError(t(authErrorKey(code))),
+    onClearError: () => setFormError(undefined),
+  });
 
   async function submit() {
     const next: { email?: string; password?: string } = {};
@@ -156,7 +140,7 @@ export default function LoginScreen() {
       {showOAuth ? (
         <>
           <OrDivider />
-          <OAuthButton provider={provider} onPress={submitOAuth} />
+          <OAuthButton provider={provider} onPress={onOAuthPress} disabled={inFlight} />
         </>
       ) : null}
 

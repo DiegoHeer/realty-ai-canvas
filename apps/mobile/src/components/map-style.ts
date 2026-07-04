@@ -39,11 +39,20 @@ export const MAP_STYLE_DARK = darkStyle as unknown as StyleSpecification;
 // positron-style.json.)
 const POLYGONS_BEFORE = 'building';
 
+// `beforeId` for the data overlays (WMS rasters, BAG building fills) — the
+// first layer *above* `building` in each vendored style. Unlike the choropleth
+// they must cover the basemap's building fills (they re-paint footprints or
+// wash over the whole map), yet still sit below every label.
+const OVERLAY_BEFORE_LIGHT = 'waterway_line_label';
+const OVERLAY_BEFORE_DARK = 'highway_name_other';
+
 export interface MapStyleConfig {
   /** Style URL (light) or inline spec (dark) to pass to the Map's `mapStyle`. */
   mapStyle: string | StyleSpecification;
   /** `beforeId` for the polygon layers, matching the active basemap. */
   polygonsBeforeId: string;
+  /** `beforeId` for the data overlays — above buildings, below labels. */
+  overlayBeforeId: string;
   /** The resolved theme, so callers can pick theme-aware overlay colors. */
   scheme: 'light' | 'dark';
 }
@@ -69,5 +78,6 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
 export function useMapStyle(): MapStyleConfig {
   const scheme = useEffectiveColorScheme();
   const mapStyle = scheme === 'dark' ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
-  return { mapStyle, polygonsBeforeId: POLYGONS_BEFORE, scheme };
+  const overlayBeforeId = scheme === 'dark' ? OVERLAY_BEFORE_DARK : OVERLAY_BEFORE_LIGHT;
+  return { mapStyle, polygonsBeforeId: POLYGONS_BEFORE, overlayBeforeId, scheme };
 }
