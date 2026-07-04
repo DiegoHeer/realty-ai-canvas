@@ -11,6 +11,7 @@ import { FilterPills } from '@/components/filter-pills';
 import { ListingCard } from '@/components/listing-card';
 import { ListingMap, type ListingMapRef } from '@/components/listing-map';
 import { LocationSearch, type LocationSearchRef } from '@/components/location-search';
+import { BUILDINGS_3D_PITCH } from '@/components/map-shared';
 import { useEffectiveColorScheme } from '@/components/map-style';
 import { Brand } from '@/constants/theme';
 import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
@@ -18,6 +19,7 @@ import { colorAreasByStat, rampFor, selectInhabitants, statDomain } from '@/lib/
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
 import { countActiveFilters, filtersToQuery, useFilters } from '@/lib/filters';
 import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
+import { useMapSettings } from '@/lib/map-settings';
 import { normalizeStats } from '@/lib/neighborhood-stats';
 import { type GeocodeResult, zoomForType } from '@/lib/pdok';
 import { recordRecentView } from '@/lib/recent-views';
@@ -60,6 +62,20 @@ export default function MapScreen() {
 
   const { data: areas = [], isFetching: areasFetching } = useAreas(selectedCity?.code, loadAreas);
   const { data: stats = [] } = useStats(selectedCity?.code, loadStats);
+
+  // 3D buildings preference, set on the Map settings page (see profile.tsx).
+  // The map mounts already tilted to match it (its own Camera/initialViewState),
+  // so this effect only needs to re-tilt on a live toggle while this screen is
+  // already open — skip the mount-time run to avoid re-animating to the same pitch.
+  const { buildings3D } = useMapSettings();
+  const mountedPitchRef = useRef(false);
+  useEffect(() => {
+    if (!mountedPitchRef.current) {
+      mountedPitchRef.current = true;
+      return;
+    }
+    mapRef.current?.setPitch(buildings3D ? BUILDINGS_3D_PITCH : 0);
+  }, [buildings3D]);
 
   // A city chosen during the intro tour: once the city shapes are loaded, focus
   // the map on it (fly + select, so its neighborhoods load) and clear the
@@ -215,6 +231,7 @@ export default function MapScreen() {
         onCameraIdle={handleCameraIdle}
         loadingPolygon={loadingCityPolygon}
         selectedPolygonId={selectedAreaId}
+        buildings3D={buildings3D}
       />
       {/* Full-screen backdrop: while the search is active, a tap anywhere
           outside the field/dropdown collapses it and hides the keyboard.

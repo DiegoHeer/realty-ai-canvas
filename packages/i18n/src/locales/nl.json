@@ -32,7 +32,8 @@
     "support": "Ondersteuning",
     "privacy": "Privacy en beveiliging",
     "help": "Help en ondersteuning",
-    "about": "Over"
+    "about": "Over",
+    "map": "Kaart"
   },
   "privacyPage": {
     "zeroDataTitle": "Een zero-data bedrijf",
@@ -78,6 +79,11 @@
   },
   "notificationsPage": {
     "comingSoon": "Meldingsinstellingen komen binnenkort."
+  },
+  "mapSettingsPage": {
+    "title": "Kaart",
+    "buildings3D": "3D-gebouwen",
+    "buildings3DDescription": "Toon gebouwen in 3D op de kaart."
   },
   "feedback": {
     "title": "Feedback",
