@@ -356,7 +356,7 @@ export function OnboardingFlow() {
         title={t('onboarding.filtersStep.title')}
         subtitle={t('onboarding.filtersStep.subtitle')}
       />
-      <FilterSection title={t('filtersPage.mode')}>
+      <View className="gap-2">
         <SelectPills
           stretch
           // Rent is a placeholder until the backend supports it; keep Buy the
@@ -372,7 +372,10 @@ export function OnboardingFlow() {
             setPrice([null, null]);
           }}
         />
-      </FilterSection>
+        <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+          {t('filtersPage.rentComingSoon')}
+        </Text>
+      </View>
       <FilterSection title={t('filtersPage.price')} value={priceLabel}>
         <RangeSlider
           min={0}

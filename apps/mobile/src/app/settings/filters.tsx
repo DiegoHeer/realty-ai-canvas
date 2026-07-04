@@ -142,7 +142,7 @@ export default function FiltersScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: 24, gap: 16 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <FilterSection title={t('filtersPage.mode')}>
+        <View className="gap-2">
           <SelectPills
             stretch
             // Rent is a placeholder until the backend supports it (deal_type=rent);
@@ -155,7 +155,10 @@ export default function FiltersScreen() {
             selected={[draft.mode]}
             onToggle={(key) => update({ mode: key as ListingMode, minPrice: null, maxPrice: null })}
           />
-        </FilterSection>
+          <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+            {t('filtersPage.rentComingSoon')}
+          </Text>
+        </View>
 
         <FilterSection title={t('filtersPage.price')} value={priceLabel}>
           <RangeSlider
