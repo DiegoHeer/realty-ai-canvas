@@ -45,7 +45,7 @@ export function useOAuthSignIn({
     setInFlight(true);
     try {
       const outcome = await signInWithGoogle();
-      if (!outcome || outcome.ok === true) {
+      if (outcome.ok === true) {
         onSuccess();
       } else if (outcome.ok === false && outcome.code !== 'cancelled') {
         // A user cancel is intentionally silent; everything else surfaces a banner.

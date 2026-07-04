@@ -76,7 +76,7 @@ interface UseAuthReturn {
   resetPassword: (p: { code: string; password: string }) => Promise<AuthOutcome>;
   signOut: () => Promise<void>;
   signIn: () => void;
-  signInWithGoogle: () => Promise<AuthOutcome> | void;
+  signInWithGoogle: () => Promise<AuthOutcome>;
   signInWithApple: () => void;
 }
 
@@ -553,12 +553,13 @@ export function signIn(): void {
 /**
  * Google sign-in. Real mode runs the native Google flow and exchanges the id
  * token for a session; mock mode synthesizes a Google-style account (the
- * visual-regression path). Real mode returns an {@link AuthOutcome}; mock mode
- * returns void (fire-and-forget, matching the other mock helpers).
+ * visual-regression path). Both return an {@link AuthOutcome} (mirroring
+ * {@link signInWithEmail}), so callers never special-case a void result.
  */
-export function signInWithGoogle(): Promise<AuthOutcome> | void {
+export function signInWithGoogle(): Promise<AuthOutcome> {
   if (AUTH_ENABLED) return realSignInWithGoogle();
   mockSignInWithGoogle();
+  return Promise.resolve({ ok: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -576,7 +577,8 @@ export function useAuth(): UseAuthReturn {
     requestPasswordReset,
     resetPassword,
     signOut,
-    // Social sign-in: no-ops in real mode (removed when backend OAuth lands); mock behavior in mock mode.
+    // Demo-only sign-in helper (mock mode); Google runs the real native flow in
+    // real mode and synthesizes a session in mock mode.
     signIn,
     signInWithGoogle,
     // Apple stays a no-op in real mode until native Sign in with Apple lands.
