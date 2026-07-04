@@ -69,19 +69,58 @@ export const SORT_OPTIONS: readonly SortOption[] = [
   'price_per_m2_asc',
 ];
 
-/** Slider domain for price; rent and buy live on very different scales. */
-export function priceDomain(mode: ListingMode): { min: number; max: number; step: number } {
-  return mode === 'rent'
-    ? { min: 0, max: 5000, step: 50 }
-    : { min: 0, max: 3_000_000, step: 25_000 };
+// Expand [upper bound, step] segments into the full list of stops, starting at 0.
+function priceLadder(segments: readonly (readonly [number, number])[]): number[] {
+  const stops = [0];
+  for (const [upTo, step] of segments) {
+    for (let v = stops[stops.length - 1] + step; v <= upTo; v += step) stops.push(v);
+  }
+  return stops;
+}
+
+/**
+ * Price slider stops — a piecewise approximation of a log scale: fine steps
+ * across the busy low/mid range, progressively bigger leaps toward the top, so
+ * equal thumb travel covers €200k–€400k as comfortably as €2M–€3M. The slider
+ * operates on stop *indices*; both thumbs at the ends mean "no constraint",
+ * and the topmost stop doubles as the open-ended "€5M+" / "€5000+" position.
+ */
+export const PRICE_STEPS_BUY: readonly number[] = priceLadder([
+  [500_000, 25_000],
+  [1_000_000, 50_000],
+  [2_000_000, 100_000],
+  [3_000_000, 250_000],
+  [5_000_000, 500_000],
+]);
+
+export const PRICE_STEPS_RENT: readonly number[] = priceLadder([
+  [800, 100],
+  [2_000, 50],
+  [3_000, 100],
+  [5_000, 250],
+]);
+
+/** The price slider's stops for a mode; rent and buy live on very different scales. */
+export function priceSteps(mode: ListingMode): readonly number[] {
+  return mode === 'rent' ? PRICE_STEPS_RENT : PRICE_STEPS_BUY;
+}
+
+/** Index of the stop closest to `value` — snaps persisted prices onto the ladder. */
+export function nearestPriceIndex(steps: readonly number[], value: number): number {
+  let best = 0;
+  for (let i = 1; i < steps.length; i++) {
+    if (Math.abs(steps[i] - value) < Math.abs(steps[best] - value)) best = i;
+  }
+  return best;
 }
 
 export const AREA_DOMAIN = { min: 0, max: 300, step: 5 } as const;
 export const YEAR_DOMAIN = { min: 1900, max: 2025, step: 5 } as const;
 
 // Mock "availability" histograms shown behind the price slider — a plausible
-// right-skewed shape per mode. Bucketed evenly across the price domain. Replace
-// with real per-bucket counts once the API exposes them.
+// right-skewed shape per mode. Bucketed evenly across the slider track (so on
+// the log-ish ladder each bucket spans a widening price band). Replace with
+// real per-bucket counts once the API exposes them.
 export const PRICE_DISTRIBUTION_BUY = [
   2, 5, 9, 14, 20, 26, 30, 28, 24, 19, 15, 12, 9, 7, 5, 4, 3, 2, 1, 1,
 ];
