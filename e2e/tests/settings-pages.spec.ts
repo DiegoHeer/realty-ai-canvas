@@ -10,7 +10,7 @@ import { expect, test } from '@playwright/test';
 // (the lighter-text pages below stay strict). See CLAUDE.md "Visual regression".
 const PAGES = [
   { path: '/settings/privacy', text: 'A zero-data company', name: 'privacy-page', maxDiffPixelRatio: 0.05 },
-  { path: '/settings/about', text: 'Realty AI Canvas', name: 'about-page', maxDiffPixelRatio: 0.05 },
+  { path: '/settings/about', text: 'Huismus', name: 'about-page', maxDiffPixelRatio: 0.05 },
   { path: '/settings/help', text: 'Frequently asked questions', name: 'help-page', maxDiffPixelRatio: 0.05 },
   {
     path: '/settings/subscription',

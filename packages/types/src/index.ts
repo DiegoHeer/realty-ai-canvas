@@ -1,5 +1,5 @@
 /**
- * Shared domain types for Realty AI Canvas.
+ * Shared domain types for Huismus.
  * Kept framework-agnostic so they can be consumed by the app, the data layer,
  * and (later) a backend without pulling in React or React Native.
  */
