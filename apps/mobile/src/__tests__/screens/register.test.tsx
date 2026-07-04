@@ -81,14 +81,19 @@ describe('RegisterScreen', () => {
     expect(await storedSession()).toEqual({ name: 'Alice Smith', email: 'alice@example.com' });
   });
 
-  it('registers via the OAuth provider button', async () => {
-    const { getByTestId } = await renderScreen('en');
+  it('registers via the OAuth provider button and lands on the success view', async () => {
+    const { getByTestId, getByText } = await renderScreen('en');
 
     await tap(getByTestId('oauth-button'));
 
-    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+    // Success is an in-place landing view; navigation waits for Continue.
+    expect(getByText("You're signed in and ready to go.")).toBeOnTheScreen();
+    expect(router.back).not.toHaveBeenCalled();
     const session = await storedSession();
     expect(session?.email).toMatch(/gmail\.com|appleid\.com/);
+
+    await tap(getByTestId('auth-continue'));
+    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
   });
 
   it('cross-links to the login screen', async () => {

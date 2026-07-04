@@ -11,6 +11,7 @@ import {
   AuthSwitchLink,
   defaultOAuthProvider,
   isValidEmail,
+  LoginSuccessView,
   MIN_PASSWORD_LENGTH,
   OAuthButton,
   OrDivider,
@@ -39,6 +40,7 @@ export default function RegisterScreen() {
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
   const [oauthBusy, setOauthBusy] = useState(false);
+  const [oauthSuccess, setOauthSuccess] = useState(false);
 
   // Mock mode keeps the platform-styled demo button; real mode offers Google
   // only (the sole provider the backend supports), and only on platforms where
@@ -56,7 +58,9 @@ export default function RegisterScreen() {
     const outcome = await action();
     setOauthBusy(false);
     if (outcome.ok === true) {
-      popOrReplace(router, '/profile');
+      // Flip to the in-place success landing (mirrors the verify/reset flows);
+      // its Continue button performs the actual navigation on a later gesture.
+      setOauthSuccess(true);
     } else if (outcome.ok === false) {
       setFormError(t(authErrorKey(outcome.code)));
     }
@@ -105,6 +109,10 @@ export default function RegisterScreen() {
         setFormError(t(authErrorKey(outcome.code)));
       }
     }
+  }
+
+  if (oauthSuccess) {
+    return <LoginSuccessView onContinue={() => popOrReplace(router, '/profile')} />;
   }
 
   return (

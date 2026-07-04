@@ -93,23 +93,29 @@ describe('LoginScreen', () => {
     expect(await storedSession()).toEqual({ name: 'Jane Doe', email: 'jane.doe@example.com' });
   });
 
-  it('signs in via the OAuth provider button', async () => {
-    const { getByTestId } = await renderScreen('en');
+  it('signs in via the OAuth provider button and lands on the success view', async () => {
+    const { getByTestId, getByText } = await renderScreen('en');
 
     await tap(getByTestId('oauth-button'));
 
-    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+    // Success is an in-place landing view; navigation waits for Continue.
+    expect(getByText("You're signed in and ready to go.")).toBeOnTheScreen();
+    expect(router.back).not.toHaveBeenCalled();
     const session = await storedSession();
     expect(session?.email).toMatch(/gmail\.com|appleid\.com/);
+
+    await tap(getByTestId('auth-continue'));
+    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
   });
 
   it('lands on the profile tab after sign-in when there is no history to pop (web deep link)', async () => {
     // Opened directly by URL: router.back() would no-op and strand the user on
-    // the stale form, so success must replace to /profile instead.
+    // the stale form, so Continue must replace to /profile instead.
     mockCanGoBack.mockReturnValueOnce(false);
     const { getByTestId } = await renderScreen('en');
 
     await tap(getByTestId('oauth-button'));
+    await tap(getByTestId('auth-continue'));
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/profile'));
     expect(router.back).not.toHaveBeenCalled();
@@ -228,7 +234,7 @@ describe('LoginScreen (real mode, Google configured)', () => {
     });
   });
 
-  it('signs in with Google and returns to the previous screen', async () => {
+  it('signs in with Google, shows the success landing, and continues back', async () => {
     mockPromptAsync.mockResolvedValue({ type: 'success', params: { code: 'AUTH_CODE' } });
     mockExchangeCodeAsync.mockResolvedValue({ idToken: 'IDT' });
     jest.spyOn(authData, 'providerTokenLogin').mockResolvedValue({
@@ -236,16 +242,19 @@ describe('LoginScreen (real mode, Google configured)', () => {
       tokens: { accessToken: 'AT', refreshToken: 'RT' },
     });
 
-    const { getByTestId } = await renderScreen('en');
+    const { getByTestId, getByText } = await renderScreen('en');
     await tap(getByTestId('oauth-button'));
 
-    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+    expect(getByText('Login successful')).toBeOnTheScreen();
     expect(authData.providerTokenLogin).toHaveBeenCalledWith({
       provider: 'google',
       clientId: '1-n.apps.googleusercontent.com',
       idToken: 'IDT',
     });
     expect(await storedSession()).toEqual({ name: 'Ada Lovelace', email: 'ada@gmail.com' });
+
+    await tap(getByTestId('auth-continue'));
+    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
   });
 
   it('shows the cancelled message when the browser sheet is dismissed', async () => {

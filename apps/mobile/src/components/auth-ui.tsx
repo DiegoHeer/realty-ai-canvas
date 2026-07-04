@@ -1,5 +1,6 @@
 import { useTranslation } from '@realty/i18n';
-import { type ReactNode } from 'react';
+import { useNavigation } from 'expo-router';
+import { useEffect, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -278,6 +279,36 @@ export function OAuthButton({
         {t('auth.continueWithGoogle')}
       </Text>
     </Pressable>
+  );
+}
+
+/**
+ * In-place "you're logged in" landing view, shown by the login and register
+ * screens after a successful social sign-in — the OAuth counterpart of the
+ * verify/reset success views (green check + a Continue button; navigation
+ * happens on the button's own gesture, a frame later, per the recycled-bitmap
+ * workaround). Retitles the header and drops the back affordance so the
+ * consumed form can't be swiped back into.
+ */
+export function LoginSuccessView({ onContinue }: { onContinue: () => void }) {
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: t('auth.loggedInTitle'),
+      headerBackVisible: false,
+      gestureEnabled: false,
+    });
+  }, [navigation, t]);
+
+  return (
+    <AuthScaffold title={t('auth.loggedInTitle')} subtitle={t('auth.loggedInSubtitle')}>
+      <View className="gap-6">
+        <SuccessBadge />
+        <PrimaryButton testID="auth-continue" label={t('auth.loggedInCta')} onPress={onContinue} />
+      </View>
+    </AuthScaffold>
   );
 }
 
