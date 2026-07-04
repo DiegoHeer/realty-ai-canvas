@@ -239,14 +239,17 @@ export const MAP_OVERLAYS: MapOverlay[] = [
   {
     // Kadaster zoning (bestemmingsplannen, Wro vintage — frozen since the
     // 2024 Omgevingswet transition but still the best national zoning map).
-    // Legend shows the most common enkelbestemmingen; colors sampled from the
-    // service's own legend graphic.
+    // The WMS is scale-gated: below ~1:25 000 (512px tiles up to z12) it
+    // returns fully transparent images, so only request from z13 and show the
+    // zoom hint above it. Legend shows the most common enkelbestemmingen;
+    // colors sampled from the service's own legend graphic.
     id: 'zoning',
     kind: 'raster',
     tiles: wmsTiles('https://service.pdok.nl/kadaster/plu/wms/v1_0', 'enkelbestemming'),
-    minzoom: 8,
+    minzoom: 13,
     maxzoom: 18,
     opacity: 0.7,
+    visibleFromZoom: 13,
     legend: [
       { color: '#FFFF00', label: 'residential', i18n: true },
       { color: '#FFC8BE', label: 'centre', i18n: true },
