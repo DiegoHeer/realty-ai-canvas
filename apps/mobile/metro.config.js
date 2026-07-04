@@ -43,6 +43,12 @@ function proxyToApi(req, res) {
     },
   );
   upstream.on('error', (err) => {
+    // If the upstream dies mid-stream the headers are already out — writing
+    // them again throws ERR_HTTP_HEADERS_SENT and crashes the dev server.
+    if (res.headersSent) {
+      res.destroy();
+      return;
+    }
     res.writeHead(502, { 'content-type': 'application/json' });
     res.end(JSON.stringify({ error: `Proxy to ${PROXY_TARGET} failed: ${err.message}` }));
   });
