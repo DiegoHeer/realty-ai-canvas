@@ -1,7 +1,5 @@
 import { useSyncExternalStore } from 'react';
 
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-
 import {
   AUTH_ENABLED,
   AuthError,
@@ -173,11 +171,24 @@ async function realSignIn(email: string, password: string): Promise<AuthOutcome>
   }
 }
 
+// The native Google Sign-In package resolves its TurboModule at import time
+// (`getEnforcing('RNGoogleSignin')`), which throws in Expo Go / mock mode / dev
+// clients without the native module. Load it lazily via `require` inside the
+// real google path only, so nothing native is touched at module load. Cached
+// after first load.
+type GoogleModule = typeof import('@react-native-google-signin/google-signin');
+let googleModule: GoogleModule | undefined;
+function loadGoogleSignin(): GoogleModule {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  googleModule ??= require('@react-native-google-signin/google-signin') as GoogleModule;
+  return googleModule;
+}
+
 // Configure the native Google Sign-In module exactly once. `webClientId` also
 // scopes the returned id_token's audience to the Web OAuth client the backend
 // expects; `iosClientId` is optional (empty on Android-only setups).
 let googleConfigured = false;
-function ensureGoogleConfigured() {
+function ensureGoogleConfigured(GoogleSignin: typeof import('@react-native-google-signin/google-signin').GoogleSignin) {
   if (googleConfigured) return;
   GoogleSignin.configure({
     webClientId: GOOGLE_WEB_CLIENT_ID,
@@ -194,7 +205,8 @@ function ensureGoogleConfigured() {
  * resolves to a `cancelled` outcome the UI can ignore silently.
  */
 async function realSignInWithGoogle(): Promise<AuthOutcome> {
-  ensureGoogleConfigured();
+  const { GoogleSignin, statusCodes } = loadGoogleSignin();
+  ensureGoogleConfigured(GoogleSignin);
   let idToken: string | null | undefined;
   try {
     await GoogleSignin.hasPlayServices();
