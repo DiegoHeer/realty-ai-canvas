@@ -1,9 +1,12 @@
-import {
-  BUILDING_AGE_FILL,
-  MAP_OVERLAYS,
-  overlayById,
-  type OverlayId,
-} from '@/lib/map-overlays';
+import { MAP_OVERLAYS, overlayById, type OverlayId } from '@/lib/map-overlays';
+
+/** Every '#rrggbb' literal inside a (possibly nested) style expression. */
+const expressionColors = (expr: unknown): string[] =>
+  Array.isArray(expr)
+    ? expr.flatMap(expressionColors)
+    : typeof expr === 'string' && expr.startsWith('#')
+      ? [expr]
+      : [];
 
 describe('MAP_OVERLAYS registry', () => {
   it('has unique ids', () => {
@@ -26,20 +29,18 @@ describe('MAP_OVERLAYS registry', () => {
     }
   });
 
-  it('pins the BAG building tiles to the only published tile matrix (17)', () => {
-    const buildings = MAP_OVERLAYS.find((o) => o.kind === 'buildings')!;
-    expect(buildings.minzoom).toBe(17);
-    expect(buildings.maxzoom).toBe(17);
-    // OGC API tiles address {tileMatrix}/{tileRow}/{tileCol} = z/y/x.
-    expect(buildings.tiles[0]).toContain('/{z}/{y}/{x}');
-  });
-
-  it('colors every building-age legend bucket from the fill expression', () => {
-    const buildings = MAP_OVERLAYS.find((o) => o.kind === 'buildings')!;
-    const expressionColors = BUILDING_AGE_FILL.filter(
-      (part) => typeof part === 'string' && part.startsWith('#'),
-    );
-    expect(buildings.legend.map((e) => e.color)).toEqual(expressionColors);
+  it('gives every buildings overlay XYZ tiles, a source-layer and a fill', () => {
+    const buildings = MAP_OVERLAYS.filter((o) => o.kind === 'buildings');
+    expect(buildings.length).toBeGreaterThan(0);
+    for (const o of buildings) {
+      expect(o.tiles[0]).toContain('/{z}/{x}/{y}');
+      expect(o.sourceLayer).toBeTruthy();
+      // Every color the fill expression can produce is explained by a legend
+      // swatch, and vice versa.
+      expect(new Set(expressionColors(o.fillColor))).toEqual(
+        new Set(o.legend.map((e) => e.color)),
+      );
+    }
   });
 
   it('gives every overlay a non-empty legend', () => {

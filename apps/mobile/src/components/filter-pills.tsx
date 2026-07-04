@@ -226,11 +226,26 @@ function BirdIcon({ size, color }: IconProps) {
   );
 }
 
+function EuroIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path
+        d="M4 10h12M4 14h9M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </StrokeSvg>
+  );
+}
+
 const OVERLAY_ICONS: Record<OverlayId, (props: IconProps) => React.ReactElement> = {
   noise: VolumeIcon,
   airQuality: WindIcon,
   energyLabels: ZapIcon,
   buildingAge: HouseIcon,
+  wozValue: EuroIcon,
   zoning: MapIcon,
   treeHeight: BirdIcon,
 };

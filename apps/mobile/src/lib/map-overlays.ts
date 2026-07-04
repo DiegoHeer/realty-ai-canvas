@@ -1,22 +1,22 @@
 import type { ExpressionSpecification } from '@maplibre/maplibre-gl-style-spec';
 
-// Optional map overlays from Dutch open geodata (the same services Atlas
+// Optional map overlays from Dutch geodata (mostly the services Atlas
 // Leefomgeving displays). Two shapes:
 //  - 'raster': a WMS rendered server-side, consumed as raster tiles via a
 //    GetMap template with the {bbox-epsg-3857} token (works in both MapLibre
 //    React Native and maplibre-gl). The service picks the colors; `legend`
 //    mirrors them, verified against each service's GetLegendGraphic.
-//  - 'buildings': PDOK BAG vector tiles styled client-side — building
-//    footprints filled by a data-driven expression (see BUILDING_AGE_FILL).
-// All services are open data, keyless. WOZ values deliberately have no
-// overlay: no open WMS/tile service exists (wozwaardeloket.nl's backend is
-// session-gated; an official open service has been requested but not built).
+//  - 'buildings': vector tiles styled client-side — building footprints
+//    filled by the overlay's own data-driven `fillColor` expression.
+// The RIVM/PDOK services are open data, keyless. Building age and WOZ come
+// from Walter Living's tileset (see WALTER_BUILDINGS_TILES below).
 
 export type OverlayId =
   | 'noise'
   | 'airQuality'
   | 'energyLabels'
   | 'buildingAge'
+  | 'wozValue'
   | 'zoning'
   | 'treeHeight';
 
@@ -28,9 +28,8 @@ export interface OverlayLegendEntry {
   i18n?: boolean;
 }
 
-export interface MapOverlay {
+interface OverlayBase {
   id: OverlayId;
-  kind: 'raster' | 'buildings';
   /** Tile URL template(s) for the MapLibre source. */
   tiles: string[];
   /** Source zoom bounds — outside them no tiles are requested. */
@@ -39,7 +38,7 @@ export interface MapOverlay {
   /** Layer opacity (raster-opacity / fill-opacity). */
   opacity: number;
   /**
-   * Camera zoom below which the service draws nothing (building-level layers
+   * Camera zoom below which the layer draws nothing (building-level layers
    * only render zoomed in) — the legend shows a "zoom in" hint below it.
    */
   visibleFromZoom?: number;
@@ -49,20 +48,51 @@ export interface MapOverlay {
   unit?: string;
 }
 
+/** Server-rendered raster tiles (WMS) — the service picks the colors. */
+interface RasterOverlay extends OverlayBase {
+  kind: 'raster';
+}
+
+/** Vector building footprints we color ourselves. */
+interface BuildingsOverlay extends OverlayBase {
+  kind: 'buildings';
+  /** The vector tiles' source-layer holding the building polygons. */
+  sourceLayer: string;
+  /** Data-driven fill matching `legend`'s buckets. */
+  fillColor: ExpressionSpecification;
+}
+
+export type MapOverlay = RasterOverlay | BuildingsOverlay;
+
 /** GetMap template MapLibre can treat as a raster tile URL (512px tiles). */
 const wmsTiles = (base: string, layer: string): string[] => [
   // PDOK's Mapserver rejects requests without `styles` — always send it empty.
   `${base}?service=WMS&version=1.3.0&request=GetMap&layers=${layer}&styles=&crs=EPSG:3857&bbox={bbox-epsg-3857}&width=512&height=512&format=image/png&transparent=true`,
 ];
 
+// Building-level vector tiles from Walter Living (walterliving.com) — one
+// `buildings` source-layer of BAG pand footprints joined with BAG's
+// construction year, the pand's EP-Online energy label and its WOZ value
+// (fields: id, construction_year, energy_label, woz_value, function).
+// Available z0–18 with open CORS, so building coloring works from city zooms
+// — unlike PDOK's own BAG vector tiles, which only publish tile matrix 17.
+// CAVEAT: this is Walter's private tile server, not an official open-data
+// service — no SLA, could change or close at any time. The underlying data is
+// all public (BAG, EP-Online, WOZ-waardeloket), so the same tileset can be
+// rebuilt and self-hosted if it ever breaks (their TileJSON documents the
+// tippecanoe invocation).
+const WALTER_BUILDINGS_TILES = ['https://tiles.walterliving.com/data/buildings/{z}/{x}/{y}.pbf'];
+const WALTER_SOURCE_LAYER = 'buildings';
+
 /**
- * Fill for the building-age overlay: BAG panden bucketed by `bouwjaar` on a
- * viridis ramp (older = darker), readable on both basemaps. The buckets match
- * the overlay's legend entries below.
+ * Fill for the building-age overlay: panden bucketed by construction year on
+ * a viridis ramp (older = darker), readable on both basemaps. The buckets
+ * match the overlay's legend entries below. Missing/placeholder years (BAG
+ * uses 1005 for "unknown, old") land in the darkest bucket.
  */
-export const BUILDING_AGE_FILL: ExpressionSpecification = [
+const BUILDING_AGE_FILL: ExpressionSpecification = [
   'step',
-  ['to-number', ['get', 'bouwjaar'], 0],
+  ['to-number', ['get', 'construction_year'], 0],
   '#440154',
   1900,
   '#414487',
@@ -76,8 +106,29 @@ export const BUILDING_AGE_FILL: ExpressionSpecification = [
   '#FDE725',
 ];
 
-/** Source-layer of the BAG vector tiles carrying the pand polygons. */
-export const BAG_PAND_SOURCE_LAYER = 'pand';
+/**
+ * Fill for the WOZ overlay: panden bucketed by WOZ value (€) on a
+ * yellow→red ramp (pricier = redder); buildings without a value (≈4%,
+ * mostly non-residential) fill neutral gray, matching the "no data" swatch.
+ */
+const WOZ_FILL: ExpressionSpecification = [
+  'case',
+  ['!', ['has', 'woz_value']],
+  '#E2E2E2',
+  [
+    'step',
+    ['to-number', ['get', 'woz_value'], 0],
+    '#FFFFB2',
+    300000,
+    '#FECC5C',
+    500000,
+    '#FD8D3C',
+    750000,
+    '#F03B20',
+    1000000,
+    '#BD0026',
+  ],
+];
 
 export const MAP_OVERLAYS: MapOverlay[] = [
   {
@@ -141,17 +192,19 @@ export const MAP_OVERLAYS: MapOverlay[] = [
     ],
   },
   {
-    // PDOK BAG vector tiles (OGC API v2 — v1 retires 2026-07-15). The
-    // WebMercatorQuad tileset only exists at tile matrix 17; MapLibre overzooms
-    // those tiles above that, and below z17 nothing loads. Note the template's
-    // {y}/{x} order — OGC tiles address row before column.
+    // BAG construction year per pand, from the Walter Living tileset. Tiles
+    // exist from z0, but tippecanoe drops the tiny footprints at low zooms —
+    // the fills only read at city scale, so gate at z12 (also spares their
+    // server country-wide requests).
     id: 'buildingAge',
     kind: 'buildings',
-    tiles: ['https://api.pdok.nl/kadaster/bag/ogc/v2/tiles/WebMercatorQuad/{z}/{y}/{x}?f=mvt'],
-    minzoom: 17,
-    maxzoom: 17,
+    tiles: WALTER_BUILDINGS_TILES,
+    sourceLayer: WALTER_SOURCE_LAYER,
+    fillColor: BUILDING_AGE_FILL,
+    minzoom: 12,
+    maxzoom: 18,
     opacity: 0.8,
-    visibleFromZoom: 17,
+    visibleFromZoom: 12,
     legend: [
       { color: '#440154', label: '<1900' },
       { color: '#414487', label: '1900–1944' },
@@ -159,6 +212,28 @@ export const MAP_OVERLAYS: MapOverlay[] = [
       { color: '#22A884', label: '1975–1989' },
       { color: '#7AD151', label: '1990–2009' },
       { color: '#FDE725', label: '≥2010' },
+    ],
+  },
+  {
+    // WOZ value per pand, same Walter Living tileset. There is no official
+    // open WOZ map service (wozwaardeloket.nl's backend is session-gated);
+    // Walter compiled the public per-address values into these tiles.
+    id: 'wozValue',
+    kind: 'buildings',
+    tiles: WALTER_BUILDINGS_TILES,
+    sourceLayer: WALTER_SOURCE_LAYER,
+    fillColor: WOZ_FILL,
+    minzoom: 12,
+    maxzoom: 18,
+    opacity: 0.8,
+    visibleFromZoom: 12,
+    legend: [
+      { color: '#FFFFB2', label: '<€300k' },
+      { color: '#FECC5C', label: '€300–500k' },
+      { color: '#FD8D3C', label: '€500–750k' },
+      { color: '#F03B20', label: '€750k–1M' },
+      { color: '#BD0026', label: '≥€1M' },
+      { color: '#E2E2E2', label: 'noData', i18n: true },
     ],
   },
   {

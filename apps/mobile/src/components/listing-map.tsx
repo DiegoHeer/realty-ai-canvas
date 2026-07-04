@@ -27,7 +27,7 @@ import { useMapStyle } from './map-style';
 import { BUILDINGS_3D_MIN_ZOOM, BUILDINGS_3D_PITCH, buildings3DPaint, DEFAULT_CENTER, priceLabel } from './map-shared';
 import { usePulseOpacity } from './use-pulse-opacity';
 import { outlineColorFor } from '../lib/area-choropleth';
-import { BAG_PAND_SOURCE_LAYER, BUILDING_AGE_FILL, type MapOverlay } from '../lib/map-overlays';
+import { type MapOverlay } from '../lib/map-overlays';
 import { useRecentViews } from '../lib/recent-views';
 import { Brand } from '../constants/theme';
 
@@ -233,9 +233,9 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
           <Layer
             id={`overlay-${overlay.id}-buildings`}
             type="fill"
-            source-layer={BAG_PAND_SOURCE_LAYER}
+            source-layer={overlay.sourceLayer}
             beforeId={overlayBeforeId}
-            paint={{ 'fill-color': BUILDING_AGE_FILL, 'fill-opacity': overlay.opacity }}
+            paint={{ 'fill-color': overlay.fillColor, 'fill-opacity': overlay.opacity }}
           />
         </VectorSource>
       )}
