@@ -1,16 +1,13 @@
 import { useTranslation } from '@realty/i18n';
-import { AUTH_ENABLED } from '@realty/data';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import {
   authErrorKey,
-  availableOAuthProviders,
   AuthField,
   AuthScaffold,
   AuthSwitchLink,
-  defaultOAuthProvider,
   isValidEmail,
   MIN_PASSWORD_LENGTH,
   OAuthButton,
@@ -18,6 +15,7 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { useOAuthSignIn } from '@/hooks/use-oauth-sign-in';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { deferNavigation } from '@/lib/navigation';
 
@@ -30,7 +28,7 @@ import { deferNavigation } from '@/lib/navigation';
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { registerWithEmail, signInWithGoogle, signInWithApple } = useAuth();
+  const { registerWithEmail } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -39,27 +37,11 @@ export default function RegisterScreen() {
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
 
-  // Mock mode surfaces the platform-default provider (Apple on iOS) for the
-  // visual-regression path. Real mode only shows a provider when it's actually
-  // usable on this platform + config (see availableOAuthProviders).
-  const provider = AUTH_ENABLED ? 'google' : defaultOAuthProvider();
-  const showOAuth = AUTH_ENABLED ? availableOAuthProviders().includes(provider) : true;
-
-  async function onOAuthPress() {
-    setFormError(undefined);
-    if (!AUTH_ENABLED) {
-      const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
-      action();
-      deferNavigation(() => router.back());
-      return;
-    }
-    const outcome = await signInWithGoogle();
-    if (!outcome || outcome.ok === true) {
-      deferNavigation(() => router.back());
-    } else if (outcome.ok === false && outcome.code !== 'cancelled') {
-      setFormError(t(authErrorKey(outcome.code)));
-    }
-  }
+  const { provider, showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
+    onSuccess: () => deferNavigation(() => router.back()),
+    onError: (code) => setFormError(t(authErrorKey(code))),
+    onClearError: () => setFormError(undefined),
+  });
 
   async function submit() {
     const next: { name?: string; email?: string; password?: string } = {};
@@ -155,7 +137,7 @@ export default function RegisterScreen() {
       {showOAuth ? (
         <>
           <OrDivider />
-          <OAuthButton provider={provider} onPress={onOAuthPress} />
+          <OAuthButton provider={provider} onPress={onOAuthPress} disabled={inFlight} />
         </>
       ) : null}
 

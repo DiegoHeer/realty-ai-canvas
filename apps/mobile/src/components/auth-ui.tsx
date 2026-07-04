@@ -259,13 +259,17 @@ function AppleMark({ size = 18, color }: { size?: number; color: string }) {
 export function OAuthButton({
   provider,
   onPress,
+  disabled = false,
 }: {
   provider: OAuthProvider;
   onPress: () => void;
+  /** Ignore presses (and dim) while a sign-in is already in flight. */
+  disabled?: boolean;
 }) {
   const { t } = useTranslation();
   const scheme = useColorScheme();
   const dark = scheme === 'dark';
+  const dimmed = disabled ? 'opacity-60' : '';
 
   if (provider === 'apple') {
     // Apple: invert with the theme so the mark always contrasts the surface.
@@ -276,9 +280,11 @@ export function OAuthButton({
       <Pressable
         testID="oauth-button"
         onPress={onPress}
+        disabled={disabled}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
         accessibilityLabel={t('auth.continueWithApple')}
-        className={`flex-row items-center justify-center gap-2.5 rounded-xl py-3.5 active:opacity-80 ${bg}`}>
+        className={`flex-row items-center justify-center gap-2.5 rounded-xl py-3.5 active:opacity-80 ${bg} ${dimmed}`}>
         <AppleMark color={markColor} />
         <Text className={`text-base font-semibold ${fg}`}>{t('auth.continueWithApple')}</Text>
       </Pressable>
@@ -289,9 +295,11 @@ export function OAuthButton({
     <Pressable
       testID="oauth-button"
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
       accessibilityLabel={t('auth.continueWithGoogle')}
-      className="flex-row items-center justify-center gap-2.5 rounded-xl border border-neutral-300 bg-white py-3.5 active:opacity-70 dark:border-neutral-700 dark:bg-neutral-900">
+      className={`flex-row items-center justify-center gap-2.5 rounded-xl border border-neutral-300 bg-white py-3.5 active:opacity-70 dark:border-neutral-700 dark:bg-neutral-900 ${dimmed}`}>
       <GoogleMark />
       <Text className="text-base font-semibold text-neutral-900 dark:text-white">
         {t('auth.continueWithGoogle')}
