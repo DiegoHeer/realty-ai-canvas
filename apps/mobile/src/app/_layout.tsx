@@ -91,6 +91,10 @@ export default function RootLayout() {
                 options={{ headerShown: true, title: t('profile.notifications') }}
               />
               <Stack.Screen
+                name="settings/map"
+                options={{ headerShown: true, title: t('profile.map') }}
+              />
+              <Stack.Screen
                 name="settings/subscription"
                 options={{ headerShown: true, title: t('profile.subscription') }}
               />

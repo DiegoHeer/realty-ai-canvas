@@ -22,7 +22,7 @@ import {
   toFeatureCollection,
 } from './area-polygons';
 import { useMapStyle } from './map-style';
-import { DEFAULT_CENTER, priceLabel } from './map-shared';
+import { BUILDINGS_3D_MIN_ZOOM, BUILDINGS_3D_PITCH, buildings3DPaint, DEFAULT_CENTER, priceLabel } from './map-shared';
 import { usePulseOpacity } from './use-pulse-opacity';
 import { outlineColorFor } from '../lib/area-choropleth';
 import { useRecentViews } from '../lib/recent-views';
@@ -93,11 +93,15 @@ export interface ListingMapProps {
    * it (data arrived, or no city is loading).
    */
   loadingPolygon?: AreaPolygon | null;
+  /** Extrude the basemap's buildings to their real height and tilt the camera. */
+  buildings3D?: boolean;
 }
 
 /** Imperative handle for driving the camera, e.g. flying to a search result. */
 export interface ListingMapRef {
   flyTo: (target: { longitude: number; latitude: number; zoom?: number }) => void;
+  /** Tilts the camera to the given pitch (degrees) without moving it otherwise. */
+  setPitch: (pitch: number) => void;
 }
 
 /**
@@ -106,7 +110,17 @@ export interface ListingMapRef {
  * The web implementation lives in `listing-map.web.tsx`.
  */
 export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function ListingMap(
-  { listings, polygons, onSelect, onSelectPolygon, selectedPolygonId, onMapPress, onCameraIdle, loadingPolygon },
+  {
+    listings,
+    polygons,
+    onSelect,
+    onSelectPolygon,
+    selectedPolygonId,
+    onMapPress,
+    onCameraIdle,
+    loadingPolygon,
+    buildings3D,
+  },
   ref,
 ) {
   const cameraRef = useRef<CameraRef>(null);
@@ -127,6 +141,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
         zoom,
         duration: 1200,
       }),
+    setPitch: (pitch) => cameraRef.current?.setStop({ pitch, duration: 500 }),
   }));
 
   // Prefer framing the polygons (the map's overlay focus); fall back to the
@@ -162,9 +177,23 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
         left: COMPASS_MARGIN,
       }}>
       {/* Uncontrolled initial framing only: applied once on load. Camera moves
-          are then driven solely by the imperative ref (search flyTo) — loading
-          a tapped city's neighborhoods or selecting an area must not move it. */}
-      <Camera ref={cameraRef} initialViewState={{ center, zoom: 11 }} />
+          are then driven solely by the imperative ref (search flyTo, and the
+          pitch tilt when 3D buildings toggle) — loading a tapped city's
+          neighborhoods or selecting an area must not move it. */}
+      <Camera
+        ref={cameraRef}
+        initialViewState={{ center, zoom: 11, pitch: buildings3D ? BUILDINGS_3D_PITCH : 0 }}
+      />
+      {buildings3D && (
+        <Layer
+          id="buildings-3d"
+          source="openmaptiles"
+          source-layer="building"
+          type="fill-extrusion"
+          minzoom={BUILDINGS_3D_MIN_ZOOM}
+          paint={buildings3DPaint(scheme)}
+        />
+      )}
       {loadingPolygon && <PulsingCityOverlay polygon={loadingPolygon} beforeId={polygonsBeforeId} />}
       {polygons && polygons.length > 0 && (
         <GeoJSONSource

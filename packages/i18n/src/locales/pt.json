@@ -32,7 +32,8 @@
     "support": "Apoio",
     "privacy": "Privacidade e segurança",
     "help": "Ajuda e apoio",
-    "about": "Sobre"
+    "about": "Sobre",
+    "map": "Mapa"
   },
   "privacyPage": {
     "zeroDataTitle": "Uma empresa sem dados",
@@ -78,6 +79,11 @@
   },
   "notificationsPage": {
     "comingSoon": "Definições de notificações em breve."
+  },
+  "mapSettingsPage": {
+    "title": "Mapa",
+    "buildings3D": "Edifícios em 3D",
+    "buildings3DDescription": "Mostrar edifícios em 3D no mapa."
   },
   "feedback": {
     "title": "Feedback",

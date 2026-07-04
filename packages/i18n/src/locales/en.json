@@ -32,7 +32,8 @@
     "support": "Support",
     "privacy": "Privacy & security",
     "help": "Help & support",
-    "about": "About"
+    "about": "About",
+    "map": "Map"
   },
   "privacyPage": {
     "zeroDataTitle": "A zero-data company",
@@ -78,6 +79,11 @@
   },
   "notificationsPage": {
     "comingSoon": "Notification settings coming soon."
+  },
+  "mapSettingsPage": {
+    "title": "Map",
+    "buildings3D": "3D buildings",
+    "buildings3DDescription": "Show buildings in 3D on the map."
   },
   "feedback": {
     "title": "Feedback",

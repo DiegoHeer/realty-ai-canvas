@@ -27,6 +27,8 @@ export const StorageKeys = {
   filters: `${PREFIX}filters`,
   /** Intro tour progress (furthest page + done flag); see lib/onboarding.ts. */
   onboarding: `${PREFIX}onboarding`,
+  /** Map display preferences (3D buildings, …); see lib/map-settings.ts. */
+  mapSettings: `${PREFIX}map-settings`,
 } as const;
 
 export async function loadJSON<T>(key: string): Promise<T | null> {
