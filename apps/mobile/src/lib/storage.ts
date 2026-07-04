@@ -19,8 +19,10 @@ export const StorageKeys = {
   likes: `${PREFIX}likes`,
   /** Cached neighborhood boundaries; suffixed with `:<cityCode>` per city. */
   areas: `${PREFIX}areas`,
-  /** Cached neighborhood statistics; suffixed with `:<cityCode>` per city. */
-  stats: `${PREFIX}stats`,
+  /** Cached neighborhood statistics; suffixed with `:<cityCode>` per city.
+   * v2: payload gained electionStats (TK2025). Bump invalidates pre-election
+   * cached cities so they refetch once; old keys are simply abandoned. */
+  stats: `${PREFIX}stats:v2`,
   /** Cached municipality boundaries for the whole country (a single list). */
   cities: `${PREFIX}cities`,
   /** The map search filters (buy/rent, price, type, …); see lib/filters.ts. */

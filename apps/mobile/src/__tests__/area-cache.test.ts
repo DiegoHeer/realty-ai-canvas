@@ -95,12 +95,12 @@ describe('loadStats', () => {
 
     expect(mockGetStats).toHaveBeenCalledWith(DEN_HAAG);
     expect(stats).toEqual(sampleStats);
-    const raw = await AsyncStorage.getItem(`realty:stats:${DEN_HAAG}`);
+    const raw = await AsyncStorage.getItem(`realty:stats:v2:${DEN_HAAG}`);
     expect(JSON.parse(raw!)).toEqual(sampleStats);
   });
 
   it('returns the cached stats without calling the API when the cache exists', async () => {
-    await AsyncStorage.setItem(`realty:stats:${DEN_HAAG}`, JSON.stringify(sampleStats));
+    await AsyncStorage.setItem(`realty:stats:v2:${DEN_HAAG}`, JSON.stringify(sampleStats));
 
     const stats = await loadStats(DEN_HAAG);
 
