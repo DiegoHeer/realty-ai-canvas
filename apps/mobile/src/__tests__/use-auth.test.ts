@@ -327,7 +327,8 @@ describe('use-auth (real mode)', () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const gsi = require('@react-native-google-signin/google-signin');
       gsi.GoogleSignin.hasPlayServices.mockResolvedValue(true);
-      gsi.GoogleSignin.signIn.mockResolvedValue({ data: { idToken: 'ID-TOKEN' } });
+      // v16 success shape: `{ type: 'success', data: { idToken, ... } }`.
+      gsi.GoogleSignin.signIn.mockResolvedValue({ type: 'success', data: { idToken: 'ID-TOKEN' } });
 
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
@@ -345,7 +346,7 @@ describe('use-auth (real mode)', () => {
     });
   });
 
-  it('signInWithGoogle handles a user cancel gracefully (no session, cancelled code)', async () => {
+  it('signInWithGoogle stays silent on cancel (no session, no provider exchange)', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const authData = require('@realty/data');
@@ -356,8 +357,9 @@ describe('use-auth (real mode)', () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const gsi = require('@react-native-google-signin/google-signin');
       gsi.GoogleSignin.hasPlayServices.mockResolvedValue(true);
-      const cancelled = Object.assign(new Error('cancelled'), { code: gsi.statusCodes.SIGN_IN_CANCELLED });
-      gsi.GoogleSignin.signIn.mockRejectedValue(cancelled);
+      // v16 RESOLVES on cancel with `{ type: 'cancelled', data: null }` — it does
+      // not reject. The flow must be silent: no session, no provider exchange.
+      gsi.GoogleSignin.signIn.mockResolvedValue({ type: 'cancelled', data: null });
 
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');

@@ -160,13 +160,15 @@ jest.mock('@/components/animated-icon', () => ({
 }));
 
 // --- @react-native-google-signin/google-signin mock ---
-// The native module is unavailable under Jest. Expose a mockable GoogleSignin
-// plus the statusCodes the hook branches on (cancel handling).
+// The native module is unavailable under Jest. Expose a mockable GoogleSignin;
+// `signIn` resolves the v16 response union — `{ type: 'success', data }` or
+// `{ type: 'cancelled', data: null }` — so tests exercise the real resolve-on-
+// cancel shape. `statusCodes` is kept for any code that still references it.
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: {
     configure: jest.fn(),
     hasPlayServices: jest.fn(async () => true),
-    signIn: jest.fn(),
+    signIn: jest.fn(async () => ({ type: 'success', data: { idToken: 'ID-TOKEN' } })),
   },
   statusCodes: {
     SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',

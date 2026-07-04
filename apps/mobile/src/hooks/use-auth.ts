@@ -205,23 +205,20 @@ function ensureGoogleConfigured(GoogleSignin: typeof import('@react-native-googl
  * resolves to a `cancelled` outcome the UI can ignore silently.
  */
 async function realSignInWithGoogle(): Promise<AuthOutcome> {
-  const { GoogleSignin, statusCodes } = loadGoogleSignin();
+  const { GoogleSignin } = loadGoogleSignin();
   ensureGoogleConfigured(GoogleSignin);
   let idToken: string | null | undefined;
   try {
     await GoogleSignin.hasPlayServices();
-    const result = await GoogleSignin.signIn();
-    // google-signin v13+ wraps the payload in `{ type, data }`; older shapes put
-    // the fields at the top level. Read both so the token is found either way.
-    idToken =
-      (result as { data?: { idToken?: string | null } }).data?.idToken ??
-      (result as { idToken?: string | null }).idToken;
-  } catch (error) {
-    // A user-initiated cancel is expected, not a failure — surface a dedicated
-    // code so the UI stays silent; everything else collapses to generic.
-    if ((error as { code?: string })?.code === statusCodes.SIGN_IN_CANCELLED) {
-      return { ok: false, code: 'cancelled' };
-    }
+    // v16 RESOLVES on cancel (it does not reject): `{ type: 'cancelled', data: null }`,
+    // and on success `{ type: 'success', data: { idToken, ... } }`. A user-initiated
+    // cancel is expected, not a failure — surface a dedicated code so the UI stays silent.
+    const response = await GoogleSignin.signIn();
+    if (response.type === 'cancelled') return { ok: false, code: 'cancelled' };
+    idToken = response.data?.idToken;
+  } catch {
+    // Genuine errors (play services missing, sign-in already in progress, native
+    // failures) collapse to generic.
     return { ok: false, code: 'generic' };
   }
   if (!idToken) return { ok: false, code: 'generic' };
