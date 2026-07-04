@@ -92,6 +92,13 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
       ref={mapRef}
       initialViewState={{ ...center, zoom: 11, pitch: buildings3D ? BUILDINGS_3D_PITCH : 0 }}
       mapStyle={mapStyle}
+      // Swap themes with a full style reload, not a diff. Diffing races the
+      // runtime-added overlay: it tries to move the overlay layer to the new
+      // theme's beforeId anchor (which doesn't exist in the old style) and to
+      // remove the overlay source before the layer using it. The two vendored
+      // themes are entirely different documents, so a diff saves nothing; on
+      // reload react-map-gl re-adds the overlay components cleanly.
+      styleDiffing={false}
       style={{ width: '100%', height: '100%' }}
       interactiveLayerIds={polygons && polygons.length > 0 ? ['area-polygons-fill'] : []}
       // Once a pan/zoom settles, report the viewport centre + zoom so the
