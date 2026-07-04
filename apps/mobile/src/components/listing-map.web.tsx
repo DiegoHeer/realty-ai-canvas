@@ -1,8 +1,10 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { AreaPolygon, Listing } from '@realty/types';
-import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
-import { Layer, Map, type MapRef, Marker, Source } from 'react-map-gl/maplibre';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useReducer, useRef } from 'react';
+import { Layer, Map, type MapRef, Marker, Source, useMap } from 'react-map-gl/maplibre';
+
+import type { MapOverlay } from '../lib/map-overlays';
 
 import type { ListingMapProps, ListingMapRef } from './listing-map';
 import {
@@ -43,6 +45,70 @@ function PulsingCityOverlay({ polygon, beforeId }: { polygon: AreaPolygon; befor
         type="line"
         beforeId={beforeId}
         paint={{ 'line-color': polygon.color, 'line-width': 1.5, 'line-opacity': 0.9 }}
+      />
+    </Source>
+  );
+}
+
+/**
+ * The active data overlay's source + layer. A separate component so it can
+ * resolve the `beforeId` anchor against the *live* style: each theme's anchor
+ * only exists in its own style document, and on a theme switch React renders
+ * the new anchor id while the map still shows the outgoing style —
+ * react-map-gl would `moveLayer` straight to the missing anchor, an error.
+ * Instead the anchor is passed only once `getLayer` finds it; during the swap
+ * the layer floats unanchored (a legal move to top, invisible under the full
+ * style reload) and re-anchors on the `styledata` the new style fires.
+ * Source/layer ids are unique per overlay: the new overlay's layer is created
+ * during render, before the old source's cleanup runs — a shared id would
+ * attach it to the outgoing source (or update that source in place with
+ * mismatched type/zoom bounds).
+ */
+function DataOverlay({ overlay, anchor }: { overlay: MapOverlay; anchor: string }) {
+  const { current: map } = useMap();
+  const [, bump] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (!map) return;
+    map.on('styledata', bump);
+    return () => {
+      map.off('styledata', bump);
+    };
+  }, [map]);
+  const beforeId = map?.getLayer(anchor) ? anchor : undefined;
+
+  if (overlay.kind === 'raster') {
+    return (
+      <Source
+        key={overlay.id}
+        id={`overlay-${overlay.id}`}
+        type="raster"
+        tiles={overlay.tiles}
+        tileSize={512}
+        minzoom={overlay.minzoom}
+        maxzoom={overlay.maxzoom}>
+        <Layer
+          id={`overlay-${overlay.id}-raster`}
+          type="raster"
+          beforeId={beforeId}
+          paint={{ 'raster-opacity': overlay.opacity }}
+        />
+      </Source>
+    );
+  }
+  return (
+    <Source
+      key={overlay.id}
+      id={`overlay-${overlay.id}`}
+      type="vector"
+      tiles={overlay.tiles}
+      minzoom={overlay.minzoom}
+      maxzoom={overlay.maxzoom}>
+      <Layer
+        id={`overlay-${overlay.id}-buildings`}
+        type="fill"
+        source-layer={overlay.sourceLayer}
+        beforeId={beforeId}
+        paint={{ 'fill-color': overlay.fillColor, 'fill-opacity': overlay.opacity }}
       />
     </Source>
   );
@@ -126,44 +192,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
           paint={buildings3DPaint(scheme)}
         />
       )}
-      {/* Active data overlay. Source/layer ids are unique per overlay: the new
-          overlay's layer is created during render, before the old source's
-          cleanup runs — a shared id would attach it to the outgoing source (or
-          update that source in place with mismatched type/zoom bounds). */}
-      {overlay && overlay.kind === 'raster' && (
-        <Source
-          key={overlay.id}
-          id={`overlay-${overlay.id}`}
-          type="raster"
-          tiles={overlay.tiles}
-          tileSize={512}
-          minzoom={overlay.minzoom}
-          maxzoom={overlay.maxzoom}>
-          <Layer
-            id={`overlay-${overlay.id}-raster`}
-            type="raster"
-            beforeId={overlayBeforeId}
-            paint={{ 'raster-opacity': overlay.opacity }}
-          />
-        </Source>
-      )}
-      {overlay && overlay.kind === 'buildings' && (
-        <Source
-          key={overlay.id}
-          id={`overlay-${overlay.id}`}
-          type="vector"
-          tiles={overlay.tiles}
-          minzoom={overlay.minzoom}
-          maxzoom={overlay.maxzoom}>
-          <Layer
-            id={`overlay-${overlay.id}-buildings`}
-            type="fill"
-            source-layer={overlay.sourceLayer}
-            beforeId={overlayBeforeId}
-            paint={{ 'fill-color': overlay.fillColor, 'fill-opacity': overlay.opacity }}
-          />
-        </Source>
-      )}
+      {overlay && <DataOverlay overlay={overlay} anchor={overlayBeforeId} />}
       {loadingPolygon && <PulsingCityOverlay polygon={loadingPolygon} beforeId={polygonsBeforeId} />}
       {polygons && polygons.length > 0 && (
         <Source id="area-polygons" type="geojson" data={toFeatureCollection(polygons)}>
