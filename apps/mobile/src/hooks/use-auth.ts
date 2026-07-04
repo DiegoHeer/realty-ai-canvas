@@ -8,6 +8,7 @@ import {
   getSession as authGetSession,
   login as authLogin,
   logout as authLogout,
+  providerTokenLogin as authProviderTokenLogin,
   queryClient,
   refresh as authRefresh,
   requestPasswordReset as authRequestPasswordReset,
@@ -17,6 +18,7 @@ import {
   type AllauthFieldError,
   type AuthUserDto,
 } from '@realty/data';
+import { requestGoogleIdToken } from '@/lib/google-auth';
 import {
   clearPendingReset,
   clearPendingSession,
@@ -52,7 +54,13 @@ export interface AuthUser {
  * `fieldErrors` array is carried through so screens can render each message
  * under its `param`'s input (see `lib/auth-errors`).
  */
-export type AuthErrorCode = 'invalid_credentials' | 'invalid_code' | 'email_taken' | 'generic';
+export type AuthErrorCode =
+  | 'invalid_credentials'
+  | 'invalid_code'
+  | 'email_taken'
+  | 'oauth_cancelled'
+  | 'oauth_failed'
+  | 'generic';
 export type AuthOutcome =
   | { ok: true }
   | { ok: false; code: AuthErrorCode; fieldErrors?: AllauthFieldError[] }
@@ -68,8 +76,8 @@ interface UseAuthReturn {
   resetPassword: (p: { code: string; password: string }) => Promise<AuthOutcome>;
   signOut: () => Promise<void>;
   signIn: () => void;
-  signInWithGoogle: () => void;
-  signInWithApple: () => void;
+  signInWithGoogle: () => Promise<AuthOutcome>;
+  signInWithApple: () => Promise<AuthOutcome>;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +144,10 @@ async function applySession(
 function codeFor(error: unknown): AuthErrorCode {
   if (
     error instanceof AuthError &&
-    (error.code === 'invalid_credentials' || error.code === 'invalid_code' || error.code === 'email_taken')
+    (error.code === 'invalid_credentials' ||
+      error.code === 'invalid_code' ||
+      error.code === 'email_taken' ||
+      error.code === 'oauth_failed')
   ) {
     return error.code;
   }
@@ -248,6 +259,29 @@ async function realResetPassword(code: string, password: string): Promise<AuthOu
     pendingResetToken = null;
     pendingResetEmail = null;
     await clearPendingReset();
+    return { ok: true };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/**
+ * Google sign-in (real): run the browser OAuth round-trip for an id_token
+ * (`lib/google-auth`), then trade it for a JWT session via allauth's
+ * provider-token endpoint. Cancelling the browser sheet is reported as its own
+ * code so the screens can show a soft "cancelled" message instead of an error.
+ */
+async function realSignInWithGoogle(): Promise<AuthOutcome> {
+  const result = await requestGoogleIdToken();
+  if (result.kind === 'cancelled') return { ok: false, code: 'oauth_cancelled' };
+  if (result.kind === 'failed') return { ok: false, code: 'oauth_failed' };
+  try {
+    const session = await authProviderTokenLogin({
+      provider: 'google',
+      clientId: result.clientId,
+      idToken: result.idToken,
+    });
+    await applySession(toAuthUser(session.user), session.tokens);
     return { ok: true };
   } catch (error) {
     return failure(error);
@@ -474,6 +508,23 @@ export function signIn(): void {
   if (!AUTH_ENABLED) mockSignIn();
 }
 
+export function signInWithGoogle(): Promise<AuthOutcome> {
+  if (AUTH_ENABLED) return realSignInWithGoogle();
+  mockSignInWithGoogle();
+  return Promise.resolve({ ok: true });
+}
+
+/**
+ * Apple sign-in. Real mode is not wired yet (no Apple provider on the backend
+ * — see docs/oauth-social-login.md); the screens never surface the Apple
+ * button in real mode, so the failure outcome is just a safety net.
+ */
+export function signInWithApple(): Promise<AuthOutcome> {
+  if (AUTH_ENABLED) return Promise.resolve({ ok: false, code: 'oauth_failed' });
+  mockSignInWithApple();
+  return Promise.resolve({ ok: true });
+}
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -489,10 +540,9 @@ export function useAuth(): UseAuthReturn {
     requestPasswordReset,
     resetPassword,
     signOut,
-    // Social sign-in: no-ops in real mode (removed when backend OAuth lands); mock behavior in mock mode.
     signIn,
-    signInWithGoogle: AUTH_ENABLED ? () => {} : mockSignInWithGoogle,
-    signInWithApple: AUTH_ENABLED ? () => {} : mockSignInWithApple,
+    signInWithGoogle,
+    signInWithApple,
   };
 }
 

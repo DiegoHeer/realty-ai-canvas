@@ -169,6 +169,38 @@ export async function login(input: { email: string; password: string }): Promise
   return toSession(env);
 }
 
+/**
+ * Social sign-in via allauth's provider-token flow: the app obtains a provider
+ * id_token itself (see apps/mobile `lib/google-auth`) and posts it here; the
+ * backend verifies it (issuer, signature, audience == `clientId`) and returns
+ * the same JWT session envelope as `login`. Emails Google reports as verified
+ * skip the email-verification stage (backend `VERIFIED_EMAIL`), so success is
+ * always a full session — a non-authenticated response is a failure, tagged
+ * `oauth_failed`.
+ */
+export async function providerTokenLogin(input: {
+  provider: 'google';
+  clientId: string;
+  idToken: string;
+}): Promise<AuthSession> {
+  const env = await call('/auth/provider/token', {
+    method: 'POST',
+    body: JSON.stringify({
+      provider: input.provider,
+      process: 'login',
+      token: { client_id: input.clientId, id_token: input.idToken },
+    }),
+  });
+  if (!env.meta?.is_authenticated) {
+    throw new AuthError(
+      env.errors?.[0]?.message ?? 'Could not sign in with this account.',
+      'oauth_failed',
+      parseAllauthErrors(env),
+    );
+  }
+  return toSession(env);
+}
+
 export async function verifyEmail(input: {
   code: string;
   sessionToken: string;

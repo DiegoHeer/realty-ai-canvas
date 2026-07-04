@@ -18,6 +18,7 @@ import {
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
+import { isGoogleSignInAvailable } from '@/lib/google-auth';
 import { deferNavigation } from '@/lib/navigation';
 
 /**
@@ -37,8 +38,30 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
+  const [oauthBusy, setOauthBusy] = useState(false);
 
-  const provider = defaultOAuthProvider();
+  // Mock mode keeps the platform-styled demo button; real mode offers Google
+  // only (the sole provider the backend supports), and only on platforms where
+  // a client id is configured — today that's web (see lib/google-auth).
+  const provider = AUTH_ENABLED ? 'google' : defaultOAuthProvider();
+  const showOAuth = AUTH_ENABLED ? isGoogleSignInAvailable() : true;
+
+  // Google "registration" IS the login flow: allauth signs the account up on
+  // first sign-in (auto-signup for verified provider emails).
+  async function submitOAuth() {
+    if (oauthBusy) return;
+    setOauthBusy(true);
+    setFormError(undefined);
+    const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
+    const outcome = await action();
+    setOauthBusy(false);
+    if (outcome.ok === true) {
+      // Same deferred pop as the email path (recycled-bitmap crash, below).
+      deferNavigation(() => router.back());
+    } else if (outcome.ok === false) {
+      setFormError(t(authErrorKey(outcome.code)));
+    }
+  }
 
   async function submit() {
     const next: { name?: string; email?: string; password?: string } = {};
@@ -131,17 +154,10 @@ export default function RegisterScreen() {
         />
       </View>
 
-      {!AUTH_ENABLED ? (
+      {showOAuth ? (
         <>
           <OrDivider />
-          <OAuthButton
-            provider={provider}
-            onPress={() => {
-              const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
-              action();
-              deferNavigation(() => router.back());
-            }}
-          />
+          <OAuthButton provider={provider} onPress={submitOAuth} />
         </>
       ) : null}
 

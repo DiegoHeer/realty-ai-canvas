@@ -143,6 +143,82 @@ describe('use-auth (real mode)', () => {
     });
   });
 
+  it('google sign-in trades the id_token for a session and persists it', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const googleAuth = require('@/lib/google-auth');
+      jest
+        .spyOn(googleAuth, 'requestGoogleIdToken')
+        .mockResolvedValue({ kind: 'success', idToken: 'IDT', clientId: 'WEB_CLIENT_ID' });
+      const providerLogin = jest.spyOn(authData, 'providerTokenLogin').mockResolvedValue({
+        user: { id: 1, email: 'ada@gmail.com', name: 'Ada Lovelace' },
+        tokens: { accessToken: 'AT', refreshToken: 'RT' },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithGoogle();
+
+      expect(outcome).toEqual({ ok: true });
+      expect(providerLogin).toHaveBeenCalledWith({
+        provider: 'google',
+        clientId: 'WEB_CLIENT_ID',
+        idToken: 'IDT',
+      });
+      expect(getCurrentUser()).toMatchObject({ name: 'Ada Lovelace', email: 'ada@gmail.com' });
+      expect(await loadTokens()).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
+    });
+  });
+
+  it('google sign-in maps a closed browser sheet to oauth_cancelled without calling the backend', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const googleAuth = require('@/lib/google-auth');
+      jest.spyOn(googleAuth, 'requestGoogleIdToken').mockResolvedValue({ kind: 'cancelled' });
+      const providerLogin = jest.spyOn(authData, 'providerTokenLogin');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithGoogle();
+
+      expect(outcome).toEqual({ ok: false, code: 'oauth_cancelled' });
+      expect(providerLogin).not.toHaveBeenCalled();
+      expect(getCurrentUser()).toBeNull();
+    });
+  });
+
+  it('google sign-in surfaces oauth_failed for a failed round-trip and a rejected token', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const googleAuth = require('@/lib/google-auth');
+      const roundTrip = jest
+        .spyOn(googleAuth, 'requestGoogleIdToken')
+        .mockResolvedValue({ kind: 'failed' });
+      jest
+        .spyOn(authData, 'providerTokenLogin')
+        .mockRejectedValue(new authData.AuthError('The token is invalid.', 'oauth_failed'));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
+
+      // Browser round-trip failed → no backend call is even attempted.
+      expect(await signInWithGoogle()).toEqual({ ok: false, code: 'oauth_failed' });
+
+      // Round-trip succeeds but allauth rejects the id_token → same stable code.
+      roundTrip.mockResolvedValue({ kind: 'success', idToken: 'BAD', clientId: 'WEB_CLIENT_ID' });
+      expect(await signInWithGoogle()).toEqual({ ok: false, code: 'oauth_failed' });
+      expect(getCurrentUser()).toBeNull();
+    });
+  });
+
   it('register returns verifyPending and does not establish a session', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

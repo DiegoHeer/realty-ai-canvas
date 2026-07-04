@@ -48,8 +48,38 @@ jest.mock('expo-image', () => {
 
 // --- expo-web-browser mock ---
 const mockOpenBrowserAsync = jest.fn();
+const mockMaybeCompleteAuthSession = jest.fn();
 jest.mock('expo-web-browser', () => ({
   openBrowserAsync: mockOpenBrowserAsync,
+  maybeCompleteAuthSession: mockMaybeCompleteAuthSession,
+}));
+
+// --- expo-auth-session mock ---
+// `lib/google-auth` drives the imperative AuthRequest API. The shared
+// `mockPromptAsync` spy lets tests script the browser round-trip's outcome
+// (success/cancel/dismiss); constructed requests are recorded so tests can
+// assert the OAuth params (client id, response type, redirect).
+const mockPromptAsync = jest.fn(async () => ({ type: 'dismiss' }));
+const mockExchangeCodeAsync = jest.fn();
+const mockAuthRequests: { config: Record<string, unknown> }[] = [];
+jest.mock('expo-auth-session', () => ({
+  AuthRequest: class {
+    config: Record<string, unknown>;
+    codeVerifier = 'test-code-verifier';
+    promptAsync = mockPromptAsync;
+    constructor(config: Record<string, unknown>) {
+      this.config = config;
+      mockAuthRequests.push(this);
+    }
+  },
+  exchangeCodeAsync: mockExchangeCodeAsync,
+  makeRedirectUri: jest.fn(({ path }: { path?: string } = {}) => `https://app.test/${path ?? ''}`),
+  ResponseType: { Code: 'code', IdToken: 'id_token' },
+}));
+
+// --- expo-crypto mock ---
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => 'test-nonce'),
 }));
 
 // --- expo-splash-screen mock ---
@@ -176,4 +206,14 @@ jest.mock('react-native-svg', () => {
 });
 
 // Export mocks for use in tests
-export { mockPush, mockReplace, mockBack, mockDismissAll, mockOpenBrowserAsync };
+export {
+  mockPush,
+  mockReplace,
+  mockBack,
+  mockDismissAll,
+  mockOpenBrowserAsync,
+  mockMaybeCompleteAuthSession,
+  mockPromptAsync,
+  mockExchangeCodeAsync,
+  mockAuthRequests,
+};

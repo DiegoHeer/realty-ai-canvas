@@ -123,6 +123,8 @@
     "errorInvalidCredentials": "Invalid email or password.",
     "errorCodeInvalid": "That code is invalid or expired.",
     "errorEmailTaken": "That email is already registered.",
+    "errorOauthCancelled": "Sign-in was cancelled.",
+    "errorOauthFailed": "Could not sign in with this account. Please try again.",
     "submitting": "Please wait…",
     "verifyTitle": "Verify your email",
     "verifySubtitle": "Enter the code we emailed you to finish creating your account.",

@@ -32,6 +32,10 @@ export function authErrorKey(code: AuthErrorCode): string {
       return 'auth.errorCodeInvalid';
     case 'email_taken':
       return 'auth.errorEmailTaken';
+    case 'oauth_cancelled':
+      return 'auth.errorOauthCancelled';
+    case 'oauth_failed':
+      return 'auth.errorOauthFailed';
     default:
       return 'auth.errorGeneric';
   }

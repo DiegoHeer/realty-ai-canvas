@@ -8,6 +8,7 @@ import type { ReactTestInstance } from 'react-test-renderer';
 import LoginScreen from '@/app/auth/login';
 import { signOut } from '@/hooks/use-auth';
 import { StorageKeys } from '@/lib/storage';
+import { mockExchangeCodeAsync, mockPromptAsync } from '../../../test-setup';
 
 // Default: AUTH_ENABLED=false so mock-mode tests work with social buttons visible.
 // Real-mode tests use jest.replaceProperty (same pattern as use-auth.test.ts) to
@@ -175,7 +176,7 @@ describe('LoginScreen', () => {
     expect(await findByText('Invalid email or password.')).toBeOnTheScreen();
   });
 
-  it('hides the social button in real-auth mode', async () => {
+  it('hides the social button in real-auth mode while Google is not configured', async () => {
     // Babel compiles named imports as live property reads (_data.AUTH_ENABLED),
     // so updating the plain mock object is seen by the component at render time
     // without needing to reload modules (which would break React context).
@@ -185,5 +186,76 @@ describe('LoginScreen', () => {
 
     const { queryByTestId } = await renderScreen('en');
     expect(queryByTestId('oauth-button')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Real-auth mode with Google configured: the button is live and drives the
+// token flow end to end (mocked expo-auth-session browser round-trip → real
+// use-auth store → mocked allauth provider-token call).
+// ---------------------------------------------------------------------------
+
+describe('LoginScreen (real mode, Google configured)', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const authData = require('@realty/data');
+
+  beforeEach(() => {
+    // Earlier tests spy on useAuth and never restore (the file relies on spies
+    // simply being re-created); drop them so this block hits the real store.
+    jest.restoreAllMocks();
+    jest.replaceProperty(authData, 'AUTH_ENABLED', true);
+    // jest-expo runs as iOS, so google-auth selects the iOS client id.
+    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', '1-n.apps.googleusercontent.com');
+  });
+
+  afterEach(async () => {
+    // Restore AUTH_ENABLED=false first so signOut() clears the mock store.
+    jest.restoreAllMocks();
+    await act(async () => {
+      await signOut();
+    });
+  });
+
+  it('signs in with Google and returns to the previous screen', async () => {
+    mockPromptAsync.mockResolvedValue({ type: 'success', params: { code: 'AUTH_CODE' } });
+    mockExchangeCodeAsync.mockResolvedValue({ idToken: 'IDT' });
+    jest.spyOn(authData, 'providerTokenLogin').mockResolvedValue({
+      user: { id: 1, email: 'ada@gmail.com', name: 'Ada Lovelace' },
+      tokens: { accessToken: 'AT', refreshToken: 'RT' },
+    });
+
+    const { getByTestId } = await renderScreen('en');
+    await tap(getByTestId('oauth-button'));
+
+    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+    expect(authData.providerTokenLogin).toHaveBeenCalledWith({
+      provider: 'google',
+      clientId: '1-n.apps.googleusercontent.com',
+      idToken: 'IDT',
+    });
+    expect(await storedSession()).toEqual({ name: 'Ada Lovelace', email: 'ada@gmail.com' });
+  });
+
+  it('shows the cancelled message when the browser sheet is dismissed', async () => {
+    mockPromptAsync.mockResolvedValue({ type: 'dismiss' });
+
+    const { getByTestId, findByText } = await renderScreen('en');
+    await tap(getByTestId('oauth-button'));
+
+    expect(await findByText('Sign-in was cancelled.')).toBeOnTheScreen();
+    expect(router.back).not.toHaveBeenCalled();
+    expect(await storedSession()).toBeNull();
+  });
+
+  it('shows the failure message when the provider round-trip errors', async () => {
+    mockPromptAsync.mockResolvedValue({ type: 'error', params: {} });
+
+    const { getByTestId, findByText } = await renderScreen('en');
+    await tap(getByTestId('oauth-button'));
+
+    expect(
+      await findByText('Could not sign in with this account. Please try again.'),
+    ).toBeOnTheScreen();
+    expect(await storedSession()).toBeNull();
   });
 });
