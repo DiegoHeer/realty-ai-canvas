@@ -1,11 +1,38 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 /**
  * JWT access + refresh tokens, persisted in the device keychain/keystore via
  * expo-secure-store. This is the sanctioned exception to the AsyncStorage-only
  * storage rule: tokens are sensitive credentials. Like `lib/storage`, every
  * operation is best-effort and resolves to a safe default instead of throwing.
+ *
+ * On **web** there is no keychain — expo-secure-store has no web
+ * implementation, so its calls reject and (being best-effort) every session
+ * silently evaporated on reload. Tokens fall back to AsyncStorage
+ * (localStorage) there: readable by any JS on our origin, which is the
+ * standard SPA trade-off — an XSS that could read localStorage could equally
+ * call our API in-page, so the keychain's at-rest guarantee has no web
+ * equivalent to preserve.
  */
+const secureStoreAvailable = () => Platform.OS !== 'web';
+
+async function getItem(key: string): Promise<string | null> {
+  if (!secureStoreAvailable()) return (await AsyncStorage.getItem(key)) ?? null;
+  return SecureStore.getItemAsync(key);
+}
+
+async function setItem(key: string, value: string): Promise<void> {
+  if (!secureStoreAvailable()) return AsyncStorage.setItem(key, value);
+  return SecureStore.setItemAsync(key, value);
+}
+
+async function deleteItem(key: string): Promise<void> {
+  if (!secureStoreAvailable()) return AsyncStorage.removeItem(key);
+  return SecureStore.deleteItemAsync(key);
+}
+
 export interface StoredTokens {
   accessToken: string;
   refreshToken: string;
@@ -30,7 +57,7 @@ const PENDING_RESET_KEY = 'realty.pending_reset';
 
 export async function loadTokens(): Promise<StoredTokens | null> {
   try {
-    const raw = await SecureStore.getItemAsync(TOKENS_KEY);
+    const raw = await getItem(TOKENS_KEY);
     if (raw == null) return null;
     const parsed = JSON.parse(raw) as Partial<StoredTokens>;
     if (!parsed.accessToken || !parsed.refreshToken) return null;
@@ -42,7 +69,7 @@ export async function loadTokens(): Promise<StoredTokens | null> {
 
 export async function saveTokens(tokens: StoredTokens): Promise<void> {
   try {
-    await SecureStore.setItemAsync(TOKENS_KEY, JSON.stringify(tokens));
+    await setItem(TOKENS_KEY, JSON.stringify(tokens));
   } catch {
     // Best-effort.
   }
@@ -50,7 +77,7 @@ export async function saveTokens(tokens: StoredTokens): Promise<void> {
 
 export async function clearTokens(): Promise<void> {
   try {
-    await SecureStore.deleteItemAsync(TOKENS_KEY);
+    await deleteItem(TOKENS_KEY);
   } catch {
     // Best-effort.
   }
@@ -58,7 +85,7 @@ export async function clearTokens(): Promise<void> {
 
 export async function loadPendingSession(): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync(PENDING_SESSION_KEY);
+    return await getItem(PENDING_SESSION_KEY);
   } catch {
     return null;
   }
@@ -66,7 +93,7 @@ export async function loadPendingSession(): Promise<string | null> {
 
 export async function savePendingSession(token: string): Promise<void> {
   try {
-    await SecureStore.setItemAsync(PENDING_SESSION_KEY, token);
+    await setItem(PENDING_SESSION_KEY, token);
   } catch {
     // Best-effort.
   }
@@ -74,7 +101,7 @@ export async function savePendingSession(token: string): Promise<void> {
 
 export async function clearPendingSession(): Promise<void> {
   try {
-    await SecureStore.deleteItemAsync(PENDING_SESSION_KEY);
+    await deleteItem(PENDING_SESSION_KEY);
   } catch {
     // Best-effort.
   }
@@ -94,7 +121,7 @@ export interface PendingReset {
 
 export async function loadPendingReset(): Promise<PendingReset | null> {
   try {
-    const raw = await SecureStore.getItemAsync(PENDING_RESET_KEY);
+    const raw = await getItem(PENDING_RESET_KEY);
     if (raw == null) return null;
     const parsed = JSON.parse(raw) as Partial<PendingReset>;
     if (!parsed.sessionToken || !parsed.email) return null;
@@ -106,7 +133,7 @@ export async function loadPendingReset(): Promise<PendingReset | null> {
 
 export async function savePendingReset(pending: PendingReset): Promise<void> {
   try {
-    await SecureStore.setItemAsync(PENDING_RESET_KEY, JSON.stringify(pending));
+    await setItem(PENDING_RESET_KEY, JSON.stringify(pending));
   } catch {
     // Best-effort.
   }
@@ -114,7 +141,7 @@ export async function savePendingReset(pending: PendingReset): Promise<void> {
 
 export async function clearPendingReset(): Promise<void> {
   try {
-    await SecureStore.deleteItemAsync(PENDING_RESET_KEY);
+    await deleteItem(PENDING_RESET_KEY);
   } catch {
     // Best-effort.
   }

@@ -8,16 +8,24 @@ const mockPush = jest.fn();
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
 const mockDismissAll = jest.fn();
+const mockCanGoBack = jest.fn(() => true);
 
 jest.mock('expo-router', () => {
   const React = require('react');
   return {
-    router: { push: mockPush, replace: mockReplace, back: mockBack, dismissAll: mockDismissAll },
+    router: {
+      push: mockPush,
+      replace: mockReplace,
+      back: mockBack,
+      dismissAll: mockDismissAll,
+      canGoBack: mockCanGoBack,
+    },
     useRouter: () => ({
       push: mockPush,
       replace: mockReplace,
       back: mockBack,
       dismissAll: mockDismissAll,
+      canGoBack: mockCanGoBack,
     }),
     useLocalSearchParams: jest.fn(() => ({})),
     useGlobalSearchParams: jest.fn(() => ({})),
@@ -210,6 +218,7 @@ export {
   mockPush,
   mockReplace,
   mockBack,
+  mockCanGoBack,
   mockDismissAll,
   mockOpenBrowserAsync,
   mockMaybeCompleteAuthSession,

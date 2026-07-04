@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { isGoogleSignInAvailable } from '@/lib/google-auth';
-import { deferNavigation } from '@/lib/navigation';
+import { popOrReplace } from '@/lib/navigation';
 
 /**
  * Login screen (pushed from the profile guest card). Supports email/password
@@ -51,8 +51,7 @@ export default function LoginScreen() {
     const outcome = await action();
     setOauthBusy(false);
     if (outcome.ok === true) {
-      // Same deferred pop as the email path (recycled-bitmap crash, below).
-      deferNavigation(() => router.back());
+      popOrReplace(router, '/profile');
     } else if (outcome.ok === false) {
       setFormError(t(authErrorKey(outcome.code)));
     }
@@ -73,10 +72,10 @@ export default function LoginScreen() {
     setSubmitting(false);
 
     if (outcome.ok === true) {
-      // Defer the pop to avoid react-native-screens' "recycled bitmap" crash on
-      // Android when a global state change and the navigation happen in the same
-      // frame (same reason the settings screens defer their `router.back()`).
-      deferNavigation(() => router.back());
+      // Pop back to the pushing screen (usually the profile guest card), or land
+      // on the profile tab when the login screen was the entry point (web URL /
+      // deep link). Deferred a frame — see popOrReplace.
+      popOrReplace(router, '/profile');
     } else if (outcome.ok === false) {
       // Prefer the backend's structured field errors (e.g. the mismatch tagged to
       // `param: "password"`); only fall back to the generic banner when none exist.

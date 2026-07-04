@@ -8,7 +8,7 @@ import type { ReactTestInstance } from 'react-test-renderer';
 import LoginScreen from '@/app/auth/login';
 import { signOut } from '@/hooks/use-auth';
 import { StorageKeys } from '@/lib/storage';
-import { mockExchangeCodeAsync, mockPromptAsync } from '../../../test-setup';
+import { mockCanGoBack, mockExchangeCodeAsync, mockPromptAsync } from '../../../test-setup';
 
 // Default: AUTH_ENABLED=false so mock-mode tests work with social buttons visible.
 // Real-mode tests use jest.replaceProperty (same pattern as use-auth.test.ts) to
@@ -101,6 +101,18 @@ describe('LoginScreen', () => {
     await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
     const session = await storedSession();
     expect(session?.email).toMatch(/gmail\.com|appleid\.com/);
+  });
+
+  it('lands on the profile tab after sign-in when there is no history to pop (web deep link)', async () => {
+    // Opened directly by URL: router.back() would no-op and strand the user on
+    // the stale form, so success must replace to /profile instead.
+    mockCanGoBack.mockReturnValueOnce(false);
+    const { getByTestId } = await renderScreen('en');
+
+    await tap(getByTestId('oauth-button'));
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/profile'));
+    expect(router.back).not.toHaveBeenCalled();
   });
 
   it('cross-links to the register screen', async () => {

@@ -19,7 +19,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { isGoogleSignInAvailable } from '@/lib/google-auth';
-import { deferNavigation } from '@/lib/navigation';
+import { popOrReplace } from '@/lib/navigation';
 
 /**
  * Register screen (pushed from the profile guest card). Supports creating an
@@ -56,8 +56,7 @@ export default function RegisterScreen() {
     const outcome = await action();
     setOauthBusy(false);
     if (outcome.ok === true) {
-      // Same deferred pop as the email path (recycled-bitmap crash, below).
-      deferNavigation(() => router.back());
+      popOrReplace(router, '/profile');
     } else if (outcome.ok === false) {
       setFormError(t(authErrorKey(outcome.code)));
     }
@@ -82,10 +81,10 @@ export default function RegisterScreen() {
     if (outcome.ok === 'verifyPending') {
       router.push('/auth/verify');
     } else if (outcome.ok === true) {
-      // Defer the pop to avoid react-native-screens' "recycled bitmap" crash on
-      // Android when a global state change and the navigation happen in the same
-      // frame (same reason the settings screens defer their `router.back()`).
-      deferNavigation(() => router.back());
+      // Pop back to the pushing screen (usually the profile guest card), or land
+      // on the profile tab when the register screen was the entry point (web URL
+      // / deep link). Deferred a frame — see popOrReplace.
+      popOrReplace(router, '/profile');
     } else {
       // Surface the backend's password/email validator messages under their
       // field (allauth tags them `param: "password"` / `"email"`); the generic
