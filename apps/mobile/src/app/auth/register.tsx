@@ -1,5 +1,4 @@
 import { useTranslation } from '@realty/i18n';
-import { AUTH_ENABLED } from '@realty/data';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
@@ -9,7 +8,6 @@ import {
   AuthField,
   AuthScaffold,
   AuthSwitchLink,
-  defaultOAuthProvider,
   isValidEmail,
   MIN_PASSWORD_LENGTH,
   OAuthButton,
@@ -17,6 +15,7 @@ import {
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { useOAuthSignIn } from '@/hooks/use-oauth-sign-in';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { deferNavigation } from '@/lib/navigation';
 
@@ -29,7 +28,7 @@ import { deferNavigation } from '@/lib/navigation';
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { registerWithEmail, signInWithGoogle, signInWithApple } = useAuth();
+  const { registerWithEmail } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -38,7 +37,11 @@ export default function RegisterScreen() {
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
 
-  const provider = defaultOAuthProvider();
+  const { provider, showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
+    onSuccess: () => deferNavigation(() => router.back()),
+    onError: (code) => setFormError(t(authErrorKey(code))),
+    onClearError: () => setFormError(undefined),
+  });
 
   async function submit() {
     const next: { name?: string; email?: string; password?: string } = {};
@@ -131,17 +134,10 @@ export default function RegisterScreen() {
         />
       </View>
 
-      {!AUTH_ENABLED ? (
+      {showOAuth ? (
         <>
           <OrDivider />
-          <OAuthButton
-            provider={provider}
-            onPress={() => {
-              const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
-              action();
-              deferNavigation(() => router.back());
-            }}
-          />
+          <OAuthButton provider={provider} onPress={onOAuthPress} disabled={inFlight} />
         </>
       ) : null}
 

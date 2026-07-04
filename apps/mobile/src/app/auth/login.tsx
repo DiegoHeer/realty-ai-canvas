@@ -1,5 +1,4 @@
 import { useTranslation } from '@realty/i18n';
-import { AUTH_ENABLED } from '@realty/data';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -9,13 +8,13 @@ import {
   AuthField,
   AuthScaffold,
   AuthSwitchLink,
-  defaultOAuthProvider,
   isValidEmail,
   OAuthButton,
   OrDivider,
   PrimaryButton,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { useOAuthSignIn } from '@/hooks/use-oauth-sign-in';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { deferNavigation } from '@/lib/navigation';
 
@@ -27,7 +26,7 @@ import { deferNavigation } from '@/lib/navigation';
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { signInWithEmail, signInWithGoogle, signInWithApple } = useAuth();
+  const { signInWithEmail } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +34,11 @@ export default function LoginScreen() {
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
 
-  const provider = defaultOAuthProvider();
+  const { provider, showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
+    onSuccess: () => deferNavigation(() => router.back()),
+    onError: (code) => setFormError(t(authErrorKey(code))),
+    onClearError: () => setFormError(undefined),
+  });
 
   async function submit() {
     const next: { email?: string; password?: string } = {};
@@ -125,17 +128,10 @@ export default function LoginScreen() {
         />
       </View>
 
-      {!AUTH_ENABLED ? (
+      {showOAuth ? (
         <>
           <OrDivider />
-          <OAuthButton
-            provider={provider}
-            onPress={() => {
-              const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
-              action();
-              deferNavigation(() => router.back());
-            }}
-          />
+          <OAuthButton provider={provider} onPress={onOAuthPress} disabled={inFlight} />
         </>
       ) : null}
 

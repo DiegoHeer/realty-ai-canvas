@@ -312,6 +312,90 @@ describe('use-auth (real mode)', () => {
     });
   });
 
+  it('signInWithGoogle establishes a session and persists tokens on success', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      Object.defineProperty(authData, 'GOOGLE_WEB_CLIENT_ID', { value: 'WEB-ID', configurable: true });
+      Object.defineProperty(authData, 'GOOGLE_IOS_CLIENT_ID', { value: 'IOS-ID', configurable: true });
+      jest.spyOn(authData, 'loginWithProviderToken').mockResolvedValue({
+        user: { id: 1, email: 'ada@gmail.com', name: 'Ada Lovelace' },
+        tokens: { accessToken: 'AT', refreshToken: 'RT' },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const gsi = require('@react-native-google-signin/google-signin');
+      gsi.GoogleSignin.hasPlayServices.mockResolvedValue(true);
+      // v16 success shape: `{ type: 'success', data: { idToken, ... } }`.
+      gsi.GoogleSignin.signIn.mockResolvedValue({ type: 'success', data: { idToken: 'ID-TOKEN' } });
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithGoogle();
+
+      expect(outcome).toEqual({ ok: true });
+      expect(authData.loginWithProviderToken).toHaveBeenCalledWith({
+        provider: 'google',
+        idToken: 'ID-TOKEN',
+        clientId: 'WEB-ID',
+      });
+      expect(getCurrentUser()).toMatchObject({ name: 'Ada Lovelace', email: 'ada@gmail.com' });
+      expect(await loadTokens()).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
+    });
+  });
+
+  it('signInWithGoogle stays silent on cancel (no session, no provider exchange)', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      Object.defineProperty(authData, 'GOOGLE_WEB_CLIENT_ID', { value: 'WEB-ID', configurable: true });
+      const providerSpy = jest.spyOn(authData, 'loginWithProviderToken');
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const gsi = require('@react-native-google-signin/google-signin');
+      gsi.GoogleSignin.hasPlayServices.mockResolvedValue(true);
+      // v16 RESOLVES on cancel with `{ type: 'cancelled', data: null }` — it does
+      // not reject. The flow must be silent: no session, no provider exchange.
+      gsi.GoogleSignin.signIn.mockResolvedValue({ type: 'cancelled', data: null });
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithGoogle();
+
+      expect(outcome).toEqual({ ok: false, code: 'cancelled' });
+      expect(providerSpy).not.toHaveBeenCalled();
+      expect(getCurrentUser()).toBeNull();
+    });
+  });
+
+  it('signInWithGoogle bails without touching the native module when the web client id is unset', async () => {
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const authData = require('@realty/data');
+      Object.defineProperty(authData, 'AUTH_ENABLED', { value: true, configurable: true });
+      Object.defineProperty(authData, 'GOOGLE_WEB_CLIENT_ID', { value: '', configurable: true });
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const gsi = require('@react-native-google-signin/google-signin');
+      const configureSpy = jest.spyOn(gsi.GoogleSignin, 'configure');
+      const signInSpy = jest.spyOn(gsi.GoogleSignin, 'signIn');
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { signInWithGoogle, getCurrentUser } = require('@/hooks/use-auth');
+
+      const outcome = await signInWithGoogle();
+
+      expect(outcome).toEqual({ ok: false, code: 'generic' });
+      expect(configureSpy).not.toHaveBeenCalled();
+      expect(signInSpy).not.toHaveBeenCalled();
+      expect(getCurrentUser()).toBeNull();
+    });
+  });
+
   it('signOut clears user, tokens and calls queryClient.clear', async () => {
     await jest.isolateModulesAsync(async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

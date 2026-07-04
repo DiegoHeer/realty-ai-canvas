@@ -1,3 +1,4 @@
+import { GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import { type ReactNode } from 'react';
 import {
@@ -191,6 +192,26 @@ export function defaultOAuthProvider(): OAuthProvider {
   return Platform.OS === 'ios' ? 'apple' : 'google';
 }
 
+/**
+ * Which OAuth providers are actually usable in real (backend) mode, given the
+ * platform and the configured Google client ids. The native google-signin lib
+ * and the backend both have hard requirements, so a button that can't succeed
+ * must not be shown:
+ *   - web: none — the native lib's web `signIn()` throws (sponsors-only).
+ *   - iOS: `google` only when BOTH the web and iOS client ids are set (the iOS
+ *     flow needs the iOS client id; the web client id scopes the id token).
+ *   - Android: `google` only when the web client id is set — Android's native
+ *     side skips the id-token request when webClientId is empty (null idToken).
+ * Apple is intentionally absent until native Sign in with Apple lands.
+ */
+export function availableOAuthProviders(): OAuthProvider[] {
+  if (Platform.OS === 'web') return [];
+  if (Platform.OS === 'ios') {
+    return GOOGLE_WEB_CLIENT_ID && GOOGLE_IOS_CLIENT_ID ? ['google'] : [];
+  }
+  return GOOGLE_WEB_CLIENT_ID ? ['google'] : [];
+}
+
 /** Google's four-color "G" mark. */
 function GoogleMark({ size = 18 }: { size?: number }) {
   return (
@@ -236,13 +257,17 @@ function AppleMark({ size = 18, color }: { size?: number; color: string }) {
 export function OAuthButton({
   provider,
   onPress,
+  disabled = false,
 }: {
   provider: OAuthProvider;
   onPress: () => void;
+  /** Ignore presses (and dim) while a sign-in is already in flight. */
+  disabled?: boolean;
 }) {
   const { t } = useTranslation();
   const scheme = useColorScheme();
   const dark = scheme === 'dark';
+  const dimmed = disabled ? 'opacity-60' : '';
 
   if (provider === 'apple') {
     // Apple: invert with the theme so the mark always contrasts the surface.
@@ -253,9 +278,11 @@ export function OAuthButton({
       <Pressable
         testID="oauth-button"
         onPress={onPress}
+        disabled={disabled}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
         accessibilityLabel={t('auth.continueWithApple')}
-        className={`flex-row items-center justify-center gap-2.5 rounded-xl py-3.5 active:opacity-80 ${bg}`}>
+        className={`flex-row items-center justify-center gap-2.5 rounded-xl py-3.5 active:opacity-80 ${bg} ${dimmed}`}>
         <AppleMark color={markColor} />
         <Text className={`text-base font-semibold ${fg}`}>{t('auth.continueWithApple')}</Text>
       </Pressable>
@@ -266,9 +293,11 @@ export function OAuthButton({
     <Pressable
       testID="oauth-button"
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
       accessibilityLabel={t('auth.continueWithGoogle')}
-      className="flex-row items-center justify-center gap-2.5 rounded-xl border border-neutral-300 bg-white py-3.5 active:opacity-70 dark:border-neutral-700 dark:bg-neutral-900">
+      className={`flex-row items-center justify-center gap-2.5 rounded-xl border border-neutral-300 bg-white py-3.5 active:opacity-70 dark:border-neutral-700 dark:bg-neutral-900 ${dimmed}`}>
       <GoogleMark />
       <Text className="text-base font-semibold text-neutral-900 dark:text-white">
         {t('auth.continueWithGoogle')}

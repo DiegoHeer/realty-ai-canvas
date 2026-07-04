@@ -169,6 +169,39 @@ export async function login(input: { email: string; password: string }): Promise
   return toSession(env);
 }
 
+/**
+ * Sign in (or auto-link + sign in) with a third-party provider's id token, via
+ * allauth headless `provider/token`. The backend verifies the id token, links
+ * it to a matching verified-email account (or creates one) and returns the same
+ * authenticated envelope as {@link login} — tokens in `meta`, user in `data`.
+ *
+ * `clientId` MUST be the Web OAuth client id the id token is scoped to (its
+ * audience); the backend rejects a mismatch. On failure we surface the same
+ * `invalid_credentials` code as password login so the UI reuses one mapping.
+ */
+export async function loginWithProviderToken(input: {
+  provider: string;
+  idToken: string;
+  clientId: string;
+}): Promise<AuthSession> {
+  const env = await call('/auth/provider/token', {
+    method: 'POST',
+    body: JSON.stringify({
+      provider: input.provider,
+      process: 'login',
+      token: { client_id: input.clientId, id_token: input.idToken },
+    }),
+  });
+  if (!env.meta?.is_authenticated) {
+    throw new AuthError(
+      env.errors?.[0]?.message ?? 'Could not sign in with that provider.',
+      'invalid_credentials',
+      parseAllauthErrors(env),
+    );
+  }
+  return toSession(env);
+}
+
 export async function verifyEmail(input: {
   code: string;
   sessionToken: string;
