@@ -65,4 +65,21 @@ describe('AreaStats', () => {
     const { getByText } = await renderStats(archipel);
     expect(getByText('Niet bekendgemaakt voor deze buurt')).toBeTruthy();
   });
+
+  it('renders the election section with abbreviated party names and vote shares', async () => {
+    const withElection: NeighborhoodStats = {
+      ...archipel,
+      election: {
+        period: 'tk2025',
+        source: 'buurt',
+        totalVotes: 1000,
+        parties: { 'D66': 316, 'VVD': 206, 'GROENLINKS / Partij van de Arbeid (PvdA)': 157 },
+      },
+    };
+    const { getByText } = await renderStats(withElection);
+    expect(getByText('Politieke voorkeur')).toBeTruthy(); // section title (nl)
+    expect(getByText('Meest gestemde partijen — Tweede Kamer 2025')).toBeTruthy(); // hint w/ year
+    expect(getByText('GL-PvdA')).toBeTruthy(); // abbreviated coalition name
+    expect(getByText('31,6%')).toBeTruthy(); // D66 vote share (nl decimal comma)
+  });
 });

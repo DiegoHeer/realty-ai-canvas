@@ -335,6 +335,8 @@
       "electricity": "Eletricidade",
       "districtHeatingTitle": "Aquecimento urbano",
       "districtHeatingHint": "Proporção de habitações com aquecimento urbano",
+      "electionTitle": "Preferência política",
+      "electionHint": "Partidos mais votados — Tweede Kamer {{year}}",
       "missing": "Não divulgado para este bairro"
     }
   },

@@ -1,4 +1,11 @@
-import type { AreaPolygon, CityShape, Listing, ListingQuery, NeighborhoodStats } from '@realty/types';
+import type {
+  AreaPolygon,
+  CityShape,
+  ElectionResult,
+  Listing,
+  ListingQuery,
+  NeighborhoodStats,
+} from '@realty/types';
 
 import { API_BASE, API_URL, API_VERSION } from './env';
 import {
@@ -283,11 +290,38 @@ export async function getCityNames(): Promise<CityName[]> {
   return request<CityName[]>('/v1/cities');
 }
 
+/** Raw per-period election block: `{ tk2025: { parties, totalVotes, ... } }`. */
+interface ElectionStatsShape {
+  source?: string;
+  totalVotes?: number;
+  parties?: Record<string, number>;
+}
+
 /** Raw stats entry from `/v1/stats/neighborhoods` (its `geometry` is dropped). */
 interface NeighborhoodStatsShape {
   code: string;
   stats_year: number;
   stats: Record<string, number>;
+  election_stats?: Record<string, ElectionStatsShape> | null;
+}
+
+/**
+ * Pick the most recent election period from a raw `election_stats` block and
+ * shape it into an {@link ElectionResult}. Periods are keyed like `tk2025`, so
+ * the lexicographically-greatest key is the newest. Returns `null` when there
+ * are no periods or the newest one has no vote counts.
+ */
+function toElectionResult(
+  raw: Record<string, ElectionStatsShape> | null | undefined,
+): ElectionResult | null {
+  if (!raw) return null;
+  const period = Object.keys(raw).sort().at(-1);
+  if (!period) return null;
+  const block = raw[period];
+  const parties = block?.parties;
+  const totalVotes = block?.totalVotes;
+  if (!parties || typeof totalVotes !== 'number' || totalVotes <= 0) return null;
+  return { period, source: block?.source ?? '', totalVotes, parties };
 }
 
 /**
@@ -304,6 +338,7 @@ export async function getStats(city: string = DEN_HAAG_CITY_CODE): Promise<Neigh
     code: entry.code,
     statsYear: entry.stats_year,
     stats: entry.stats ?? {},
+    election: toElectionResult(entry.election_stats),
   }));
 }
 

@@ -1,5 +1,6 @@
 import { useTranslation } from '@realty/i18n';
 import type { NeighborhoodStats } from '@realty/types';
+import { Image } from 'expo-image';
 import { useColorScheme } from 'nativewind';
 import { useMemo, type ReactNode } from 'react';
 import { Text, View, type DimensionValue } from 'react-native';
@@ -8,9 +9,42 @@ import Svg, { Circle } from 'react-native-svg';
 import {
   deriveNeighborhoodStats,
   type AgeRow,
+  type ElectionPartyRow,
   type StatFormat,
   type StatSegment,
 } from '@/lib/neighborhood-stats';
+
+/**
+ * Party logo assets keyed by the slug emitted from `neighborhood-stats`. Metro
+ * only bundles statically-analyzable `require` calls, so every party is listed
+ * explicitly. Sourced from the StemWijzer 2025 logo set.
+ */
+const PARTY_LOGOS: Record<string, number> = {
+  vvd: require('../../assets/images/party-logos/vvd.png'),
+  d66: require('../../assets/images/party-logos/d66.png'),
+  pvv: require('../../assets/images/party-logos/pvv.png'),
+  'groenlinks-pvda': require('../../assets/images/party-logos/groenlinks-pvda.png'),
+  cda: require('../../assets/images/party-logos/cda.png'),
+  pvdd: require('../../assets/images/party-logos/pvdd.png'),
+  fvd: require('../../assets/images/party-logos/fvd.png'),
+  sp: require('../../assets/images/party-logos/sp.png'),
+  sgp: require('../../assets/images/party-logos/sgp.png'),
+  christenunie: require('../../assets/images/party-logos/christenunie.png'),
+  volt: require('../../assets/images/party-logos/volt.png'),
+  ja21: require('../../assets/images/party-logos/ja21.png'),
+  bvnl: require('../../assets/images/party-logos/bvnl.png'),
+  bij1: require('../../assets/images/party-logos/bij1.png'),
+  lp: require('../../assets/images/party-logos/lp.png'),
+  '50plus': require('../../assets/images/party-logos/50plus.png'),
+  piratenpartij: require('../../assets/images/party-logos/piratenpartij.png'),
+  fnp: require('../../assets/images/party-logos/fnp.png'),
+  'vrij-verbond': require('../../assets/images/party-logos/vrij-verbond.png'),
+  'de-linie': require('../../assets/images/party-logos/de-linie.png'),
+  denk: require('../../assets/images/party-logos/denk.png'),
+  bbb: require('../../assets/images/party-logos/bbb.png'),
+  nsc: require('../../assets/images/party-logos/nsc.png'),
+  'vrede-voor-dieren': require('../../assets/images/party-logos/vrede-voor-dieren.png'),
+};
 
 // Chart palettes mirror the design mockup. SEQ is a light→dark sequential ramp
 // (age, construction year); CAT is a categorical set (household, tenure, type,
@@ -155,6 +189,49 @@ function AgeBars({ rows }: { rows: AgeRow[] }) {
           </View>
           <Text className="w-9 text-xs font-bold text-neutral-900 dark:text-white">
             {row.percent}%
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Vote share of the top parties: logo, abbreviated name, a horizontal bar
+ * scaled so the winning party fills the row, and the percentage of the vote.
+ */
+function PartyVotes({ parties, fmt }: { parties: ElectionPartyRow[]; fmt: Fmt }) {
+  const max = Math.max(...parties.map((p) => p.share), 1);
+  return (
+    <View className="gap-2.5">
+      {parties.map((party) => (
+        <View key={party.label} className="flex-row items-center gap-2.5">
+          {party.slug && PARTY_LOGOS[party.slug] ? (
+            <Image
+              source={PARTY_LOGOS[party.slug]}
+              style={{ width: 22, height: 22 }}
+              contentFit="contain"
+            />
+          ) : (
+            <View className="h-[22px] w-[22px] rounded-full bg-neutral-200 dark:bg-neutral-700" />
+          )}
+          <Text
+            numberOfLines={1}
+            className="w-20 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+            {party.label}
+          </Text>
+          <View className="h-3 flex-1 justify-center">
+            <View
+              className="h-3 rounded-full"
+              style={{
+                width: widthPct((party.share / max) * 100),
+                minWidth: 4,
+                backgroundColor: ACCENT,
+              }}
+            />
+          </View>
+          <Text className="w-14 text-right text-xs font-bold text-neutral-900 dark:text-white">
+            {fmt.percent1(party.share)}
           </Text>
         </View>
       ))}
@@ -336,6 +413,16 @@ export function AreaStats({ stats }: AreaStatsProps) {
       {view.origin ? (
         <StatCard title={t('area.stats.originTitle')} hint={t('area.stats.originHint')}>
           <SegmentedBar segments={view.origin} colors={CAT} />
+        </StatCard>
+      ) : null}
+
+      {view.election ? (
+        <StatCard
+          title={t('area.stats.electionTitle')}
+          hint={t('area.stats.electionHint', {
+            year: view.election.period.match(/\d{4}/)?.[0] ?? view.election.period,
+          })}>
+          <PartyVotes parties={view.election.parties} fmt={fmt} />
         </StatCard>
       ) : null}
 

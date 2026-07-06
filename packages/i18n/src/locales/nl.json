@@ -335,6 +335,8 @@
       "electricity": "Elektriciteit",
       "districtHeatingTitle": "Stadsverwarming",
       "districtHeatingHint": "Aandeel woningen met stadsverwarming",
+      "electionTitle": "Politieke voorkeur",
+      "electionHint": "Meest gestemde partijen — Tweede Kamer {{year}}",
       "missing": "Niet bekendgemaakt voor deze buurt"
     }
   },

@@ -335,6 +335,8 @@
       "electricity": "Electricity",
       "districtHeatingTitle": "District heating",
       "districtHeatingHint": "Share of dwellings on district heating",
+      "electionTitle": "Political preference",
+      "electionHint": "Most-voted parties — Tweede Kamer {{year}}",
       "missing": "Not disclosed for this neighborhood"
     }
   },

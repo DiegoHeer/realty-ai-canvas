@@ -1,6 +1,43 @@
 import type { NeighborhoodStats } from '@realty/types';
 
 /**
+ * Maps a party's full name (as returned by the API's `election_stats.parties`)
+ * to a stable `slug` — used by the component to pick its logo — and an
+ * abbreviated `label` for display. Only the 24 parties that have a logo are
+ * listed; anything else (e.g. the tiny "ELLECT"/"NL PLAN" lists) falls back to
+ * its raw name with no icon, but in practice never reaches the top five.
+ */
+const PARTY_META: Record<string, { slug: string; label: string }> = {
+  'VVD': { slug: 'vvd', label: 'VVD' },
+  'D66': { slug: 'd66', label: 'D66' },
+  'PVV (Partij voor de Vrijheid)': { slug: 'pvv', label: 'PVV' },
+  'GROENLINKS / Partij van de Arbeid (PvdA)': { slug: 'groenlinks-pvda', label: 'GL-PvdA' },
+  'CDA': { slug: 'cda', label: 'CDA' },
+  'Partij voor de Dieren': { slug: 'pvdd', label: 'PvdD' },
+  'Forum voor Democratie': { slug: 'fvd', label: 'FvD' },
+  'SP (Socialistische Partij)': { slug: 'sp', label: 'SP' },
+  'Staatkundig Gereformeerde Partij (SGP)': { slug: 'sgp', label: 'SGP' },
+  'ChristenUnie': { slug: 'christenunie', label: 'CU' },
+  'Volt': { slug: 'volt', label: 'Volt' },
+  'JA21': { slug: 'ja21', label: 'JA21' },
+  'Belang Van Nederland (BVNL)': { slug: 'bvnl', label: 'BVNL' },
+  'BIJ1': { slug: 'bij1', label: 'BIJ1' },
+  'LP (Libertaire Partij)': { slug: 'lp', label: 'LP' },
+  '50PLUS': { slug: '50plus', label: '50PLUS' },
+  'Piratenpartij': { slug: 'piratenpartij', label: 'Piraten' },
+  'FNP': { slug: 'fnp', label: 'FNP' },
+  'Vrij Verbond': { slug: 'vrij-verbond', label: 'Vrij Verbond' },
+  'DE LINIE': { slug: 'de-linie', label: 'De Linie' },
+  'DENK': { slug: 'denk', label: 'DENK' },
+  'BBB': { slug: 'bbb', label: 'BBB' },
+  'Nieuw Sociaal Contract (NSC)': { slug: 'nsc', label: 'NSC' },
+  'Vrede voor Dieren': { slug: 'vrede-voor-dieren', label: 'Vrede v. Dieren' },
+};
+
+/** How many parties the election section shows (the most-voted). */
+const ELECTION_TOP_N = 5;
+
+/**
  * Maps the curated subset of CBS "Kerncijfers wijken en buurten" fields we
  * visualize to their raw keys in the Den Haag (`0518`) stats payload. The
  * `_NN` suffix is CBS's column ordinal. Unless noted, values are absolute
@@ -202,6 +239,16 @@ export interface EnergyStat {
   unit: 'm3' | 'kWh';
 }
 
+/** One party's share of the vote in the election section. */
+export interface ElectionPartyRow {
+  /** Logo slug for the component's asset map, or `null` when no logo exists. */
+  slug: string | null;
+  /** Abbreviated party name, e.g. "GL-PvdA". */
+  label: string;
+  /** Vote share on a 0–100 scale, unrounded (formatted/normalized by the view). */
+  share: number;
+}
+
 /**
  * A presentation-ready view of one neighborhood's stats. Every section is
  * `null` when the underlying figures are entirely absent, so the component can
@@ -220,6 +267,8 @@ export interface NeighborhoodStatsView {
   energy: EnergyStat[] | null;
   /** % of dwellings on district heating, or `null` when CBS suppressed it. */
   districtHeating: number | null;
+  /** Top parties by vote share, or `null` when there is no election data. */
+  election: { period: string; parties: ElectionPartyRow[] } | null;
 }
 
 /** Read a field as a finite number, treating `null`/missing/`NaN` as absent. */
@@ -301,6 +350,29 @@ function deriveIncome(stats: Record<string, number>): NeighborhoodStatsView['inc
   return hasAny ? { tiles, shares } : null;
 }
 
+/**
+ * Rank the {@link ELECTION_TOP_N} most-voted parties and express each as a share
+ * of the total vote. Returns `null` when there is no usable election data.
+ */
+function deriveElection(
+  election: NeighborhoodStats['election'],
+): NeighborhoodStatsView['election'] {
+  if (!election || election.totalVotes <= 0) return null;
+  const parties = Object.entries(election.parties)
+    .filter(([, votes]) => isFiniteNum(votes) && votes > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, ELECTION_TOP_N)
+    .map(([name, votes]) => {
+      const meta = PARTY_META[name];
+      return {
+        slug: meta?.slug ?? null,
+        label: meta?.label ?? name,
+        share: (votes / election.totalVotes) * 100,
+      };
+    });
+  return parties.length > 0 ? { period: election.period, parties } : null;
+}
+
 function deriveEnergy(stats: Record<string, number>): EnergyStat[] | null {
   const rows = (
     [
@@ -366,5 +438,6 @@ export function deriveNeighborhoodStats(
     income: deriveIncome(s),
     energy: deriveEnergy(s),
     districtHeating: num(s, RAW_FIELDS.districtHeating),
+    election: deriveElection(stats.election),
   };
 }
