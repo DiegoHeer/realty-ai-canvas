@@ -16,8 +16,9 @@ import { useEffect } from 'react';
 import { Platform, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-// Importing the hook also runs the module side-effect that applies any saved
-// appearance override at boot.
+// Importing these hooks also runs their module side-effects at boot: applying
+// any saved appearance override, and hydrating the analytics opt-out flag.
+import { useScreenView } from '@/lib/analytics';
 import { useAppearance } from '@/lib/appearance';
 import { useOnboarding } from '@/lib/onboarding';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -26,6 +27,10 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { appearance } = useAppearance();
   const { t } = useTranslation();
+
+  // Auto-track a Plausible pageview on every route-pattern change (no-op unless
+  // analytics is enabled and the user hasn't opted out).
+  useScreenView();
 
   // Resolve the effective theme from the stored preference ('system' follows the
   // OS), then invert it for the status bar: dark icons on light, light on dark.
