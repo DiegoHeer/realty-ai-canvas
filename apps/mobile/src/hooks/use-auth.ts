@@ -77,7 +77,6 @@ interface UseAuthReturn {
   signOut: () => Promise<void>;
   signIn: () => void;
   signInWithGoogle: () => Promise<AuthOutcome>;
-  signInWithApple: () => Promise<AuthOutcome>;
 }
 
 // ---------------------------------------------------------------------------
@@ -424,15 +423,6 @@ function mockSignInWithGoogle() {
   mockSetSession({ name: 'Google User', email: 'user@gmail.com' });
 }
 
-/**
- * Apple sign-in (mock). A real integration would use Sign in with Apple
- * (expo-apple-authentication, iOS) and exchange the identity token for a
- * session; with no backend we synthesize an Apple-style account.
- */
-function mockSignInWithApple() {
-  mockSetSession({ name: 'Apple User', email: 'user@privaterelay.appleid.com' });
-}
-
 const MOCK_USER: AuthUser = {
   name: 'Jeroen Esseveld',
   email: 'jeroen_esseveld@hotmail.com',
@@ -514,17 +504,6 @@ export function signInWithGoogle(): Promise<AuthOutcome> {
   return Promise.resolve({ ok: true });
 }
 
-/**
- * Apple sign-in. Real mode is not wired yet (no Apple provider on the backend
- * — see docs/oauth-social-login.md); the screens never surface the Apple
- * button in real mode, so the failure outcome is just a safety net.
- */
-export function signInWithApple(): Promise<AuthOutcome> {
-  if (AUTH_ENABLED) return Promise.resolve({ ok: false, code: 'oauth_failed' });
-  mockSignInWithApple();
-  return Promise.resolve({ ok: true });
-}
-
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -542,7 +521,6 @@ export function useAuth(): UseAuthReturn {
     signOut,
     signIn,
     signInWithGoogle,
-    signInWithApple,
   };
 }
 

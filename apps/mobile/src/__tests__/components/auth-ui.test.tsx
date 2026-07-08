@@ -4,30 +4,21 @@ import { I18nextProvider } from 'react-i18next';
 
 import { isValidEmail, OAuthButton } from '@/components/auth-ui';
 
-async function renderButton(provider: 'google' | 'apple', onPress: () => void) {
+async function renderButton(onPress: () => void) {
   const i18n = initI18n('en');
   return render(
     <I18nextProvider i18n={i18n}>
-      <OAuthButton provider={provider} onPress={onPress} />
+      <OAuthButton onPress={onPress} />
     </I18nextProvider>,
   );
 }
 
 describe('OAuthButton', () => {
-  it('renders the Google provider and fires onPress', async () => {
+  it('renders the Google button and fires onPress', async () => {
     const onPress = jest.fn();
-    const { getByText, getByTestId } = await renderButton('google', onPress);
+    const { getByText, getByTestId } = await renderButton(onPress);
 
     expect(getByText('Continue with Google')).toBeTruthy();
-    fireEvent.press(getByTestId('oauth-button'));
-    expect(onPress).toHaveBeenCalledTimes(1);
-  });
-
-  it('renders the Apple provider and fires onPress', async () => {
-    const onPress = jest.fn();
-    const { getByText, getByTestId } = await renderButton('apple', onPress);
-
-    expect(getByText('Continue with Apple')).toBeTruthy();
     fireEvent.press(getByTestId('oauth-button'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });

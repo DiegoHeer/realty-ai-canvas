@@ -38,6 +38,17 @@ const ANDROID_CLIENT_ID = '1234-android.apps.googleusercontent.com';
 const IOS_CLIENT_ID = '1234-ios.apps.googleusercontent.com';
 const WEB_CLIENT_ID = '1234-web.apps.googleusercontent.com';
 
+/**
+ * A minimal JWT whose payload carries the given `nonce` claim (header/signature
+ * are unused — the web flow reads the claim, not the signature). Crypto's
+ * randomUUID is mocked to 'test-nonce', so a token minted with that value
+ * passes the round-trip check.
+ */
+function jwtWithNonce(nonce: string): string {
+  const payload = Buffer.from(JSON.stringify({ nonce })).toString('base64url');
+  return `header.${payload}.sig`;
+}
+
 /** Pin Platform.OS for one test (jest-expo defaults to ios). */
 function onPlatform(os: 'web' | 'android' | 'ios') {
   jest.replaceProperty(Platform, 'OS', os);
@@ -77,11 +88,12 @@ describe('web (implicit id_token flow)', () => {
   });
 
   it('builds an OIDC implicit request (id_token + nonce, no PKCE) to /auth/callback', async () => {
-    mockPromptAsync.mockResolvedValue({ type: 'success', params: { id_token: 'IDT' } });
+    const idToken = jwtWithNonce('test-nonce');
+    mockPromptAsync.mockResolvedValue({ type: 'success', params: { id_token: idToken } });
 
     const result = await requestGoogleIdToken();
 
-    expect(result).toEqual({ kind: 'success', idToken: 'IDT', clientId: WEB_CLIENT_ID });
+    expect(result).toEqual({ kind: 'success', idToken, clientId: WEB_CLIENT_ID });
     expect(mockAuthRequests).toHaveLength(1);
     expect(mockAuthRequests[0]!.config).toMatchObject({
       clientId: WEB_CLIENT_ID,
@@ -91,6 +103,14 @@ describe('web (implicit id_token flow)', () => {
       scopes: ['openid', 'email', 'profile'],
       extraParams: { nonce: 'test-nonce' },
     });
+  });
+
+  it('rejects an id_token whose nonce does not match the request', async () => {
+    mockPromptAsync.mockResolvedValue({
+      type: 'success',
+      params: { id_token: jwtWithNonce('someone-elses-nonce') },
+    });
+    expect(await requestGoogleIdToken()).toEqual({ kind: 'failed' });
   });
 
   it('reports cancel/dismiss as cancelled', async () => {

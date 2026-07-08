@@ -39,7 +39,7 @@ export default function LoginScreen() {
   // On success, flip to the in-place landing view (mirrors the verify/reset
   // flows); its Continue button performs the actual navigation on a later
   // gesture.
-  const { provider, showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
+  const { showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
     onSuccess: () => setOauthSuccess(true),
     onError: (code) => setFormError(t(authErrorKey(code))),
     onClearError: () => setFormError(undefined),
@@ -140,7 +140,7 @@ export default function LoginScreen() {
       {showOAuth ? (
         <>
           <OrDivider />
-          <OAuthButton provider={provider} onPress={onOAuthPress} disabled={inFlight} />
+          <OAuthButton onPress={onOAuthPress} disabled={inFlight} />
         </>
       ) : null}
 

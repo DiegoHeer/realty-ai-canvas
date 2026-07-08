@@ -43,7 +43,7 @@ export default function RegisterScreen() {
   // first sign-in (auto-signup for verified provider emails). On success, flip
   // to the in-place landing view (mirrors the verify/reset flows); its Continue
   // button performs the actual navigation on a later gesture.
-  const { provider, showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
+  const { showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
     onSuccess: () => setOauthSuccess(true),
     onError: (code) => setFormError(t(authErrorKey(code))),
     onClearError: () => setFormError(undefined),
@@ -147,7 +147,7 @@ export default function RegisterScreen() {
       {showOAuth ? (
         <>
           <OrDivider />
-          <OAuthButton provider={provider} onPress={onOAuthPress} disabled={inFlight} />
+          <OAuthButton onPress={onOAuthPress} disabled={inFlight} />
         </>
       ) : null}
 

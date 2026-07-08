@@ -35,8 +35,12 @@ export function googleClientId(): string {
       return GOOGLE_WEB_CLIENT_ID;
     case 'ios':
       return GOOGLE_IOS_CLIENT_ID;
-    default:
+    case 'android':
       return GOOGLE_ANDROID_CLIENT_ID;
+    // Any other platform (windows/macos/…) has no configured client → sign-in
+    // is unavailable rather than silently borrowing the Android id.
+    default:
+      return '';
   }
 }
 
@@ -79,8 +83,31 @@ export async function requestGoogleIdToken(): Promise<GoogleSignInResult> {
   }
 }
 
+/**
+ * The `nonce` claim from a JWT's payload, or undefined if absent/unparseable.
+ * Web-only helper (runs in the browser, where `atob` exists); we only read the
+ * claim — signature verification is the backend's job in `verify_token`.
+ */
+function idTokenNonce(idToken: string): string | undefined {
+  const payload = idToken.split('.')[1];
+  if (!payload) return undefined;
+  try {
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=');
+    const claims = JSON.parse(atob(padded)) as { nonce?: unknown };
+    return typeof claims.nonce === 'string' ? claims.nonce : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Web: implicit OIDC — the id_token comes back in the redirect fragment. */
 async function requestViaImplicitFlow(clientId: string): Promise<GoogleSignInResult> {
+  // OIDC requires a nonce with response_type=id_token; Google echoes it back in
+  // the token. We generate a fresh one and verify the round-trip below, which
+  // binds the token to *this* request (replay / token-injection protection).
+  // CSRF on the redirect is separately covered by expo-auth-session's `state`.
+  const nonce = Crypto.randomUUID();
   const request = new AuthRequest({
     clientId,
     redirectUri: makeRedirectUri({ path: 'auth/callback' }),
@@ -88,11 +115,12 @@ async function requestViaImplicitFlow(clientId: string): Promise<GoogleSignInRes
     responseType: ResponseType.IdToken,
     // PKCE belongs to the code flow; Google rejects a code_challenge here.
     usePKCE: false,
-    // OIDC requires a nonce with response_type=id_token (echoed in the token).
-    extraParams: { nonce: Crypto.randomUUID() },
+    extraParams: { nonce },
   });
   const result = await request.promptAsync(GOOGLE_DISCOVERY);
   if (result.type === 'success' && typeof result.params.id_token === 'string') {
+    // Reject a token whose nonce doesn't match the one we just sent.
+    if (idTokenNonce(result.params.id_token) !== nonce) return { kind: 'failed' };
     return { kind: 'success', idToken: result.params.id_token, clientId };
   }
   return result.type === 'cancel' || result.type === 'dismiss'

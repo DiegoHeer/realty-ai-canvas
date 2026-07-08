@@ -1,14 +1,12 @@
 import { AUTH_ENABLED } from '@realty/data';
 import { useState } from 'react';
 
-import { defaultOAuthProvider, type OAuthProvider } from '@/components/auth-ui';
 import { useAuth, type AuthErrorCode } from '@/hooks/use-auth';
 import { isGoogleSignInAvailable } from '@/lib/google-auth';
 
 /**
- * Shared OAuth sign-in logic for the login and register screens. Owns:
- *   - provider selection (mock mode: platform default; real mode: Google only,
- *     the sole provider the backend supports),
+ * Shared Google sign-in logic for the login and register screens (Google is the
+ * only social provider the backend supports). Owns:
  *   - whether the button should render (`showOAuth`) — real mode gates on
  *     {@link isGoogleSignInAvailable} (a client id configured for this
  *     platform) so no dead/unconfigured button ships,
@@ -17,7 +15,7 @@ import { isGoogleSignInAvailable } from '@/lib/google-auth';
  *     callbacks. A user cancel surfaces `oauth_cancelled`, which maps to a
  *     soft "sign-in was cancelled" message rather than an alarming error.
  *
- * Mock mode keeps the original demo behavior: it synthesizes a provider session
+ * Mock mode keeps the original demo behavior: it synthesizes a Google session
  * and reports success, no outcome inspection needed.
  */
 export function useOAuthSignIn({
@@ -29,10 +27,9 @@ export function useOAuthSignIn({
   onError: (code: AuthErrorCode) => void;
   onClearError: () => void;
 }) {
-  const { signInWithGoogle, signInWithApple } = useAuth();
+  const { signInWithGoogle } = useAuth();
   const [inFlight, setInFlight] = useState(false);
 
-  const provider: OAuthProvider = AUTH_ENABLED ? 'google' : defaultOAuthProvider();
   const showOAuth = AUTH_ENABLED ? isGoogleSignInAvailable() : true;
 
   async function onOAuthPress() {
@@ -40,8 +37,7 @@ export function useOAuthSignIn({
     onClearError();
 
     if (!AUTH_ENABLED) {
-      const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
-      void action();
+      void signInWithGoogle();
       onSuccess();
       return;
     }
@@ -59,5 +55,5 @@ export function useOAuthSignIn({
     }
   }
 
-  return { provider, showOAuth, inFlight, onOAuthPress };
+  return { showOAuth, inFlight, onOAuthPress };
 }

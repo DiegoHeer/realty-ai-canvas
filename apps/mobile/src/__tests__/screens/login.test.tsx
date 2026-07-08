@@ -102,7 +102,7 @@ describe('LoginScreen', () => {
     expect(getByText("You're signed in and ready to go.")).toBeOnTheScreen();
     expect(router.back).not.toHaveBeenCalled();
     const session = await storedSession();
-    expect(session?.email).toMatch(/gmail\.com|appleid\.com/);
+    expect(session?.email).toMatch(/gmail\.com/);
 
     await tap(getByTestId('auth-continue'));
     await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
@@ -159,7 +159,6 @@ describe('LoginScreen', () => {
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
       signInWithEmail: jest.fn().mockResolvedValue({ ok: false, code: 'invalid_credentials' }),
       signInWithGoogle: jest.fn(),
-      signInWithApple: jest.fn(),
     });
     const { getByPlaceholderText, getByTestId, findByText } = await renderScreen('en');
     await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
@@ -182,7 +181,6 @@ describe('LoginScreen', () => {
         ],
       }),
       signInWithGoogle: jest.fn(),
-      signInWithApple: jest.fn(),
     });
     const { getByPlaceholderText, getByTestId, findByText } = await renderScreen('en');
 

@@ -15,6 +15,15 @@ import { Platform } from 'react-native';
  * standard SPA trade-off — an XSS that could read localStorage could equally
  * call our API in-page, so the keychain's at-rest guarantee has no web
  * equivalent to preserve.
+ *
+ * Trade-off to keep in mind: this persists the **refresh** token in
+ * localStorage too, and a stolen refresh token is durable, offline access
+ * (usable long after the tab closes), not just a live-session risk. Defensible
+ * for a static Expo web export with no server to hold an httpOnly cookie, and
+ * strictly better than the previous silent session loss — but revisit if the
+ * backend ever offers httpOnly-cookie sessions for the browser client (move the
+ * refresh token out of JS reach and keep only the short-lived access token, or
+ * none, in localStorage).
  */
 const secureStoreAvailable = () => Platform.OS !== 'web';
 

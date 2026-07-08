@@ -73,18 +73,13 @@ describe('useAuth (mock mode)', () => {
     expect(result.current.user).toEqual({ name: 'Alice Smith', email: 'alice@example.com' });
   });
 
-  it('establishes provider-specific sessions for Google and Apple', async () => {
+  it('establishes a Google session', async () => {
     const { result } = await renderHook(() => useAuth());
 
     await act(async () => {
       result.current.signInWithGoogle();
     });
     expect(result.current.user?.email).toBe('user@gmail.com');
-
-    await act(async () => {
-      result.current.signInWithApple();
-    });
-    expect(result.current.user?.email).toBe('user@privaterelay.appleid.com');
   });
 
   it('signs out, clearing the in-memory and persisted session', async () => {
