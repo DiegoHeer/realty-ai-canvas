@@ -1,26 +1,26 @@
-import { useSegments } from 'expo-router';
+import { usePathname, useSegments } from 'expo-router';
 import { useEffect, useRef } from 'react';
 
 import { trackPageview } from './client';
 import { segmentsToPattern } from './route-pattern';
 
 /**
- * Fire a Plausible pageview whenever the current route pattern changes. Mount
- * once, in the root layout. Sends the route *pattern* (`/listing/:id`), never a
- * concrete path, and dedupes consecutive identical patterns so a re-render or a
- * same-screen param change doesn't double-count.
+ * Fire a Plausible pageview whenever the current route changes. Mount once,
+ * in the root layout. Sends the route *pattern* (`/listing/:id`), never a
+ * concrete path, but dedupes on the concrete path so navigating between two
+ * screens that share a pattern (e.g. listing A → listing B) still counts as
+ * two pageviews.
  */
 export function useScreenView(): void {
   const segments = useSegments();
-  // useSegments() may return a fresh array each render; key on the content.
-  const joined = (segments ?? []).join('/');
+  const pathname = usePathname();
   const last = useRef<string | null>(null);
 
   useEffect(() => {
-    if (joined === '') return; // navigator not mounted yet
-    const pattern = segmentsToPattern(joined.split('/'));
-    if (pattern === last.current) return;
-    last.current = pattern;
+    if (!pathname || pathname === '') return; // navigator not mounted yet
+    if (pathname === last.current) return;
+    last.current = pathname;
+    const pattern = segmentsToPattern(segments);
     trackPageview(pattern);
-  }, [joined]);
+  }, [pathname, segments]);
 }

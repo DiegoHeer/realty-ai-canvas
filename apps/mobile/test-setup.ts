@@ -9,6 +9,7 @@ const mockReplace = jest.fn();
 const mockBack = jest.fn();
 const mockDismissAll = jest.fn();
 const mockCanGoBack = jest.fn(() => true);
+const mockUsePathname = jest.fn().mockReturnValue('/');
 
 jest.mock('expo-router', () => {
   const React = require('react');
@@ -30,6 +31,7 @@ jest.mock('expo-router', () => {
     useLocalSearchParams: jest.fn(() => ({})),
     useGlobalSearchParams: jest.fn(() => ({})),
     useSegments: jest.fn(() => []),
+    usePathname: mockUsePathname,
     useNavigation: () => ({ setOptions: jest.fn() }),
     Link: ({ children }: { children: React.ReactNode }) => children,
     Stack: Object.assign(
@@ -228,4 +230,5 @@ export {
   mockPromptAsync,
   mockExchangeCodeAsync,
   mockAuthRequests,
+  mockUsePathname,
 };
