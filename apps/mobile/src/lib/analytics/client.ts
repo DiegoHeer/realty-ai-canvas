@@ -67,11 +67,12 @@ export function sendEvent(
   });
 }
 
+const CONFIG = readConfig();
+
 /** Track a custom event (or `pageview`). No-op unless analytics is enabled. */
 export function track(name: string, opts?: TrackOptions): void {
-  const config = readConfig();
-  if (!shouldTrack(config, isWeb, isOptedOut(), isHydrated())) return;
-  sendEvent(config, name, opts);
+  if (!shouldTrack(CONFIG, isWeb, isOptedOut(), isHydrated())) return;
+  sendEvent(CONFIG, name, opts);
 }
 
 /** Convenience wrapper for the screen-view hook. */
