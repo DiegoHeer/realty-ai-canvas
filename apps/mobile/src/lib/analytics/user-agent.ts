@@ -1,5 +1,6 @@
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+
+import { APP_VERSION } from '@/constants/app';
 
 /**
  * A stable User-Agent for Plausible ingest, e.g. `Huismus/1.0.0 (ios 17.5)`.
@@ -14,8 +15,7 @@ import { Platform } from 'react-native';
  * stay accurate; treat unique visitors as approximate.
  */
 export function buildUserAgent(): string {
-  const version = Constants.expoConfig?.version ?? '0.0.0';
   const os = Platform.OS;
   const osVersion = String(Platform.Version ?? '');
-  return `Huismus/${version} (${os}${osVersion ? ` ${osVersion}` : ''})`;
+  return `Huismus/${APP_VERSION} (${os}${osVersion ? ` ${osVersion}` : ''})`;
 }

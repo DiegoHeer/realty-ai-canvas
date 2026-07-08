@@ -1,12 +1,8 @@
 import { useTranslation } from '@realty/i18n';
-import Constants from 'expo-constants';
 import { Text, View } from 'react-native';
 
+import { APP_VERSION } from '@/constants/app';
 import { InfoCard, Paragraph, SettingsContentScreen } from '@/components/settings-content';
-
-// Single source of truth for the displayed version is the Expo app config
-// (app.json → expo.version); fall back gracefully if it isn't populated.
-const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 /**
  * About page (pushed from the profile screen): what the app is, what you can do
