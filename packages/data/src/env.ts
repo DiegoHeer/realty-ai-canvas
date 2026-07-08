@@ -21,6 +21,9 @@ const isWebDev =
   typeof document !== 'undefined' && process.env.NODE_ENV !== 'production';
 export const API_BASE = isWebDev ? '/realty-api' : API_URL;
 
+/** True on any web surface (dev server, production export, e2e). */
+export const isWeb = typeof document !== 'undefined';
+
 /**
  * Turn on real backend authentication (allauth headless JWT). Off by default,
  * so the app keeps the mock auth path — which is also the deterministic

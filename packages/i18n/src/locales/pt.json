@@ -41,7 +41,10 @@
     "behaviorTitle": "O que medimos",
     "behaviorBody": "Apenas registamos o comportamento na aplicação para melhorar a sua experiência: que funcionalidades são usadas e quais raramente. Concentramo-nos em melhorar as funcionalidades que realmente usa.",
     "noResaleTitle": "As suas pesquisas são suas",
-    "noResaleBody": "Não recolhemos nem redistribuímos os seus filtros de pesquisa e preferências de imóveis. Aquilo que procura permanece privado."
+    "noResaleBody": "Não recolhemos nem redistribuímos os seus filtros de pesquisa e preferências de imóveis. Aquilo que procura permanece privado.",
+    "optOutTitle": "Medição de utilização",
+    "optOutLabel": "Medir a minha utilização na aplicação",
+    "optOutDescription": "Estatísticas anónimas e sem cookies que nos ajudam a melhorar a aplicação. Desative para parar de as enviar."
   },
   "aboutPage": {
     "intro": "O Huismus ajuda-o a explorar imóveis à venda em todos os Países Baixos numa tela rápida e centrada no mapa — com informações detalhadas sobre os bairros ao seu alcance.",

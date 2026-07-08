@@ -41,7 +41,10 @@
     "behaviorTitle": "Wat we wél meten",
     "behaviorBody": "We meten alleen het gebruik in de app om je ervaring te verbeteren: welke functies worden gebruikt en welke zelden. We richten ons op het verbeteren van de functies die je echt gebruikt.",
     "noResaleTitle": "Je zoekopdrachten blijven van jou",
-    "noResaleBody": "We verzamelen of verspreiden je zoekfilters en woningvoorkeuren niet. Waar je naar zoekt blijft privé."
+    "noResaleBody": "We verzamelen of verspreiden je zoekfilters en woningvoorkeuren niet. Waar je naar zoekt blijft privé.",
+    "optOutTitle": "Gebruiksmeting",
+    "optOutLabel": "Meet mijn gebruik in de app",
+    "optOutDescription": "Anonieme, cookieloze statistieken waarmee we de app verbeteren. Zet dit uit om te stoppen met verzenden."
   },
   "aboutPage": {
     "intro": "Huismus helpt je koopwoningen in heel Nederland te ontdekken op een snel, kaartgericht canvas — met rijke buurtinzichten binnen handbereik.",
