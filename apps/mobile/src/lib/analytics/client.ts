@@ -1,4 +1,6 @@
-import { AnalyticsConfig, isWebDev, readConfig } from './config';
+import { isWeb } from '@realty/data';
+
+import { AnalyticsConfig, readConfig } from './config';
 import { isHydrated, isOptedOut } from './opt-out';
 import { buildUserAgent } from './user-agent';
 
@@ -36,11 +38,11 @@ export function buildEventBody(
 /** Gating predicate — pure so it can be exhaustively unit-tested. */
 export function shouldTrack(
   config: AnalyticsConfig,
-  webDev: boolean,
+  web: boolean,
   optedOut: boolean,
   hydrated: boolean,
 ): boolean {
-  return hydrated && config.enabled && !!config.url && !!config.domain && !webDev && !optedOut;
+  return hydrated && config.enabled && !!config.url && !!config.domain && !web && !optedOut;
 }
 
 /**
@@ -68,7 +70,7 @@ export function sendEvent(
 /** Track a custom event (or `pageview`). No-op unless analytics is enabled. */
 export function track(name: string, opts?: TrackOptions): void {
   const config = readConfig();
-  if (!shouldTrack(config, isWebDev(), isOptedOut(), isHydrated())) return;
+  if (!shouldTrack(config, isWeb, isOptedOut(), isHydrated())) return;
   sendEvent(config, name, opts);
 }
 

@@ -46,7 +46,7 @@ describe('buildEventBody', () => {
 describe('shouldTrack', () => {
   const on: AnalyticsConfig = { enabled: true, url: 'https://p', domain: 'd' };
 
-  it('is true only when enabled, configured, not web-dev, not opted out, and hydrated', () => {
+  it('is true only when enabled, configured, not web, not opted out, and hydrated', () => {
     expect(shouldTrack(on, false, false, true)).toBe(true);
   });
 
@@ -54,11 +54,11 @@ describe('shouldTrack', () => {
     ['disabled', { ...on, enabled: false }, false, false, true],
     ['no url', { ...on, url: '' }, false, false, true],
     ['no domain', { ...on, domain: '' }, false, false, true],
-    ['web dev', on, true, false, true],
+    ['web', on, true, false, true],
     ['opted out', on, false, true, true],
     ['not hydrated', on, false, false, false],
-  ])('is false when %s', (_label, config, webDev, optedOut, hydrated) => {
-    expect(shouldTrack(config as AnalyticsConfig, webDev, optedOut, hydrated)).toBe(false);
+  ])('is false when %s', (_label, config, web, optedOut, hydrated) => {
+    expect(shouldTrack(config as AnalyticsConfig, web, optedOut, hydrated)).toBe(false);
   });
 });
 
