@@ -8,5 +8,5 @@
  */
 export { track, trackPageview } from './client';
 export type { EventProps, TrackOptions } from './client';
-export { isOptedOut, setOptedOut, useAnalyticsOptOut } from './opt-out';
+export { isHydrated, isOptedOut, setOptedOut, useAnalyticsOptOut } from './opt-out';
 export { useScreenView } from './use-screen-view';

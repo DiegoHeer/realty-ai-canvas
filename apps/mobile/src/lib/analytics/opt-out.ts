@@ -6,8 +6,9 @@ import { loadJSON, saveJSON, StorageKeys } from '../storage';
  * Whether the user has opted out of anonymous usage analytics, persisted to
  * AsyncStorage. Same in-memory `useSyncExternalStore` shape as
  * {@link useMapSettings}/{@link useAppearance} — an eagerly-readable store with
- * async hydration on boot, so `track()` can read the flag synchronously and a
- * saved choice is respected before the first event fires.
+ * async hydration on boot, so `track()` can read the flag synchronously.
+ * The `hydrated` flag is exposed via `isHydrated()` so that `shouldTrack()`
+ * can suppress events until the stored preference is known.
  *
  * Default is `false` (analytics on): consistent with the privacy screen's copy
  * that we measure anonymous in-app usage. The toggle there lets the user leave.
@@ -32,14 +33,21 @@ export function isOptedOut(): boolean {
 }
 
 let hydrated = false;
+let hydrating = false;
 
 /** Load the saved opt-out flag. Safe to call repeatedly; runs once. */
 export async function hydrateOptOut() {
-  if (hydrated) return;
-  hydrated = true;
+  if (hydrating) return;
+  hydrating = true;
   const stored = await loadJSON<boolean>(StorageKeys.analyticsOptOut);
   if (typeof stored === 'boolean') optedOut = stored;
+  hydrated = true;
   emit();
+}
+
+/** Synchronous getter used by `shouldTrack()` — has the stored preference loaded yet? */
+export function isHydrated(): boolean {
+  return hydrated;
 }
 
 function subscribe(listener: () => void) {

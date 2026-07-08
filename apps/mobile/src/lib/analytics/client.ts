@@ -1,5 +1,5 @@
 import { AnalyticsConfig, isWebDev, readConfig } from './config';
-import { isOptedOut } from './opt-out';
+import { isHydrated, isOptedOut } from './opt-out';
 import { buildUserAgent } from './user-agent';
 
 export type EventProps = Record<string, string | number | boolean>;
@@ -38,8 +38,9 @@ export function shouldTrack(
   config: AnalyticsConfig,
   webDev: boolean,
   optedOut: boolean,
+  hydrated: boolean,
 ): boolean {
-  return config.enabled && !!config.url && !!config.domain && !webDev && !optedOut;
+  return hydrated && config.enabled && !!config.url && !!config.domain && !webDev && !optedOut;
 }
 
 /**
@@ -67,7 +68,7 @@ export function sendEvent(
 /** Track a custom event (or `pageview`). No-op unless analytics is enabled. */
 export function track(name: string, opts?: TrackOptions): void {
   const config = readConfig();
-  if (!shouldTrack(config, isWebDev(), isOptedOut())) return;
+  if (!shouldTrack(config, isWebDev(), isOptedOut(), isHydrated())) return;
   sendEvent(config, name, opts);
 }
 
