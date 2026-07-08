@@ -1,6 +1,6 @@
-import { GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
-import { type ReactNode } from 'react';
+import { useNavigation } from 'expo-router';
+import { useEffect, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { type AuthErrorCode } from '@/hooks/use-auth';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 /** Placeholder grey that reads on both light and dark inputs (neutral-400). */
 const PLACEHOLDER_COLOR = '#9ca3af';
@@ -33,6 +32,10 @@ export function authErrorKey(code: AuthErrorCode): string {
       return 'auth.errorCodeInvalid';
     case 'email_taken':
       return 'auth.errorEmailTaken';
+    case 'oauth_cancelled':
+      return 'auth.errorOauthCancelled';
+    case 'oauth_failed':
+      return 'auth.errorOauthFailed';
     default:
       return 'auth.errorGeneric';
   }
@@ -182,36 +185,6 @@ export function OrDivider() {
   );
 }
 
-export type OAuthProvider = 'apple' | 'google';
-
-/**
- * The OAuth provider to surface for the current platform: Apple on iOS, Google
- * elsewhere (Android, and web for the demo export), matching platform norms.
- */
-export function defaultOAuthProvider(): OAuthProvider {
-  return Platform.OS === 'ios' ? 'apple' : 'google';
-}
-
-/**
- * Which OAuth providers are actually usable in real (backend) mode, given the
- * platform and the configured Google client ids. The native google-signin lib
- * and the backend both have hard requirements, so a button that can't succeed
- * must not be shown:
- *   - web: none — the native lib's web `signIn()` throws (sponsors-only).
- *   - iOS: `google` only when BOTH the web and iOS client ids are set (the iOS
- *     flow needs the iOS client id; the web client id scopes the id token).
- *   - Android: `google` only when the web client id is set — Android's native
- *     side skips the id-token request when webClientId is empty (null idToken).
- * Apple is intentionally absent until native Sign in with Apple lands.
- */
-export function availableOAuthProviders(): OAuthProvider[] {
-  if (Platform.OS === 'web') return [];
-  if (Platform.OS === 'ios') {
-    return GOOGLE_WEB_CLIENT_ID && GOOGLE_IOS_CLIENT_ID ? ['google'] : [];
-  }
-  return GOOGLE_WEB_CLIENT_ID ? ['google'] : [];
-}
-
 /** Google's four-color "G" mark. */
 function GoogleMark({ size = 18 }: { size?: number }) {
   return (
@@ -236,58 +209,21 @@ function GoogleMark({ size = 18 }: { size?: number }) {
   );
 }
 
-/** Apple's logo mark, tinted by `color`. */
-function AppleMark({ size = 18, color }: { size?: number; color: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path
-        fill={color}
-        d="M17.05 12.04c-.03-2.62 2.14-3.88 2.24-3.94-1.22-1.79-3.12-2.03-3.8-2.06-1.62-.16-3.16.95-3.98.95-.82 0-1.74-.93-2.86-.91-1.47.02-2.83.86-3.59 2.18-1.53 2.66-.39 6.6 1.1 8.76.73 1.06 1.6 2.25 2.74 2.21 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.71.71 2.87.69 1.19-.02 1.94-1.08 2.67-2.14.84-1.23 1.19-2.42 1.21-2.48-.03-.01-2.32-.89-2.35-3.5zM14.53 4.27c.61-.74 1.02-1.77.91-2.8-.88.04-1.94.59-2.57 1.32-.56.65-1.06 1.7-.93 2.7.98.08 1.98-.5 2.59-1.22z"
-      />
-    </Svg>
-  );
-}
-
 /**
- * Social sign-in button for the active provider. Apple follows its sign-in
- * guidance (black on light, white on dark); Google uses a neutral surface with
- * the multicolor mark. Exposed `testID="oauth-button"` for tests regardless of
- * which provider is shown.
+ * "Continue with Google" sign-in button — the only social provider the backend
+ * supports. Neutral surface with the multicolor Google mark; exposes
+ * `testID="oauth-button"` for tests.
  */
 export function OAuthButton({
-  provider,
   onPress,
   disabled = false,
 }: {
-  provider: OAuthProvider;
   onPress: () => void;
   /** Ignore presses (and dim) while a sign-in is already in flight. */
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
-  const scheme = useColorScheme();
-  const dark = scheme === 'dark';
   const dimmed = disabled ? 'opacity-60' : '';
-
-  if (provider === 'apple') {
-    // Apple: invert with the theme so the mark always contrasts the surface.
-    const bg = dark ? 'bg-white' : 'bg-black';
-    const fg = dark ? 'text-black' : 'text-white';
-    const markColor = dark ? '#000000' : '#ffffff';
-    return (
-      <Pressable
-        testID="oauth-button"
-        onPress={onPress}
-        disabled={disabled}
-        accessibilityRole="button"
-        accessibilityState={{ disabled }}
-        accessibilityLabel={t('auth.continueWithApple')}
-        className={`flex-row items-center justify-center gap-2.5 rounded-xl py-3.5 active:opacity-80 ${bg} ${dimmed}`}>
-        <AppleMark color={markColor} />
-        <Text className={`text-base font-semibold ${fg}`}>{t('auth.continueWithApple')}</Text>
-      </Pressable>
-    );
-  }
 
   return (
     <Pressable
@@ -303,6 +239,36 @@ export function OAuthButton({
         {t('auth.continueWithGoogle')}
       </Text>
     </Pressable>
+  );
+}
+
+/**
+ * In-place "you're logged in" landing view, shown by the login and register
+ * screens after a successful social sign-in — the OAuth counterpart of the
+ * verify/reset success views (green check + a Continue button; navigation
+ * happens on the button's own gesture, a frame later, per the recycled-bitmap
+ * workaround). Retitles the header and drops the back affordance so the
+ * consumed form can't be swiped back into.
+ */
+export function LoginSuccessView({ onContinue }: { onContinue: () => void }) {
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: t('auth.loggedInTitle'),
+      headerBackVisible: false,
+      gestureEnabled: false,
+    });
+  }, [navigation, t]);
+
+  return (
+    <AuthScaffold title={t('auth.loggedInTitle')} subtitle={t('auth.loggedInSubtitle')}>
+      <View className="gap-6">
+        <SuccessBadge />
+        <PrimaryButton testID="auth-continue" label={t('auth.loggedInCta')} onPress={onContinue} />
+      </View>
+    </AuthScaffold>
   );
 }
 

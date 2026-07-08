@@ -9,6 +9,7 @@ import {
   AuthScaffold,
   AuthSwitchLink,
   isValidEmail,
+  LoginSuccessView,
   MIN_PASSWORD_LENGTH,
   OAuthButton,
   OrDivider,
@@ -17,7 +18,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { useOAuthSignIn } from '@/hooks/use-oauth-sign-in';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
-import { deferNavigation } from '@/lib/navigation';
+import { popOrReplace } from '@/lib/navigation';
 
 /**
  * Register screen (pushed from the profile guest card). Supports creating an
@@ -36,9 +37,14 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
+  const [oauthSuccess, setOauthSuccess] = useState(false);
 
-  const { provider, showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
-    onSuccess: () => deferNavigation(() => router.back()),
+  // Google "registration" IS the login flow: allauth signs the account up on
+  // first sign-in (auto-signup for verified provider emails). On success, flip
+  // to the in-place landing view (mirrors the verify/reset flows); its Continue
+  // button performs the actual navigation on a later gesture.
+  const { showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
+    onSuccess: () => setOauthSuccess(true),
     onError: (code) => setFormError(t(authErrorKey(code))),
     onClearError: () => setFormError(undefined),
   });
@@ -62,10 +68,10 @@ export default function RegisterScreen() {
     if (outcome.ok === 'verifyPending') {
       router.push('/auth/verify');
     } else if (outcome.ok === true) {
-      // Defer the pop to avoid react-native-screens' "recycled bitmap" crash on
-      // Android when a global state change and the navigation happen in the same
-      // frame (same reason the settings screens defer their `router.back()`).
-      deferNavigation(() => router.back());
+      // Pop back to the pushing screen (usually the profile guest card), or land
+      // on the profile tab when the register screen was the entry point (web URL
+      // / deep link). Deferred a frame — see popOrReplace.
+      popOrReplace(router, '/profile');
     } else {
       // Surface the backend's password/email validator messages under their
       // field (allauth tags them `param: "password"` / `"email"`); the generic
@@ -86,6 +92,10 @@ export default function RegisterScreen() {
         setFormError(t(authErrorKey(outcome.code)));
       }
     }
+  }
+
+  if (oauthSuccess) {
+    return <LoginSuccessView onContinue={() => popOrReplace(router, '/profile')} />;
   }
 
   return (
@@ -137,7 +147,7 @@ export default function RegisterScreen() {
       {showOAuth ? (
         <>
           <OrDivider />
-          <OAuthButton provider={provider} onPress={onOAuthPress} disabled={inFlight} />
+          <OAuthButton onPress={onOAuthPress} disabled={inFlight} />
         </>
       ) : null}
 

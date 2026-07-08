@@ -9,6 +9,7 @@ import {
   AuthScaffold,
   AuthSwitchLink,
   isValidEmail,
+  LoginSuccessView,
   OAuthButton,
   OrDivider,
   PrimaryButton,
@@ -16,7 +17,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { useOAuthSignIn } from '@/hooks/use-oauth-sign-in';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
-import { deferNavigation } from '@/lib/navigation';
+import { popOrReplace } from '@/lib/navigation';
 
 /**
  * Login screen (pushed from the profile guest card). Supports email/password
@@ -33,9 +34,13 @@ export default function LoginScreen() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [formError, setFormError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
+  const [oauthSuccess, setOauthSuccess] = useState(false);
 
-  const { provider, showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
-    onSuccess: () => deferNavigation(() => router.back()),
+  // On success, flip to the in-place landing view (mirrors the verify/reset
+  // flows); its Continue button performs the actual navigation on a later
+  // gesture.
+  const { showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
+    onSuccess: () => setOauthSuccess(true),
     onError: (code) => setFormError(t(authErrorKey(code))),
     onClearError: () => setFormError(undefined),
   });
@@ -55,10 +60,10 @@ export default function LoginScreen() {
     setSubmitting(false);
 
     if (outcome.ok === true) {
-      // Defer the pop to avoid react-native-screens' "recycled bitmap" crash on
-      // Android when a global state change and the navigation happen in the same
-      // frame (same reason the settings screens defer their `router.back()`).
-      deferNavigation(() => router.back());
+      // Pop back to the pushing screen (usually the profile guest card), or land
+      // on the profile tab when the login screen was the entry point (web URL /
+      // deep link). Deferred a frame — see popOrReplace.
+      popOrReplace(router, '/profile');
     } else if (outcome.ok === false) {
       // Prefer the backend's structured field errors (e.g. the mismatch tagged to
       // `param: "password"`); only fall back to the generic banner when none exist.
@@ -79,6 +84,10 @@ export default function LoginScreen() {
     router.push(
       trimmed ? { pathname: '/auth/forgot-password', params: { email: trimmed } } : '/auth/forgot-password',
     );
+  }
+
+  if (oauthSuccess) {
+    return <LoginSuccessView onContinue={() => popOrReplace(router, '/profile')} />;
   }
 
   return (
@@ -131,7 +140,7 @@ export default function LoginScreen() {
       {showOAuth ? (
         <>
           <OrDivider />
-          <OAuthButton provider={provider} onPress={onOAuthPress} disabled={inFlight} />
+          <OAuthButton onPress={onOAuthPress} disabled={inFlight} />
         </>
       ) : null}
 

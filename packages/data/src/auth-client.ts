@@ -170,19 +170,18 @@ export async function login(input: { email: string; password: string }): Promise
 }
 
 /**
- * Sign in (or auto-link + sign in) with a third-party provider's id token, via
- * allauth headless `provider/token`. The backend verifies the id token, links
- * it to a matching verified-email account (or creates one) and returns the same
- * authenticated envelope as {@link login} — tokens in `meta`, user in `data`.
- *
- * `clientId` MUST be the Web OAuth client id the id token is scoped to (its
- * audience); the backend rejects a mismatch. On failure we surface the same
- * `invalid_credentials` code as password login so the UI reuses one mapping.
+ * Social sign-in via allauth's provider-token flow: the app obtains a provider
+ * id_token itself (see apps/mobile `lib/google-auth`) and posts it here; the
+ * backend verifies it (issuer, signature, audience == `clientId`) and returns
+ * the same JWT session envelope as `login`. Emails Google reports as verified
+ * skip the email-verification stage (backend `VERIFIED_EMAIL`), so success is
+ * always a full session — a non-authenticated response is a failure, tagged
+ * `oauth_failed`.
  */
-export async function loginWithProviderToken(input: {
-  provider: string;
-  idToken: string;
+export async function providerTokenLogin(input: {
+  provider: 'google';
   clientId: string;
+  idToken: string;
 }): Promise<AuthSession> {
   const env = await call('/auth/provider/token', {
     method: 'POST',
@@ -194,8 +193,8 @@ export async function loginWithProviderToken(input: {
   });
   if (!env.meta?.is_authenticated) {
     throw new AuthError(
-      env.errors?.[0]?.message ?? 'Could not sign in with that provider.',
-      'invalid_credentials',
+      env.errors?.[0]?.message ?? 'Could not sign in with this account.',
+      'oauth_failed',
       parseAllauthErrors(env),
     );
   }

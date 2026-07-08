@@ -8,6 +8,7 @@ import type { ReactTestInstance } from 'react-test-renderer';
 import LoginScreen from '@/app/auth/login';
 import { signOut } from '@/hooks/use-auth';
 import { StorageKeys } from '@/lib/storage';
+import { mockCanGoBack, mockExchangeCodeAsync, mockPromptAsync } from '../../../test-setup';
 
 // Default: AUTH_ENABLED=false so mock-mode tests work with social buttons visible.
 // Real-mode tests use jest.replaceProperty (same pattern as use-auth.test.ts) to
@@ -92,14 +93,32 @@ describe('LoginScreen', () => {
     expect(await storedSession()).toEqual({ name: 'Jane Doe', email: 'jane.doe@example.com' });
   });
 
-  it('signs in via the OAuth provider button', async () => {
-    const { getByTestId } = await renderScreen('en');
+  it('signs in via the OAuth provider button and lands on the success view', async () => {
+    const { getByTestId, getByText } = await renderScreen('en');
 
     await tap(getByTestId('oauth-button'));
 
-    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+    // Success is an in-place landing view; navigation waits for Continue.
+    expect(getByText("You're signed in and ready to go.")).toBeOnTheScreen();
+    expect(router.back).not.toHaveBeenCalled();
     const session = await storedSession();
-    expect(session?.email).toMatch(/gmail\.com|appleid\.com/);
+    expect(session?.email).toMatch(/gmail\.com/);
+
+    await tap(getByTestId('auth-continue'));
+    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+  });
+
+  it('lands on the profile tab after sign-in when there is no history to pop (web deep link)', async () => {
+    // Opened directly by URL: router.back() would no-op and strand the user on
+    // the stale form, so Continue must replace to /profile instead.
+    mockCanGoBack.mockReturnValueOnce(false);
+    const { getByTestId } = await renderScreen('en');
+
+    await tap(getByTestId('oauth-button'));
+    await tap(getByTestId('auth-continue'));
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/profile'));
+    expect(router.back).not.toHaveBeenCalled();
   });
 
   it('cross-links to the register screen', async () => {
@@ -140,7 +159,6 @@ describe('LoginScreen', () => {
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
       signInWithEmail: jest.fn().mockResolvedValue({ ok: false, code: 'invalid_credentials' }),
       signInWithGoogle: jest.fn(),
-      signInWithApple: jest.fn(),
     });
     const { getByPlaceholderText, getByTestId, findByText } = await renderScreen('en');
     await typeInto(getByPlaceholderText('you@example.com'), 'ada@example.com');
@@ -163,7 +181,6 @@ describe('LoginScreen', () => {
         ],
       }),
       signInWithGoogle: jest.fn(),
-      signInWithApple: jest.fn(),
     });
     const { getByPlaceholderText, getByTestId, findByText } = await renderScreen('en');
 
@@ -175,88 +192,89 @@ describe('LoginScreen', () => {
     expect(await findByText('Invalid email or password.')).toBeOnTheScreen();
   });
 
-  it('shows the Google button in real-auth mode and signs in through it', async () => {
+  it('hides the social button in real-auth mode while Google is not configured', async () => {
     // Babel compiles named imports as live property reads (_data.AUTH_ENABLED),
     // so updating the plain mock object is seen by the component at render time
     // without needing to reload modules (which would break React context).
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const authData = require('@realty/data');
     jest.replaceProperty(authData, 'AUTH_ENABLED', true);
-    // Configured native setup: both client ids set → google is available.
-    jest.replaceProperty(authData, 'GOOGLE_WEB_CLIENT_ID', 'WEB-ID');
-    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', 'IOS-ID');
 
-    const signInWithGoogle = jest.fn().mockResolvedValue({ ok: true });
-    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
-      signInWithEmail: jest.fn(),
-      signInWithGoogle,
-      signInWithApple: jest.fn(),
+    const { queryByTestId } = await renderScreen('en');
+    expect(queryByTestId('oauth-button')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Real-auth mode with Google configured: the button is live and drives the
+// token flow end to end (mocked expo-auth-session browser round-trip → real
+// use-auth store → mocked allauth provider-token call).
+// ---------------------------------------------------------------------------
+
+describe('LoginScreen (real mode, Google configured)', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const authData = require('@realty/data');
+
+  beforeEach(() => {
+    // Earlier tests spy on useAuth and never restore (the file relies on spies
+    // simply being re-created); drop them so this block hits the real store.
+    jest.restoreAllMocks();
+    jest.replaceProperty(authData, 'AUTH_ENABLED', true);
+    // jest-expo runs as iOS, so google-auth selects the iOS client id.
+    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', '1-n.apps.googleusercontent.com');
+  });
+
+  afterEach(async () => {
+    // Restore AUTH_ENABLED=false first so signOut() clears the mock store.
+    jest.restoreAllMocks();
+    await act(async () => {
+      await signOut();
+    });
+  });
+
+  it('signs in with Google, shows the success landing, and continues back', async () => {
+    mockPromptAsync.mockResolvedValue({ type: 'success', params: { code: 'AUTH_CODE' } });
+    mockExchangeCodeAsync.mockResolvedValue({ idToken: 'IDT' });
+    jest.spyOn(authData, 'providerTokenLogin').mockResolvedValue({
+      user: { id: 1, email: 'ada@gmail.com', name: 'Ada Lovelace' },
+      tokens: { accessToken: 'AT', refreshToken: 'RT' },
     });
 
     const { getByTestId, getByText } = await renderScreen('en');
-    // Real mode ships Google only.
-    expect(getByText('Continue with Google')).toBeTruthy();
-
     await tap(getByTestId('oauth-button'));
 
-    expect(signInWithGoogle).toHaveBeenCalledTimes(1);
+    expect(getByText('Login successful')).toBeOnTheScreen();
+    expect(authData.providerTokenLogin).toHaveBeenCalledWith({
+      provider: 'google',
+      clientId: '1-n.apps.googleusercontent.com',
+      idToken: 'IDT',
+    });
+    expect(await storedSession()).toEqual({ name: 'Ada Lovelace', email: 'ada@gmail.com' });
+
+    await tap(getByTestId('auth-continue'));
     await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
   });
 
-  it('surfaces a Google sign-in error but stays silent on cancel', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const authData = require('@realty/data');
-    jest.replaceProperty(authData, 'AUTH_ENABLED', true);
-    jest.replaceProperty(authData, 'GOOGLE_WEB_CLIENT_ID', 'WEB-ID');
-    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', 'IOS-ID');
+  it('shows the cancelled message when the browser sheet is dismissed', async () => {
+    mockPromptAsync.mockResolvedValue({ type: 'dismiss' });
 
-    const signInWithGoogle = jest
-      .fn()
-      .mockResolvedValueOnce({ ok: false, code: 'cancelled' })
-      .mockResolvedValueOnce({ ok: false, code: 'generic' });
-    jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
-      signInWithEmail: jest.fn(),
-      signInWithGoogle,
-      signInWithApple: jest.fn(),
-    });
-
-    const { getByTestId, queryByText, findByText } = await renderScreen('en');
-
-    // Cancel: no error banner, no navigation.
+    const { getByTestId, findByText } = await renderScreen('en');
     await tap(getByTestId('oauth-button'));
-    expect(queryByText('Something went wrong. Please try again.')).toBeNull();
+
+    expect(await findByText('Sign-in was cancelled.')).toBeOnTheScreen();
     expect(router.back).not.toHaveBeenCalled();
-
-    // Real failure: generic banner shown.
-    fireEvent.press(getByTestId('oauth-button'));
-    expect(await findByText('Something went wrong. Please try again.')).toBeOnTheScreen();
+    expect(await storedSession()).toBeNull();
   });
 
-  it('hides the OAuth button in real mode when Google is not configured', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const authData = require('@realty/data');
-    jest.replaceProperty(authData, 'AUTH_ENABLED', true);
-    // No client ids → availableOAuthProviders() is empty → no button ships.
-    jest.replaceProperty(authData, 'GOOGLE_WEB_CLIENT_ID', '');
-    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', '');
+  it('shows the failure message when the provider round-trip errors', async () => {
+    mockPromptAsync.mockResolvedValue({ type: 'error', params: {} });
 
-    const { queryByTestId } = await renderScreen('en');
+    const { getByTestId, findByText } = await renderScreen('en');
+    await tap(getByTestId('oauth-button'));
 
-    expect(queryByTestId('oauth-button')).toBeNull();
-  });
-
-  it('hides the OAuth button in real mode on web', async () => {
-    const Platform = require('react-native').Platform;
-    jest.replaceProperty(Platform, 'OS', 'web');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const authData = require('@realty/data');
-    jest.replaceProperty(authData, 'AUTH_ENABLED', true);
-    // Even fully configured, web has no usable provider (native web signIn throws).
-    jest.replaceProperty(authData, 'GOOGLE_WEB_CLIENT_ID', 'WEB-ID');
-    jest.replaceProperty(authData, 'GOOGLE_IOS_CLIENT_ID', 'IOS-ID');
-
-    const { queryByTestId } = await renderScreen('en');
-
-    expect(queryByTestId('oauth-button')).toBeNull();
+    expect(
+      await findByText('Could not sign in with this account. Please try again.'),
+    ).toBeOnTheScreen();
+    expect(await storedSession()).toBeNull();
   });
 });

@@ -1,20 +1,22 @@
 import { AUTH_ENABLED } from '@realty/data';
 import { useState } from 'react';
 
-import { availableOAuthProviders, defaultOAuthProvider, type OAuthProvider } from '@/components/auth-ui';
 import { useAuth, type AuthErrorCode } from '@/hooks/use-auth';
+import { isGoogleSignInAvailable } from '@/lib/google-auth';
 
 /**
- * Shared OAuth sign-in logic for the login and register screens. Owns:
- *   - provider selection (mock mode: platform default; real mode: Google only),
+ * Shared Google sign-in logic for the login and register screens (Google is the
+ * only social provider the backend supports). Owns:
  *   - whether the button should render (`showOAuth`) — real mode gates on
- *     {@link availableOAuthProviders} so no dead/unconfigured button ships,
+ *     {@link isGoogleSignInAvailable} (a client id configured for this
+ *     platform) so no dead/unconfigured button ships,
  *   - an in-flight guard (`inFlight`) so a double-tap can't launch two flows,
- *   - the cancel-is-silent policy (a `cancelled` outcome surfaces no error),
- *   - firing the caller's `onSuccess` (navigation) / `onError` (banner) callbacks.
+ *   - firing the caller's `onSuccess` (success view) / `onError` (banner)
+ *     callbacks. A user cancel surfaces `oauth_cancelled`, which maps to a
+ *     soft "sign-in was cancelled" message rather than an alarming error.
  *
- * Mock mode keeps the original demo behavior: it synthesizes a provider session
- * and navigates back, no outcome inspection needed.
+ * Mock mode keeps the original demo behavior: it synthesizes a Google session
+ * and reports success, no outcome inspection needed.
  */
 export function useOAuthSignIn({
   onSuccess,
@@ -22,22 +24,20 @@ export function useOAuthSignIn({
   onClearError,
 }: {
   onSuccess: () => void;
-  onError: (code: Exclude<AuthErrorCode, 'cancelled'>) => void;
+  onError: (code: AuthErrorCode) => void;
   onClearError: () => void;
 }) {
-  const { signInWithGoogle, signInWithApple } = useAuth();
+  const { signInWithGoogle } = useAuth();
   const [inFlight, setInFlight] = useState(false);
 
-  const provider: OAuthProvider = AUTH_ENABLED ? 'google' : defaultOAuthProvider();
-  const showOAuth = AUTH_ENABLED ? availableOAuthProviders().includes(provider) : true;
+  const showOAuth = AUTH_ENABLED ? isGoogleSignInAvailable() : true;
 
   async function onOAuthPress() {
     if (inFlight) return;
     onClearError();
 
     if (!AUTH_ENABLED) {
-      const action = provider === 'apple' ? signInWithApple : signInWithGoogle;
-      action();
+      void signInWithGoogle();
       onSuccess();
       return;
     }
@@ -47,8 +47,7 @@ export function useOAuthSignIn({
       const outcome = await signInWithGoogle();
       if (outcome.ok === true) {
         onSuccess();
-      } else if (outcome.ok === false && outcome.code !== 'cancelled') {
-        // A user cancel is intentionally silent; everything else surfaces a banner.
+      } else if (outcome.ok === false) {
         onError(outcome.code);
       }
     } finally {
@@ -56,5 +55,5 @@ export function useOAuthSignIn({
     }
   }
 
-  return { provider, showOAuth, inFlight, onOAuthPress };
+  return { showOAuth, inFlight, onOAuthPress };
 }
