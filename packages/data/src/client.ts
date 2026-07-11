@@ -358,9 +358,6 @@ export async function getListing(id: string): Promise<Listing> {
 /** Platform tag on submitted feedback; mirrors the backend `FeedbackPlatform`. */
 export type FeedbackPlatform = 'ios' | 'android' | 'web';
 
-/** Locale tag on submitted feedback; mirrors the backend `FeedbackLocale`. */
-export type FeedbackLocale = 'en' | 'nl' | 'pt';
-
 /**
  * Body for `POST /v1/feedback`. Only `message` is required; the rest is optional
  * context the app attaches for triage. Spec:
@@ -371,7 +368,12 @@ export interface FeedbackIn {
   /** App version string; the backend caps this at 20 characters. */
   app_version?: string | null;
   platform?: FeedbackPlatform | null;
-  locale?: FeedbackLocale | null;
+  /**
+   * UI language code the app is running in (e.g. `en`). Left as a free string so
+   * new languages flow through without changing this type — the app's supported
+   * set is the single source of truth in `@realty/i18n`.
+   */
+  locale?: string | null;
 }
 
 /** `201` acknowledgement returned when feedback is stored. */

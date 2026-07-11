@@ -65,17 +65,14 @@ export default function FeedbackScreen() {
   const [text, setText] = useState('');
   const [status, setStatus] = useState<Status>('idle');
 
-  // Cleared if the screen unmounts mid-send so the "sent" auto-reset timer and
-  // the post-await state updates never land on an unmounted component.
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Guards the post-await state updates from landing after the screen unmounts
+  // mid-send.
   const mounted = useRef(true);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    return () => {
       mounted.current = false;
-      timers.current.forEach(clearTimeout);
-    },
-    [],
-  );
+    };
+  }, []);
 
   // Retryable from the initial idle state and after a failed send.
   const canSubmit = (status === 'idle' || status === 'error') && text.trim().length > 0;
@@ -86,10 +83,9 @@ export default function FeedbackScreen() {
     try {
       await submitFeedback({ message: text.trim(), ...feedbackContext(i18n.language) });
       if (!mounted.current) return;
+      // Leave the button on its "sent" confirmation; typing again resets it.
       setStatus('sent');
       setText('');
-      // Return to idle in place so more feedback can be sent.
-      timers.current.push(setTimeout(() => setStatus('idle'), 2200));
     } catch {
       if (mounted.current) setStatus('error');
     }
