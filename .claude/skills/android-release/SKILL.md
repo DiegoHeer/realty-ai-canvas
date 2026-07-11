@@ -19,7 +19,7 @@ minified, signed APK. Use `bun`/`bunx`, never `npm`/`npx` (project rule).
 | Thing | Value |
 |---|---|
 | Android project | `apps/mobile/android` |
-| Android package | `com.anonymous.huismus` |
+| Android package | `com.fastvibes.huismus` |
 | Gradle wrapper | `apps/mobile/android/gradlew` |
 | Android SDK | `/home/jeroen/Android/Sdk` (set in `android/local.properties`) |
 | `adb` | `/usr/bin/adb` |
@@ -138,7 +138,7 @@ adb install -r apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 `-r` reinstalls keeping app data. This works over an existing debug install because the
 **release and debug variants share the debug keystore** (matching signature). If you ever
 switch to a real release keystore, the signature won't match a debug install — then either
-`adb uninstall com.anonymous.huismus` first, or use `adb install -r -d` (allow
+`adb uninstall com.fastvibes.huismus` first, or use `adb install -r -d` (allow
 downgrade) as appropriate. `versionCode` is `1`; equal codes reinstall fine.
 
 `INSTALL_FAILED_UPDATE_INCOMPATIBLE` / `signatures do not match` → uninstall first.
@@ -146,7 +146,7 @@ downgrade) as appropriate. `versionCode` is `1`; equal codes reinstall fine.
 ## 6. Launch + confirm
 
 ```bash
-PKG=com.anonymous.huismus
+PKG=com.fastvibes.huismus
 adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1   # launch
 adb shell dumpsys package $PKG | grep -E "versionName|versionCode|lastUpdateTime"
 ```
