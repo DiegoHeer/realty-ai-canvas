@@ -9,9 +9,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FilterSection, SelectPills, Stepper } from '@/components/filter-controls';
 import { RangeSlider } from '@/components/range-slider';
 import { deferNavigation } from '@/lib/navigation';
+import { trackFiltersApplied } from '@/lib/analytics';
 import {
   AREA_DOMAIN,
   BUILDING_TYPES,
+  countActiveFilters,
   DEFAULT_FILTERS,
   ENERGY_LABELS,
   filtersToQuery,
@@ -128,6 +130,7 @@ export default function FiltersScreen() {
       : anyLabel;
 
   function apply() {
+    trackFiltersApplied(countActiveFilters(draft));
     setFilters(draft);
     // Defer the pop one frame: committing filters re-renders the map (which
     // draws listing imagery) and popping in the same frame races

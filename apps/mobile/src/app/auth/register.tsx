@@ -17,6 +17,7 @@ import {
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
 import { useOAuthSignIn } from '@/hooks/use-oauth-sign-in';
+import { trackSignup } from '@/lib/analytics';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { popOrReplace } from '@/lib/navigation';
 
@@ -44,7 +45,10 @@ export default function RegisterScreen() {
   // to the in-place landing view (mirrors the verify/reset flows); its Continue
   // button performs the actual navigation on a later gesture.
   const { showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
-    onSuccess: () => setOauthSuccess(true),
+    onSuccess: () => {
+      trackSignup('google');
+      setOauthSuccess(true);
+    },
     onError: (code) => setFormError(t(authErrorKey(code))),
     onClearError: () => setFormError(undefined),
   });
@@ -64,6 +68,8 @@ export default function RegisterScreen() {
     setSubmitting(true);
     const outcome = await registerWithEmail({ name, email, password });
     setSubmitting(false);
+
+    if (outcome.ok === 'verifyPending' || outcome.ok === true) trackSignup('email');
 
     if (outcome.ok === 'verifyPending') {
       router.push('/auth/verify');

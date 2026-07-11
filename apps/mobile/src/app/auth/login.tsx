@@ -16,6 +16,7 @@ import {
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
 import { useOAuthSignIn } from '@/hooks/use-oauth-sign-in';
+import { trackLogin } from '@/lib/analytics';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { popOrReplace } from '@/lib/navigation';
 
@@ -40,7 +41,10 @@ export default function LoginScreen() {
   // flows); its Continue button performs the actual navigation on a later
   // gesture.
   const { showOAuth, inFlight, onOAuthPress } = useOAuthSignIn({
-    onSuccess: () => setOauthSuccess(true),
+    onSuccess: () => {
+      trackLogin('google');
+      setOauthSuccess(true);
+    },
     onError: (code) => setFormError(t(authErrorKey(code))),
     onClearError: () => setFormError(undefined),
   });
@@ -60,6 +64,7 @@ export default function LoginScreen() {
     setSubmitting(false);
 
     if (outcome.ok === true) {
+      trackLogin('email');
       // Pop back to the pushing screen (usually the profile guest card), or land
       // on the profile tab when the login screen was the entry point (web URL /
       // deep link). Deferred a frame — see popOrReplace.
