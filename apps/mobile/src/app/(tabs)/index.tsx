@@ -1,5 +1,5 @@
 import { useAreas, useCities, useListings, useStats } from '@realty/data';
-import type { AreaPolygon } from '@realty/types';
+import type { AreaPolygon, Listing } from '@realty/types';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
@@ -19,12 +19,13 @@ import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat, rampFor, selectInhabitants, statDomain } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
 import { countActiveFilters, filtersToQuery, useFilters } from '@/lib/filters';
+import { useLikes } from '@/lib/likes';
 import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
 import { overlayById, type OverlayId } from '@/lib/map-overlays';
 import { useMapSettings } from '@/lib/map-settings';
 import { normalizeStats } from '@/lib/neighborhood-stats';
 import { type GeocodeResult, zoomForType } from '@/lib/pdok';
-import { recordRecentView } from '@/lib/recent-views';
+import { recordRecentView, useRecentViews } from '@/lib/recent-views';
 
 // Zoom level at or above which the map auto-loads the neighborhoods under its
 // centre. The initial framing sits at zoom 11 (no city selected yet); zooming
@@ -56,6 +57,24 @@ export default function MapScreen() {
       return next;
     });
   }, []);
+  // The Favorites/Recent pills swap the map's data source: instead of the
+  // server's search results, show the locally stored snapshots — every liked /
+  // recently viewed home, wherever it is, regardless of the current search
+  // query (the stores keep whole Listings for exactly this). Both pills
+  // together show the union, deduped by id (a home can be both). The camera
+  // stays put, matching the rule that selection never pans the map.
+  const { likes } = useLikes();
+  const { recentViews } = useRecentViews();
+  const favoritesActive = activeFilters.has('favorites');
+  const recentActive = activeFilters.has('recent');
+  const snapshotsActive = favoritesActive || recentActive;
+  const shownListings = useMemo(() => {
+    if (!snapshotsActive) return listings;
+    const merged = new Map<string, Listing>();
+    if (favoritesActive) for (const listing of likes) merged.set(listing.id, listing);
+    if (recentActive) for (const listing of recentViews) merged.set(listing.id, listing);
+    return [...merged.values()];
+  }, [snapshotsActive, favoritesActive, recentActive, listings, likes, recentViews]);
   // The active map overlay (noise, air quality, …) — one at a time: tapping an
   // overlay pill swaps to it, tapping the active one turns it off.
   const [overlayId, setOverlayId] = useState<OverlayId | null>(null);
@@ -117,9 +136,12 @@ export default function MapScreen() {
   // whose bbox contains it. Cities load once and are cached, so this is cheap.
   const cityIndex = useMemo(() => buildCityIndex(cities), [cities]);
 
+  // Resolve the selection against what's on the map — a snapshot marker must
+  // open its card even when the listing isn't in the server results. A side
+  // effect: deselecting happens for free when a toggle removes the marker.
   const selected = useMemo(
-    () => listings.find((l) => l.id === selectedId) ?? null,
-    [listings, selectedId],
+    () => shownListings.find((l) => l.id === selectedId) ?? null,
+    [shownListings, selectedId],
   );
 
   const selectedArea = useMemo(
@@ -175,10 +197,10 @@ export default function MapScreen() {
     (id: string) => {
       setSelectedId(id);
       setSelectedAreaId(null);
-      const listing = listings.find((l) => l.id === id);
+      const listing = shownListings.find((l) => l.id === id);
       if (listing) recordRecentView(listing);
     },
-    [listings],
+    [shownListings],
   );
 
   // Selecting an area and a listing are mutually exclusive — the area sheet and
@@ -236,7 +258,7 @@ export default function MapScreen() {
     <View className="flex-1 bg-neutral-100 dark:bg-black">
       <ListingMap
         ref={mapRef}
-        listings={listings}
+        listings={shownListings}
         polygons={coloredAreas}
         onSelect={handleSelect}
         onSelectPolygon={handleSelectPolygon}
@@ -303,7 +325,9 @@ export default function MapScreen() {
           />
         </View>
       )}
-      {isLoading && (
+      {/* The spinner tracks the server query — irrelevant (and misleading)
+          while a snapshot pill sources the map from disk instead. */}
+      {isLoading && !snapshotsActive && (
         <View className="absolute inset-0 items-center justify-center" pointerEvents="none">
           <ActivityIndicator />
         </View>
