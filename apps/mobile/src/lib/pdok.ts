@@ -30,6 +30,10 @@ interface PdokDoc {
   weergavenaam?: string;
   type?: string;
   centroide_ll?: string;
+  /** CBS municipality code, bare 4-digit (e.g. "0518") — matches `CityShape.code`. */
+  gemeentecode?: string;
+  /** CBS buurt code (e.g. "BU05180000") — matches `AreaPolygon.id`. Absent for a wijk. */
+  buurtcode?: string;
 }
 
 // WKT point as returned in `centroide_ll`, e.g. "POINT(4.897 52.378)" → [lng, lat].
@@ -76,11 +80,14 @@ export async function geocode(query: string, signal?: AbortSignal): Promise<Geoc
 export async function suggest(
   query: string,
   signal?: AbortSignal,
+  /** Optional Solr `fq` to restrict result types, e.g. `type:(buurt OR wijk)`. */
+  typeFilter?: string,
 ): Promise<GeocodeSuggestion[]> {
   const q = query.trim();
   if (!q) return [];
 
-  const url = `${SUGGEST_ENDPOINT}?q=${encodeURIComponent(q)}&rows=6&fl=id,weergavenaam,type`;
+  const fq = typeFilter ? `&fq=${encodeURIComponent(typeFilter)}` : '';
+  const url = `${SUGGEST_ENDPOINT}?q=${encodeURIComponent(q)}&rows=6&fl=id,weergavenaam,type${fq}`;
   const res = await fetch(url, { headers: { Accept: 'application/json' }, signal });
   if (!res.ok) throw new Error(`PDOK Locatieserver responded ${res.status}`);
 
@@ -109,6 +116,44 @@ export async function lookup(id: string, signal?: AbortSignal): Promise<GeocodeR
     longitude: point[0],
     latitude: point[1],
     type: doc.type ?? '',
+  };
+}
+
+/** A picked buurt/wijk resolved to a coordinate plus the CBS codes needed to
+ * drive the map: {@link gemeentecode} selects the city (loading its neighborhood
+ * overlays) and {@link buurtcode} selects the matching {@link AreaPolygon}. */
+export interface BuurtLookup {
+  label: string;
+  longitude: number;
+  latitude: number;
+  /** CBS municipality code (bare 4-digit) — matches `CityShape.code`. */
+  gemeentecode: string;
+  /** CBS buurt code — matches `AreaPolygon.id`. Null for a wijk (no buurt polygon). */
+  buurtcode: string | null;
+}
+
+/**
+ * Resolve a buurt/wijk suggestion `id` to its centroid plus CBS codes. Like
+ * {@link lookup} but also pulls `gemeentecode`/`buurtcode`, so the caller can
+ * open the neighborhood on the map rather than just fly there. Returns `null`
+ * when the id is unknown or carries no municipality code.
+ */
+export async function lookupBuurt(id: string, signal?: AbortSignal): Promise<BuurtLookup | null> {
+  const url = `${LOOKUP_ENDPOINT}?id=${encodeURIComponent(id)}&fl=weergavenaam,centroide_ll,gemeentecode,buurtcode`;
+  const res = await fetch(url, { headers: { Accept: 'application/json' }, signal });
+  if (!res.ok) throw new Error(`PDOK Locatieserver responded ${res.status}`);
+
+  const json = (await res.json()) as { response?: { docs?: PdokDoc[] } };
+  const doc = json.response?.docs?.[0];
+  const point = parsePoint(doc?.centroide_ll);
+  if (!doc || !point || !doc.gemeentecode) return null;
+
+  return {
+    label: doc.weergavenaam ?? id,
+    longitude: point[0],
+    latitude: point[1],
+    gemeentecode: doc.gemeentecode,
+    buurtcode: doc.buurtcode ?? null,
   };
 }
 

@@ -167,7 +167,10 @@
     "recentTitle": "Recente zoekopdrachten",
     "clearRecent": "Wissen",
     "removeRecent": "Verwijderen uit recente zoekopdrachten",
-    "filters": "Filters"
+    "filters": "Filters",
+    "sectionHomes": "Woningen",
+    "sectionNeighborhoods": "Buurten",
+    "sectionPlaces": "Plaatsen"
   },
   "filters": {
     "favorites": "Favorieten",

@@ -167,7 +167,10 @@
     "recentTitle": "Pesquisas recentes",
     "clearRecent": "Limpar",
     "removeRecent": "Remover das pesquisas recentes",
-    "filters": "Filtros"
+    "filters": "Filtros",
+    "sectionHomes": "Casas",
+    "sectionNeighborhoods": "Bairros",
+    "sectionPlaces": "Locais"
   },
   "filters": {
     "favorites": "Favoritos",

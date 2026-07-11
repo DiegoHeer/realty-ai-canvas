@@ -17,8 +17,20 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useEffectiveColorScheme } from '@/components/map-style';
 import { useFadingText } from '@/components/use-fading-text';
 import { trackSearch, type SearchMethod } from '@/lib/analytics';
-import { geocode, lookup, suggest, type GeocodeResult, type GeocodeSuggestion } from '@/lib/pdok';
 import { useRecentSearches } from '@/lib/recent-searches';
+import {
+  resolvePick,
+  resolveTyped,
+  resultKey,
+  resultLabel,
+  resultType,
+  suggestAll,
+  suggestionCount,
+  type SearchResult,
+  type SearchSource,
+  type SearchSuggestion,
+  type SearchSuggestions,
+} from '@/lib/search';
 
 const ICON_COLOR = '#9ca3af';
 
@@ -101,9 +113,18 @@ function FilterIcon({
 const SUGGEST_DEBOUNCE_MS = 200;
 const MIN_QUERY_LENGTH = 2;
 
+const EMPTY_SUGGESTIONS: SearchSuggestions = { homes: [], buurten: [], places: [] };
+const DEFAULT_SOURCES: readonly SearchSource[] = ['places'];
+
 export interface LocationSearchProps {
-  /** Fired with the resolved place when the user submits or picks a suggestion. */
-  onResult: (result: GeocodeResult) => void;
+  /** Fired with the resolved place/buurt/home when the user submits or picks a suggestion. */
+  onResult: (result: SearchResult) => void;
+  /**
+   * Which suggestion sources to draw from. Defaults to `['places']` — the
+   * original PDOK-only behavior (explore tab). The map screen opts into homes +
+   * buurten as well, which switches the dropdown to a sectioned layout.
+   */
+  sources?: readonly SearchSource[];
   /**
    * Fired when the field gains/loses focus or a dropdown opens/closes. The
    * parent uses this to render a full-screen, tap-catching backdrop while the
@@ -130,16 +151,48 @@ export interface LocationSearchRef {
   dismiss: () => void;
 }
 
+/** One tappable suggestion row (shared by every section). */
+function SuggestionRow({
+  item,
+  bordered,
+  onPick,
+}: {
+  item: SearchSuggestion;
+  bordered: boolean;
+  onPick: (item: SearchSuggestion) => void;
+}) {
+  return (
+    <Pressable
+      onPress={() => onPick(item)}
+      accessibilityRole="button"
+      className={`px-4 py-3 active:bg-neutral-100 dark:active:bg-neutral-700 ${
+        bordered ? 'border-t border-neutral-100 dark:border-neutral-700' : ''
+      }`}>
+      <Text className="text-base text-neutral-900 dark:text-white" numberOfLines={1}>
+        {item.label}
+      </Text>
+    </Pressable>
+  );
+}
+
 /**
  * Search bar overlaying the map. As the user types we fetch autocomplete
- * suggestions from PDOK Locatieserver and show them in a dropdown; picking one
- * (or pressing Enter, which takes the top hit) resolves a coordinate and hands
- * it to the parent, which flies the camera there. Built on React Native
- * primitives so the single file serves web and native.
+ * suggestions from the configured {@link SearchSource}s — homes (the backend's
+ * fuzzy residence search), buurten and places (PDOK) — and show them grouped by
+ * section; picking one (or pressing Enter, which takes the top place) resolves
+ * it and hands a {@link SearchResult} to the parent, which acts per kind. Built
+ * on React Native primitives so the single file serves web and native.
  */
 export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>(
   function LocationSearch(
-    { onResult, onActiveChange, placeholder, onOpenFilters, activeFilterCount = 0 },
+    {
+      onResult,
+      sources = DEFAULT_SOURCES,
+      onActiveChange,
+      placeholder,
+      onOpenFilters,
+      activeFilterCount = 0,
+    },
     ref,
   ) {
   const { t } = useTranslation();
@@ -160,10 +213,13 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } =
     useRecentSearches();
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<GeocodeSuggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchSuggestions>(EMPTY_SUGGESTIONS);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Sectioned layout (a header per group) only when more than one source feeds
+  // the dropdown; a places-only bar keeps the original flat list.
+  const sectioned = sources.length > 1;
   // Show the recents dropdown while the field is focused and empty. Set on
   // focus and cleared when the user acts (resolve), mirroring how `open` is
   // managed — we deliberately don't hide on blur so a recent stays tappable.
@@ -208,21 +264,21 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     suggestCtrl.current?.abort();
     const q = text.trim();
     if (q.length < MIN_QUERY_LENGTH) {
-      setSuggestions([]);
+      setSuggestions(EMPTY_SUGGESTIONS);
       setOpen(false);
       return;
     }
     const controller = new AbortController();
     suggestCtrl.current = controller;
-    suggest(q, controller.signal)
-      .then((results) => {
+    suggestAll(q, sources, controller.signal)
+      .then((groups) => {
         if (controller.signal.aborted) return;
-        setSuggestions(results);
-        setOpen(results.length > 0);
+        setSuggestions(groups);
+        setOpen(suggestionCount(groups) > 0);
       })
       .catch((err) => {
         if (controller.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
-        setSuggestions([]);
+        setSuggestions(EMPTY_SUGGESTIONS);
         setOpen(false);
       });
   }
@@ -238,10 +294,10 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     debounce.current = setTimeout(() => fetchSuggestions(text), SUGGEST_DEBOUNCE_MS);
   }
 
-  // Resolve a coordinate via `resolver`, then hand it up and collapse the UI.
+  // Resolve a result via `resolver`, then hand it up and collapse the UI.
   async function resolve(
     label: string,
-    resolver: (signal: AbortSignal) => Promise<GeocodeResult | null>,
+    resolver: (signal: AbortSignal) => Promise<SearchResult | null>,
     method: SearchMethod,
   ) {
     inFlight.current?.abort();
@@ -261,11 +317,11 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
       if (controller.signal.aborted) return;
       if (result) {
         skipNextSuggest.current = true;
-        setQuery(result.label);
-        setSuggestions([]);
+        setQuery(resultLabel(result));
+        setSuggestions(EMPTY_SUGGESTIONS);
         addRecentSearch(result);
         onResult(result);
-        trackSearch(result.type, method);
+        trackSearch(resultType(result), method);
       } else {
         setError(t('search.noResults'));
       }
@@ -283,18 +339,18 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
   function handleSubmit(e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) {
     const text = e.nativeEvent.text.trim();
     if (!text) return;
-    void resolve(text, (signal) => geocode(text, signal), 'typed');
+    void resolve(text, (signal) => resolveTyped(text, signal), 'typed');
   }
 
-  function handlePick(item: GeocodeSuggestion) {
+  function handlePick(item: SearchSuggestion) {
     // Dismiss the soft keyboard on native; no-op on web.
     Keyboard.dismiss();
-    void resolve(item.label, (signal) => lookup(item.id, signal), 'suggestion');
+    void resolve(item.label, (signal) => resolvePick(item, signal), 'suggestion');
   }
 
-  // A recent already carries its coordinate, so skip the network and fly there
-  // directly; re-adding moves it back to the front of the list.
-  function handlePickRecent(item: GeocodeResult) {
+  // A recent already carries its coordinate / listing, so skip the network and
+  // act directly; re-adding moves it back to the front of the list.
+  function handlePickRecent(item: SearchResult) {
     Keyboard.dismiss();
     inFlight.current?.abort();
     suggestCtrl.current?.abort();
@@ -303,11 +359,11 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     setOpen(false);
     setError(null);
     skipNextSuggest.current = true;
-    setQuery(item.label);
-    setSuggestions([]);
+    setQuery(resultLabel(item));
+    setSuggestions(EMPTY_SUGGESTIONS);
     addRecentSearch(item);
     onResult(item);
-    trackSearch(item.type, 'recent');
+    trackSearch(resultType(item), 'recent');
   }
 
   function handleClear() {
@@ -316,11 +372,18 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     if (debounce.current) clearTimeout(debounce.current);
     inFlight.current = null;
     setQuery('');
-    setSuggestions([]);
+    setSuggestions(EMPTY_SUGGESTIONS);
     setOpen(false);
     setError(null);
     setLoading(false);
   }
+
+  // Ordered, non-empty sections for the dropdown.
+  const sections: { key: string; title: string; items: SearchSuggestion[] }[] = [
+    { key: 'homes', title: t('search.sectionHomes'), items: suggestions.homes },
+    { key: 'buurten', title: t('search.sectionNeighborhoods'), items: suggestions.buurten },
+    { key: 'places', title: t('search.sectionPlaces'), items: suggestions.places },
+  ].filter((section) => section.items.length > 0);
 
   return (
     <View>
@@ -345,7 +408,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
             onSubmitEditing={handleSubmit}
             onFocus={() => {
               setFocused(true);
-              if (suggestions.length > 0) setOpen(true);
+              if (suggestionCount(suggestions) > 0) setOpen(true);
             }}
             placeholder={placeholderText}
             placeholderTextColor="transparent"
@@ -416,7 +479,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
           </View>
           {recentSearches.map((item, index) => (
             <View
-              key={`${item.label}-${item.type}`}
+              key={resultKey(item)}
               className={`flex-row items-center ${
                 index > 0 ? 'border-t border-neutral-100 dark:border-neutral-700' : ''
               }`}>
@@ -426,11 +489,11 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
                 className="flex-1  text-lg  flex-row items-center gap-2 px-4 py-3 active:bg-neutral-100 dark:active:bg-neutral-700">
                 <ClockIcon />
                 <Text className="flex-1 text-base text-neutral-900 dark:text-white" numberOfLines={1}>
-                  {item.label}
+                  {resultLabel(item)}
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => removeRecentSearch(`${item.label}|${item.type}`)}
+                onPress={() => removeRecentSearch(resultKey(item))}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={t('search.removeRecent')}
@@ -442,20 +505,24 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
         </View>
       )}
 
-      {open && suggestions.length > 0 && (
+      {open && sections.length > 0 && (
         <View className="mt-1 overflow-hidden rounded-2xl bg-white shadow-md shadow-black/20 dark:bg-neutral-800">
-          {suggestions.map((item, index) => (
-            <Pressable
-              key={item.id}
-              onPress={() => handlePick(item)}
-              accessibilityRole="button"
-              className={`px-4 py-3 active:bg-neutral-100 dark:active:bg-neutral-700 ${
-                index > 0 ? 'border-t border-neutral-100 dark:border-neutral-700' : ''
-              }`}>
-              <Text className="text-base text-neutral-900 dark:text-white" numberOfLines={1}>
-                {item.label}
-              </Text>
-            </Pressable>
+          {sections.map((section) => (
+            <View key={section.key}>
+              {sectioned && (
+                <Text className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  {section.title}
+                </Text>
+              )}
+              {section.items.map((item, index) => (
+                <SuggestionRow
+                  key={item.id}
+                  item={item}
+                  bordered={index > 0}
+                  onPick={handlePick}
+                />
+              ))}
+            </View>
           ))}
         </View>
       )}
