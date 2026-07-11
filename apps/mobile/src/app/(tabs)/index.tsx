@@ -35,10 +35,6 @@ const AUTO_LOAD_AREAS_ZOOM = 12;
 
 export default function MapScreen() {
   const { filters } = useFilters();
-  // Filters (and sort) drive the query: the server returns only matching,
-  // geocoded homes (capped at the page size), so the map renders them directly.
-  const query = useMemo(() => filtersToQuery(filters), [filters]);
-  const { data: listings = [], isLoading } = useListings(query);
   const { data: cities = [] } = useCities(loadCities);
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ListingMapRef>(null);
@@ -68,6 +64,17 @@ export default function MapScreen() {
   const favoritesActive = activeFilters.has('favorites');
   const recentActive = activeFilters.has('recent');
   const snapshotsActive = favoritesActive || recentActive;
+  // The Sold pill takes a different path from the snapshot pills above: instead
+  // of swapping the data source, it narrows the *server* query to sold
+  // residences (status=sold), so the API returns only sold homes. Filters and
+  // sort otherwise drive the query — the server returns only matching, geocoded
+  // homes (capped at the page size), which the map renders directly.
+  const soldActive = activeFilters.has('sold');
+  const query = useMemo(() => {
+    const base = filtersToQuery(filters);
+    return soldActive ? { ...base, status: 'sold' as const } : base;
+  }, [filters, soldActive]);
+  const { data: listings = [], isLoading } = useListings(query);
   const shownListings = useMemo(() => {
     if (!snapshotsActive) return listings;
     const merged = new Map<string, Listing>();
