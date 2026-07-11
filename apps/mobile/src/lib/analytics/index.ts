@@ -8,5 +8,17 @@
  */
 export { track, trackPageview } from './client';
 export type { EventProps, TrackOptions } from './client';
+export {
+  AnalyticsEvent,
+  trackFiltersApplied,
+  trackListingFavorited,
+  trackLogin,
+  trackOnboardingCompleted,
+  trackOnboardingStep,
+  trackOutboundLink,
+  trackSearch,
+  trackSignup,
+} from './events';
+export type { AuthMethod, SearchMethod } from './events';
 export { isHydrated, isOptedOut, setOptedOut, useAnalyticsOptOut } from './opt-out';
 export { useScreenView } from './use-screen-view';
