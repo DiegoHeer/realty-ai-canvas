@@ -16,6 +16,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useEffectiveColorScheme } from '@/components/map-style';
 import { useFadingText } from '@/components/use-fading-text';
+import { trackSearch, type SearchMethod } from '@/lib/analytics';
 import { geocode, lookup, suggest, type GeocodeResult, type GeocodeSuggestion } from '@/lib/pdok';
 import { useRecentSearches } from '@/lib/recent-searches';
 
@@ -238,7 +239,11 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
   }
 
   // Resolve a coordinate via `resolver`, then hand it up and collapse the UI.
-  async function resolve(label: string, resolver: (signal: AbortSignal) => Promise<GeocodeResult | null>) {
+  async function resolve(
+    label: string,
+    resolver: (signal: AbortSignal) => Promise<GeocodeResult | null>,
+    method: SearchMethod,
+  ) {
     inFlight.current?.abort();
     suggestCtrl.current?.abort();
     if (debounce.current) clearTimeout(debounce.current);
@@ -260,6 +265,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
         setSuggestions([]);
         addRecentSearch(result);
         onResult(result);
+        trackSearch(result.type, method);
       } else {
         setError(t('search.noResults'));
       }
@@ -277,13 +283,13 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
   function handleSubmit(e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) {
     const text = e.nativeEvent.text.trim();
     if (!text) return;
-    void resolve(text, (signal) => geocode(text, signal));
+    void resolve(text, (signal) => geocode(text, signal), 'typed');
   }
 
   function handlePick(item: GeocodeSuggestion) {
     // Dismiss the soft keyboard on native; no-op on web.
     Keyboard.dismiss();
-    void resolve(item.label, (signal) => lookup(item.id, signal));
+    void resolve(item.label, (signal) => lookup(item.id, signal), 'suggestion');
   }
 
   // A recent already carries its coordinate, so skip the network and fly there
@@ -301,6 +307,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     setSuggestions([]);
     addRecentSearch(item);
     onResult(item);
+    trackSearch(item.type, 'recent');
   }
 
   function handleClear() {

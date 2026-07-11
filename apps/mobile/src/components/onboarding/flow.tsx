@@ -28,6 +28,7 @@ import {
   TextButton,
 } from '@/components/onboarding/shared';
 import { RangeSlider } from '@/components/range-slider';
+import { trackOnboardingCompleted, trackOnboardingStep } from '@/lib/analytics';
 import { cityDisplayName } from '@/lib/city-search';
 import {
   nearestPriceIndex,
@@ -94,6 +95,14 @@ export function OnboardingFlow() {
   const indexRef = useRef(index);
   useEffect(() => {
     indexRef.current = index;
+  }, [index]);
+
+  // Emit a virtual pageview per step (see lib/analytics/events). CE has no
+  // funnel view, so these `/onboarding/<step>` pages let the tour be read as a
+  // drop-off series in Plausible's Top Pages. `index` only changes on settle,
+  // so this fires once per step (and once for the resume step on mount).
+  useEffect(() => {
+    trackOnboardingStep(index);
   }, [index]);
 
   // Staged filter choices (committed to the live store only on finish).
@@ -311,12 +320,14 @@ export function OnboardingFlow() {
     });
     setPreferredCities(preferred);
     if (preferred.length > 0) setMapFocus(preferred[0]);
+    trackOnboardingCompleted({ skipped: false, citiesSelected: cityCodes.length });
     completeOnboarding();
     leaveToApp();
   }
 
   function skip() {
     // Skipping applies nothing — just close the tour for good.
+    trackOnboardingCompleted({ skipped: true, citiesSelected: cityCodes.length });
     completeOnboarding();
     leaveToApp();
   }
