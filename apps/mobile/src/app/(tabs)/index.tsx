@@ -89,13 +89,15 @@ export default function MapScreen() {
     mapRef.current?.setPitch(buildings3D ? BUILDINGS_3D_PITCH : 0);
   }, [buildings3D]);
 
-  // A city chosen during the intro tour: once the city shapes are loaded, focus
-  // the map on it (fly + select, so its neighborhoods load) and clear the
-  // request so it fires only once. Needs the geometry from `cities`, which is
-  // empty in mock/offline builds — there the request is simply left unconsumed.
+  // A city chosen during the intro tour, or the first saved preferred city
+  // re-queued at boot: once the city shapes are loaded, focus the map on it
+  // (fly + select, so its neighborhoods load) and clear the request so it
+  // fires only once. Needs the geometry from `cities`, which is empty in
+  // mock/offline builds — there the request is simply left unconsumed.
   const pendingFocus = useMapFocus();
-  // Consume a one-shot external signal (set when the tour finishes, before the
-  // map mounts) and reflect it into local selection + an imperative camera move.
+  // Consume a one-shot external signal (set when the tour finishes or at boot,
+  // before the map mounts) and reflect it into local selection + an imperative
+  // camera move.
   // This is the "subscribe to an external system" effect the rule is meant to
   // allow; it just can't see that through the store indirection, so disable it
   // here (cf. hooks/use-color-scheme.web.ts).

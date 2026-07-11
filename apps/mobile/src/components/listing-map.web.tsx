@@ -1,7 +1,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { AreaPolygon, Listing } from '@realty/types';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useReducer, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef } from 'react';
 import { Layer, Map, type MapRef, Marker, Source, useMap } from 'react-map-gl/maplibre';
 
 import type { MapOverlay } from '../lib/map-overlays';
@@ -130,7 +130,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   },
   ref,
 ) {
-  const mapRef = useRef<MapRef>(null);
+  const mapRef = useRef<MapRef | null>(null);
   const { mapStyle, polygonsBeforeId, overlayBeforeId, scheme } = useMapStyle();
   const { recentViews } = useRecentViews();
   const viewedIds = useMemo(
@@ -138,9 +138,31 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
     [recentViews],
   );
 
+  // A flyTo can arrive before react-map-gl has attached the map instance — the
+  // boot-time preferred-city focus fires as soon as the cached city shapes
+  // hydrate, which beats the map's creation. Hold the latest target and apply
+  // it the moment the instance lands, as an instant jump: at that point it's
+  // the launch framing, not a transition the user should watch.
+  const pendingFlyToRef = useRef<{ longitude: number; latitude: number; zoom?: number } | null>(
+    null,
+  );
+  const attachMap = useCallback((instance: MapRef | null) => {
+    mapRef.current = instance;
+    const target = pendingFlyToRef.current;
+    if (!instance || !target) return;
+    pendingFlyToRef.current = null;
+    instance.jumpTo({ center: [target.longitude, target.latitude], zoom: target.zoom });
+  }, []);
+
   useImperativeHandle(ref, () => ({
-    flyTo: ({ longitude, latitude, zoom }) =>
-      mapRef.current?.flyTo({ center: [longitude, latitude], zoom, duration: 1200 }),
+    flyTo: (target) => {
+      const map = mapRef.current;
+      if (!map) {
+        pendingFlyToRef.current = target;
+        return;
+      }
+      map.flyTo({ center: [target.longitude, target.latitude], zoom: target.zoom, duration: 1200 });
+    },
     setPitch: (pitch) => mapRef.current?.flyTo({ pitch, duration: 500 }),
   }));
 
@@ -155,7 +177,7 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
 
   return (
     <Map
-      ref={mapRef}
+      ref={attachMap}
       initialViewState={{ ...center, zoom: 11, pitch: buildings3D ? BUILDINGS_3D_PITCH : 0 }}
       mapStyle={mapStyle}
       // Swap themes with a full style reload, not a diff. Diffing races the

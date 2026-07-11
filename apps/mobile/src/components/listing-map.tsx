@@ -133,6 +133,15 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   ref,
 ) {
   const cameraRef = useRef<CameraRef>(null);
+  // A flyTo can arrive before the native map has finished loading — the
+  // boot-time preferred-city focus fires as soon as the cached city shapes
+  // hydrate — and the camera may drop it. Until the map reports loaded, keep
+  // the latest target and re-assert it then, instantly: at that point it's the
+  // launch framing, not a transition the user should watch.
+  const pendingFlyToRef = useRef<{ longitude: number; latitude: number; zoom?: number } | null>(
+    null,
+  );
+  const mapLoadedRef = useRef(false);
   // Timestamp of the last marker tap; see MARKER_TAP_GRACE_MS.
   const markerTapAtRef = useRef(0);
   const insets = useSafeAreaInsets();
@@ -144,12 +153,14 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
   );
 
   useImperativeHandle(ref, () => ({
-    flyTo: ({ longitude, latitude, zoom }) =>
+    flyTo: (target) => {
+      if (!mapLoadedRef.current) pendingFlyToRef.current = target;
       cameraRef.current?.flyTo({
-        center: [longitude, latitude],
-        zoom,
+        center: [target.longitude, target.latitude],
+        zoom: target.zoom,
         duration: 1200,
-      }),
+      });
+    },
     setPitch: (pitch) => cameraRef.current?.setStop({ pitch, duration: 500 }),
   }));
 
@@ -180,6 +191,17 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
       onRegionDidChange={(e) => {
         const [longitude, latitude] = e.nativeEvent.center;
         onCameraIdle?.({ longitude, latitude, zoom: e.nativeEvent.zoom });
+      }}
+      onDidFinishLoadingMap={() => {
+        mapLoadedRef.current = true;
+        const target = pendingFlyToRef.current;
+        if (!target) return;
+        pendingFlyToRef.current = null;
+        cameraRef.current?.flyTo({
+          center: [target.longitude, target.latitude],
+          zoom: target.zoom,
+          duration: 0,
+        });
       }}
       compassPosition={{
         bottom: insets.bottom + COMPASS_MARGIN,
