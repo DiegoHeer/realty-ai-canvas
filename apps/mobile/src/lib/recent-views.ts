@@ -18,9 +18,12 @@ const store = createPersistedListStore<Listing>({
 /** Record (or refresh) a listing as recently viewed. Call when a detail loads. */
 export const recordRecentView = store.add;
 
+/** Forget every recently viewed listing. */
+export const clearRecentViews = store.clear;
+
 export function useRecentViews() {
   return {
     recentViews: store.use(),
-    clearRecentViews: store.clear,
+    clearRecentViews,
   };
 }
