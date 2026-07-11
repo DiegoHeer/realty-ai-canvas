@@ -27,6 +27,8 @@ export const StorageKeys = {
   filters: `${PREFIX}filters`,
   /** Intro tour progress (furthest page + done flag); see lib/onboarding.ts. */
   onboarding: `${PREFIX}onboarding`,
+  /** Cities picked in the intro tour as search preferences; see lib/preferred-cities.ts. */
+  preferredCities: `${PREFIX}preferred-cities`,
   /** Map display preferences (3D buildings, …); see lib/map-settings.ts. */
   mapSettings: `${PREFIX}map-settings`,
   /** Opt-out flag for anonymous usage analytics; see lib/analytics/opt-out.ts. */

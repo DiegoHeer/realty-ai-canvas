@@ -1,5 +1,8 @@
 import '@/global.css';
 import '@/i18n';
+// Hydrates the saved preferred cities and queues the launch map focus on the
+// first one, so the map opens on it every boot (see lib/preferred-cities.ts).
+import '@/lib/preferred-cities';
 
 import { DataProvider } from '@realty/data';
 import { i18n, I18nextProvider, useTranslation } from '@realty/i18n';
