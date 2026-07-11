@@ -234,6 +234,7 @@
   },
   "listings": {
     "title": "Aanbod",
+    "sortBy": "Sorteren op",
     "count_one": "{{count}} woning",
     "count_other": "{{count}} woningen",
     "recentlyViewed": "Recent bekeken",

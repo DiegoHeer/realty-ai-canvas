@@ -234,6 +234,7 @@
   },
   "listings": {
     "title": "Listings",
+    "sortBy": "Sort by",
     "count_one": "{{count}} home",
     "count_other": "{{count}} homes",
     "recentlyViewed": "Recently viewed",

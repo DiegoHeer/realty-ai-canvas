@@ -6,8 +6,10 @@ import { useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LikeButton } from '@/components/like-button';
 import { LocationSearch, type LocationSearchRef } from '@/components/location-search';
-import { countActiveFilters, filtersToQuery, useFilters } from '@/lib/filters';
+import { SORT_BUTTON_HEIGHT, SortButton, SortMenu } from '@/components/sort-dropdown';
+import { countActiveFilters, filtersToQuery, SORT_OPTIONS, useFilters } from '@/lib/filters';
 import { useRecentViews } from '@/lib/recent-views';
 
 // Vertical room the absolutely-positioned search bar needs: its 8px top offset,
@@ -46,7 +48,11 @@ function RecentlyViewed() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {recentViews.map((listing) => (
           <View key={listing.id} className="mr-3 w-72">
-            <ListingCard listing={listing} onPress={() => openListing(listing.id)} />
+            <ListingCard
+              listing={listing}
+              onPress={() => openListing(listing.id)}
+              likeButton={<LikeButton listing={listing} />}
+            />
           </View>
         ))}
       </ScrollView>
@@ -55,7 +61,7 @@ function RecentlyViewed() {
 }
 
 export default function ListingsScreen() {
-  const { filters } = useFilters();
+  const { filters, setFilters } = useFilters();
   // Same filtered query as the map screen — the shared filters store keeps the
   // list, the map, and the bar's count badge in lock-step.
   const query = useMemo(() => filtersToQuery(filters), [filters]);
@@ -68,13 +74,31 @@ export default function ListingsScreen() {
   const insets = useSafeAreaInsets();
   const searchRef = useRef<LocationSearchRef>(null);
   const [searchActive, setSearchActive] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+
+  // Reuse the filters screen's curated option set and its translated labels, so
+  // the header dropdown and the Filters page always agree.
+  const sortOptions = SORT_OPTIONS.map((key) => ({
+    key,
+    label: t(`filtersPage.sortOptions.${key}` as const),
+  }));
+  const currentSortLabel = t(`filtersPage.sortOptions.${filters.sort}` as const);
 
   return (
     <View className="flex-1 bg-neutral-100 dark:bg-black">
       <View className="px-4 pb-2" style={{ paddingTop: insets.top + SEARCH_BAR_CLEARANCE }}>
-        <Text className="text-2xl font-bold text-neutral-900 dark:text-white">
-          {t('listings.title')}
-        </Text>
+        <SortButton
+          label={currentSortLabel}
+          open={sortOpen}
+          onPress={() => {
+            // Opening the sort menu and the search dropdown at once would stack
+            // two overlays; collapse the search first.
+            searchRef.current?.dismiss();
+            setSortOpen((open) => !open);
+          }}
+          accessibilityLabel={t('listings.sortBy')}
+          testID="sort-button"
+        />
         <Text className="text-sm text-neutral-500">
           {isLoading || isCountLoading
             ? t('common.loading')
@@ -90,7 +114,11 @@ export default function ListingsScreen() {
         onRefresh={refetch}
         ListHeaderComponent={RecentlyViewed}
         renderItem={({ item }) => (
-          <ListingCard listing={item} onPress={() => openListing(item.id)} />
+          <ListingCard
+            listing={item}
+            onPress={() => openListing(item.id)}
+            likeButton={<LikeButton listing={item} />}
+          />
         )}
       />
       {/* Full-screen backdrop: while the search is active, a tap anywhere
@@ -111,7 +139,12 @@ export default function ListingsScreen() {
         pointerEvents="box-none">
         <LocationSearch
           ref={searchRef}
-          onActiveChange={setSearchActive}
+          onActiveChange={(active) => {
+            setSearchActive(active);
+            // Focusing the search collapses the sort menu, so the two overlays
+            // never show at once.
+            if (active) setSortOpen(false);
+          }}
           activeFilterCount={countActiveFilters(filters)}
           onOpenFilters={() => router.push('/settings/filters')}
           // The listings API can't narrow by place yet, so picking a result only
@@ -121,6 +154,22 @@ export default function ListingsScreen() {
           onResult={() => {}}
         />
       </View>
+      {/* Anchored under the header's sort button; rendered here at the screen
+          root (after the search overlay) so the card floats above the feed and
+          its backdrop can cover the whole screen. */}
+      {sortOpen && (
+        <SortMenu
+          options={sortOptions}
+          selected={filters.sort}
+          onSelect={(sort) => {
+            setFilters({ ...filters, sort });
+            setSortOpen(false);
+          }}
+          onClose={() => setSortOpen(false)}
+          top={insets.top + SEARCH_BAR_CLEARANCE + SORT_BUTTON_HEIGHT + 4}
+          left={16}
+        />
+      )}
     </View>
   );
 }

@@ -234,6 +234,7 @@
   },
   "listings": {
     "title": "Imóveis",
+    "sortBy": "Ordenar por",
     "count_one": "{{count}} imóvel",
     "count_other": "{{count}} imóveis",
     "recentlyViewed": "Vistos recentemente",
