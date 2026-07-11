@@ -1,4 +1,4 @@
-import { useListings } from '@realty/data';
+import { useListings, useListingsCount } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import { ListingCard } from '@realty/ui';
 import { router } from 'expo-router';
@@ -60,6 +60,10 @@ export default function ListingsScreen() {
   // list, the map, and the bar's count badge in lock-step.
   const query = useMemo(() => filtersToQuery(filters), [filters]);
   const { data: listings = [], isLoading, refetch, isRefetching } = useListings(query);
+  // The feed only ever holds one fetched page (capped server-side), so its
+  // length understates the true match count — mirror the filters screen's
+  // "Show N homes" badge and ask the server directly (limit=0 count-only mode).
+  const { data: totalCount, isLoading: isCountLoading } = useListingsCount(query);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const searchRef = useRef<LocationSearchRef>(null);
@@ -72,7 +76,9 @@ export default function ListingsScreen() {
           {t('listings.title')}
         </Text>
         <Text className="text-sm text-neutral-500">
-          {isLoading ? t('common.loading') : t('listings.count', { count: listings.length })}
+          {isLoading || isCountLoading
+            ? t('common.loading')
+            : t('listings.count', { count: totalCount ?? listings.length })}
         </Text>
       </View>
       <FlatList
