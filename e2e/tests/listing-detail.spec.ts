@@ -9,8 +9,8 @@ test.describe('Listing Detail page', () => {
     // first render already sees the fixed time.
     await page.clock.setFixedTime(new Date('2026-06-22T12:00:00Z'));
     await stubApi(page);
-    // Residence id 1 in the fixtures (Prinsengracht 412); getListing resolves the
-    // id against the stubbed list endpoint.
+    // Residence id 1 in the fixtures (Prinsengracht 412); getListing fetches it
+    // from the stubbed detail endpoint, /v1/residences/1.
     await page.goto('/listing/1');
     await page.waitForLoadState('networkidle');
   });
