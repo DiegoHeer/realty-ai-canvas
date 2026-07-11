@@ -39,4 +39,10 @@ describe('ListingsScreen', () => {
     const { getByText } = await renderScreen('nl');
     expect(getByText('Aanbod')).toBeTruthy();
   });
+
+  it('renders the location search bar with its filters button', async () => {
+    const { getByPlaceholderText, getByLabelText } = await renderScreen();
+    expect(getByPlaceholderText('Search')).toBeTruthy();
+    expect(getByLabelText('Filters')).toBeTruthy();
+  });
 });
