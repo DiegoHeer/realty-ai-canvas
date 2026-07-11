@@ -41,7 +41,10 @@
     "behaviorTitle": "Wat we wél meten",
     "behaviorBody": "We meten alleen het gebruik in de app om je ervaring te verbeteren: welke functies worden gebruikt en welke zelden. We richten ons op het verbeteren van de functies die je echt gebruikt.",
     "noResaleTitle": "Je zoekopdrachten blijven van jou",
-    "noResaleBody": "We verzamelen of verspreiden je zoekfilters en woningvoorkeuren niet. Waar je naar zoekt blijft privé."
+    "noResaleBody": "We verzamelen of verspreiden je zoekfilters en woningvoorkeuren niet. Waar je naar zoekt blijft privé.",
+    "optOutTitle": "Gebruiksmeting",
+    "optOutLabel": "Meet mijn gebruik in de app",
+    "optOutDescription": "Anonieme, cookieloze statistieken waarmee we de app verbeteren. Zet dit uit om te stoppen met verzenden."
   },
   "aboutPage": {
     "intro": "Huismus helpt je koopwoningen in heel Nederland te ontdekken op een snel, kaartgericht canvas — met rijke buurtinzichten binnen handbereik.",
@@ -108,7 +111,6 @@
     "logInCta": "Inloggen",
     "registerCta": "Account aanmaken",
     "continueWithGoogle": "Doorgaan met Google",
-    "continueWithApple": "Doorgaan met Apple",
     "orDivider": "of",
     "noAccountPrompt": "Nog geen account?",
     "haveAccountPrompt": "Heb je al een account?",
@@ -123,6 +125,11 @@
     "errorInvalidCredentials": "Ongeldig e-mailadres of wachtwoord.",
     "errorCodeInvalid": "Die code is ongeldig of verlopen.",
     "errorEmailTaken": "Dat e-mailadres is al geregistreerd.",
+    "errorOauthCancelled": "Inloggen is geannuleerd.",
+    "errorOauthFailed": "Inloggen met dit account is niet gelukt. Probeer het opnieuw.",
+    "loggedInTitle": "Inloggen gelukt",
+    "loggedInSubtitle": "Je bent ingelogd en klaar om te beginnen.",
+    "loggedInCta": "Doorgaan",
     "submitting": "Even geduld…",
     "verifyTitle": "Verifieer je e-mailadres",
     "verifySubtitle": "Voer de code in die we je hebben gemaild om je account aan te maken.",
@@ -335,6 +342,8 @@
       "electricity": "Elektriciteit",
       "districtHeatingTitle": "Stadsverwarming",
       "districtHeatingHint": "Aandeel woningen met stadsverwarming",
+      "electionTitle": "Politieke voorkeur",
+      "electionHint": "Meest gestemde partijen — Tweede Kamer {{year}}",
       "missing": "Niet bekendgemaakt voor deze buurt"
     }
   },

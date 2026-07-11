@@ -1,8 +1,8 @@
 import {
   AuthError,
   login,
-  loginWithProviderToken,
   parseAllauthErrors,
+  providerTokenLogin,
   requestPasswordReset,
   resetPassword,
   signup,
@@ -97,42 +97,6 @@ describe('auth-client', () => {
           param: 'password',
         },
       ],
-    });
-  });
-
-  it('loginWithProviderToken posts the provider token envelope and returns a session', async () => {
-    mockFetch(200, {
-      status: 200,
-      data: { user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' } },
-      meta: { is_authenticated: true, access_token: 'AT', refresh_token: 'RT' },
-    });
-    const session = await loginWithProviderToken({
-      provider: 'google',
-      idToken: 'ID-TOKEN',
-      clientId: 'WEB-CLIENT-ID',
-    });
-    expect(session.user.name).toBe('Ada Lovelace');
-    expect(session.tokens).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
-    const call = (global.fetch as jest.Mock).mock.calls[0];
-    expect(call[0]).toMatch(/\/auth\/provider\/token$/);
-    expect(JSON.parse(call[1].body)).toEqual({
-      provider: 'google',
-      process: 'login',
-      token: { client_id: 'WEB-CLIENT-ID', id_token: 'ID-TOKEN' },
-    });
-  });
-
-  it('loginWithProviderToken throws AuthError "invalid_credentials" on a rejected token', async () => {
-    mockFetch(400, {
-      status: 400,
-      errors: [{ message: 'Invalid token.', code: 'invalid', param: 'id_token' }],
-    });
-    await expect(
-      loginWithProviderToken({ provider: 'google', idToken: 'BAD', clientId: 'WEB-CLIENT-ID' }),
-    ).rejects.toMatchObject({
-      name: 'AuthError',
-      code: 'invalid_credentials',
-      fieldErrors: [{ message: 'Invalid token.', code: 'invalid', param: 'id_token' }],
     });
   });
 
@@ -285,5 +249,46 @@ describe('parseAllauthErrors', () => {
     expect(tokens).toEqual({ accessToken: 'AT2', refreshToken: 'RT2' });
     const call = (global.fetch as jest.Mock).mock.calls[0];
     expect(call[0]).toMatch(/\/tokens\/refresh$/);
+  });
+
+  it('providerTokenLogin posts the allauth token payload and returns the session', async () => {
+    mockFetch(200, {
+      status: 200,
+      data: { user: { id: 1, email: 'ada@gmail.com', name: 'Ada Lovelace' } },
+      meta: { is_authenticated: true, access_token: 'AT', refresh_token: 'RT' },
+    });
+    const session = await providerTokenLogin({
+      provider: 'google',
+      clientId: 'WEB_CLIENT_ID',
+      idToken: 'GOOGLE_ID_TOKEN',
+    });
+    expect(session.user.email).toBe('ada@gmail.com');
+    expect(session.tokens).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
+    const call = (global.fetch as jest.Mock).mock.calls[0];
+    expect(call[0]).toMatch(/\/auth\/provider\/token$/);
+    expect(JSON.parse(call[1].body)).toEqual({
+      provider: 'google',
+      process: 'login',
+      token: { client_id: 'WEB_CLIENT_ID', id_token: 'GOOGLE_ID_TOKEN' },
+    });
+  });
+
+  it('providerTokenLogin throws a coded oauth_failed AuthError when the token is rejected', async () => {
+    // allauth's ProviderTokenInput rejects a bad/mismatched id_token with a
+    // 400 carrying errors[] (code "invalid_token").
+    mockFetch(400, {
+      status: 400,
+      errors: [{ message: 'The token is invalid.', code: 'invalid_token', param: 'token' }],
+    });
+    const attempt = providerTokenLogin({
+      provider: 'google',
+      clientId: 'WEB_CLIENT_ID',
+      idToken: 'BAD',
+    });
+    await expect(attempt).rejects.toMatchObject({
+      name: 'AuthError',
+      code: 'oauth_failed',
+      message: 'The token is invalid.',
+    });
   });
 });

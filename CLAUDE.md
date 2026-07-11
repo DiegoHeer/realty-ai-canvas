@@ -3,7 +3,8 @@ This project implements i18n for all texts visible to user (except for data fiel
 
 ## Workflow
 
-- New feature → create a worktree in `.claude/worktrees`; develop and test there (Playwright for UI).
+
+- New feature → create a worktree in `./.claude/worktree`; also include `apps/mobile/.env.local` in the worktree. develop and test there (Playwright for UI).
 - At milestones / on completion → push to GitHub with `gh`.
 - Front-end changes → spawn `bun run web -p <PORT>` and share the URL so the owner can see it live.
 

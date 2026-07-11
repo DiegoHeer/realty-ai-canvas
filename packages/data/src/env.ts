@@ -21,6 +21,9 @@ const isWebDev =
   typeof document !== 'undefined' && process.env.NODE_ENV !== 'production';
 export const API_BASE = isWebDev ? '/realty-api' : API_URL;
 
+/** True on any web surface (dev server, production export, e2e). */
+export const isWeb = typeof document !== 'undefined';
+
 /**
  * Turn on real backend authentication (allauth headless JWT). Off by default,
  * so the app keeps the mock auth path — which is also the deterministic
@@ -30,24 +33,26 @@ export const API_BASE = isWebDev ? '/realty-api' : API_URL;
 export const AUTH_ENABLED = process.env.EXPO_PUBLIC_AUTH_ENABLED === 'true';
 
 /**
- * Google OAuth Web client id, used two ways for native Google Sign-In:
- *   1. as the Google Sign-In `webClientId` (so the returned id_token's audience
- *      is this Web client), and
- *   2. as `token.client_id` in the allauth `provider/token` request body — the
- *      backend requires it to equal the Web client id the id_token is scoped to.
- * Empty when unset; the sign-in flow only runs in real mode with this configured.
- */
-export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
-
-/**
- * Google OAuth iOS client id, passed to Google Sign-In as `iosClientId` so the
- * native iOS flow uses the right client. Empty when unset (e.g. Android-only).
- */
-export const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '';
-
-/**
  * API contract version the client speaks, sent as `api_version` on
  * `/v1/residences`. `2` selects the paginated `ResidencePage` envelope;
  * absent/`1` is the legacy bare array. Bump only on breaking response changes.
  */
 export const API_VERSION = 2;
+
+/**
+ * Google OAuth client ids for "Continue with Google" (allauth's provider-token
+ * flow: the app obtains a Google id_token and posts it to the backend, which
+ * verifies the token's audience against these same ids).
+ *
+ * - Web builds use the **Web application** client id (must equal the backend's
+ *   GOOGLE_OAUTH_CLIENT_ID).
+ * - Native builds use the platform's **installed-app** client id (Android:
+ *   package name + signing SHA-1; iOS: bundle id; no secret). The backend must
+ *   also list these as extra (hidden) apps under SOCIALACCOUNT_PROVIDERS.
+ *
+ * Empty (the default) hides the Google button on that platform in real-auth
+ * mode, so the feature ships dark until the console/backend setup exists.
+ */
+export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
+export const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? '';
+export const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '';

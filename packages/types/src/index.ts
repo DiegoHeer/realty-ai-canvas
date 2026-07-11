@@ -115,6 +115,22 @@ export interface CityShape {
 }
 
 /**
+ * Results of one election in an area, distilled from the API's `election_stats`
+ * (which is keyed by election period, e.g. `tk2025`). We keep the single most
+ * recent period.
+ */
+export interface ElectionResult {
+  /** Election period identifier, e.g. "tk2025" (Tweede Kamer 2025). */
+  period: string;
+  /** Granularity the figures were aggregated at, e.g. "buurt" or "gemeente". */
+  source: string;
+  /** Total valid votes cast across all parties. */
+  totalVotes: number;
+  /** Votes per party, keyed by the API's full party name. */
+  parties: Record<string, number>;
+}
+
+/**
  * CBS statistics for a single neighborhood. Matched to an {@link AreaPolygon}
  * by `code` === the polygon's `id`.
  */
@@ -125,6 +141,8 @@ export interface NeighborhoodStats {
   statsYear: number;
   /** Raw CBS metrics keyed by field name. Values are counts, percentages, etc. */
   stats: Record<string, number>;
+  /** Most recent election result for the area, or `null` when unavailable. */
+  election?: ElectionResult | null;
 }
 
 /** Transaction kind. Maps to the API's `deal_type`; buy→`sale`, rent→`rent`. */

@@ -1,0 +1,146 @@
+[
+  {
+    "slug": "pvv",
+    "name": "PVV",
+    "row": 0,
+    "file": "pvv.png"
+  },
+  {
+    "slug": "groenlinks-pvda",
+    "name": "GroenLinks-PvdA",
+    "row": 1,
+    "file": "groenlinks-pvda.png"
+  },
+  {
+    "slug": "vvd",
+    "name": "VVD",
+    "row": 2,
+    "file": "vvd.png"
+  },
+  {
+    "slug": "nsc",
+    "name": "NSC",
+    "row": 3,
+    "file": "nsc.png"
+  },
+  {
+    "slug": "d66",
+    "name": "D66",
+    "row": 4,
+    "file": "d66.png"
+  },
+  {
+    "slug": "bbb",
+    "name": "BBB",
+    "row": 5,
+    "file": "bbb.png"
+  },
+  {
+    "slug": "cda",
+    "name": "CDA",
+    "row": 6,
+    "file": "cda.png"
+  },
+  {
+    "slug": "sp",
+    "name": "SP",
+    "row": 7,
+    "file": "sp.png"
+  },
+  {
+    "slug": "denk",
+    "name": "DENK",
+    "row": 8,
+    "file": "denk.png"
+  },
+  {
+    "slug": "pvdd",
+    "name": "Partij voor de Dieren",
+    "row": 9,
+    "file": "pvdd.png"
+  },
+  {
+    "slug": "fvd",
+    "name": "Forum voor Democratie",
+    "row": 10,
+    "file": "fvd.png"
+  },
+  {
+    "slug": "sgp",
+    "name": "SGP",
+    "row": 11,
+    "file": "sgp.png"
+  },
+  {
+    "slug": "christenunie",
+    "name": "ChristenUnie",
+    "row": 12,
+    "file": "christenunie.png"
+  },
+  {
+    "slug": "volt",
+    "name": "Volt",
+    "row": 13,
+    "file": "volt.png"
+  },
+  {
+    "slug": "ja21",
+    "name": "JA21",
+    "row": 14,
+    "file": "ja21.png"
+  },
+  {
+    "slug": "vrede-voor-dieren",
+    "name": "Vrede voor Dieren",
+    "row": 15,
+    "file": "vrede-voor-dieren.png"
+  },
+  {
+    "slug": "bvnl",
+    "name": "BVNL",
+    "row": 16,
+    "file": "bvnl.png"
+  },
+  {
+    "slug": "bij1",
+    "name": "BIJ1",
+    "row": 17,
+    "file": "bij1.png"
+  },
+  {
+    "slug": "lp",
+    "name": "Libertaire Partij",
+    "row": 18,
+    "file": "lp.png"
+  },
+  {
+    "slug": "50plus",
+    "name": "50PLUS",
+    "row": 19,
+    "file": "50plus.png"
+  },
+  {
+    "slug": "piratenpartij",
+    "name": "Piratenpartij",
+    "row": 20,
+    "file": "piratenpartij.png"
+  },
+  {
+    "slug": "fnp",
+    "name": "FNP",
+    "row": 21,
+    "file": "fnp.png"
+  },
+  {
+    "slug": "vrij-verbond",
+    "name": "Vrij Verbond",
+    "row": 22,
+    "file": "vrij-verbond.png"
+  },
+  {
+    "slug": "de-linie",
+    "name": "De Linie",
+    "row": 23,
+    "file": "de-linie.png"
+  }
+]

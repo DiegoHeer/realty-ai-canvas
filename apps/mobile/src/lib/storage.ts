@@ -29,6 +29,8 @@ export const StorageKeys = {
   onboarding: `${PREFIX}onboarding`,
   /** Map display preferences (3D buildings, …); see lib/map-settings.ts. */
   mapSettings: `${PREFIX}map-settings`,
+  /** Opt-out flag for anonymous usage analytics; see lib/analytics/opt-out.ts. */
+  analyticsOptOut: `${PREFIX}analytics-opt-out`,
 } as const;
 
 export async function loadJSON<T>(key: string): Promise<T | null> {

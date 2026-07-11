@@ -324,8 +324,40 @@ describe('client (API mode)', () => {
     const url = (global.fetch as jest.Mock).mock.calls[0]![0] as string;
     expect(url).toContain('/v1/stats/neighborhoods?city=0518');
     expect(stats).toEqual([
-      { code: 'BU05180546', statsYear: 2023, stats: { AantalInwoners_5: 6285, Koopwoningen_41: 54 } },
+      {
+        code: 'BU05180546',
+        statsYear: 2023,
+        stats: { AantalInwoners_5: 6285, Koopwoningen_41: 54 },
+        election: null,
+      },
     ]);
+  });
+
+  it('getStats maps election_stats to the most recent period', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        {
+          code: 'BU05180546',
+          stats_year: 2023,
+          stats: {},
+          election_stats: {
+            // Out of order and multi-period to prove the newest wins.
+            tk2023: { source: 'buurt', totalVotes: 10, parties: { VVD: 10 } },
+            tk2025: { source: 'buurt', totalVotes: 100, parties: { VVD: 60, D66: 40 } },
+          },
+        },
+      ],
+    });
+
+    const [entry] = await getStatsApi();
+
+    expect(entry!.election).toEqual({
+      period: 'tk2025',
+      source: 'buurt',
+      totalVotes: 100,
+      parties: { VVD: 60, D66: 40 },
+    });
   });
 
   it('request throws on non-ok response', async () => {

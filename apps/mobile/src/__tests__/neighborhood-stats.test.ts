@@ -152,6 +152,52 @@ describe('deriveNeighborhoodStats', () => {
     expect(view.income).toBeNull();
     expect(view.energy).toBeNull();
     expect(view.districtHeating).toBeNull();
+    expect(view.election).toBeNull();
+  });
+});
+
+describe('deriveNeighborhoodStats election section', () => {
+  const withElection = (parties: Record<string, number>, totalVotes: number): NeighborhoodStats => ({
+    code: 'BU05180546',
+    statsYear: 2023,
+    stats: {},
+    election: { period: 'tk2025', source: 'buurt', totalVotes, parties },
+  });
+
+  it('is null when there is no election data', () => {
+    expect(deriveNeighborhoodStats(archipel)!.election).toBeNull();
+  });
+
+  it('ranks the top five parties by vote share, with logo slug + abbreviation', () => {
+    const view = deriveNeighborhoodStats(
+      withElection(
+        {
+          'D66': 867,
+          'VVD': 566,
+          'GROENLINKS / Partij van de Arbeid (PvdA)': 432,
+          'CDA': 271,
+          'PVV (Partij voor de Vrijheid)': 131,
+          'Partij voor de Dieren': 100, // 6th — dropped by the top-5 cap
+        },
+        2367,
+      ),
+    )!;
+    expect(view.election!.period).toBe('tk2025');
+    expect(view.election!.parties).toEqual([
+      { slug: 'd66', label: 'D66', share: (867 / 2367) * 100 },
+      { slug: 'vvd', label: 'VVD', share: (566 / 2367) * 100 },
+      { slug: 'groenlinks-pvda', label: 'GL-PvdA', share: (432 / 2367) * 100 },
+      { slug: 'cda', label: 'CDA', share: (271 / 2367) * 100 },
+      { slug: 'pvv', label: 'PVV', share: (131 / 2367) * 100 },
+    ]);
+  });
+
+  it('drops zero-vote parties and falls back to the raw name when no logo exists', () => {
+    const view = deriveNeighborhoodStats(withElection({ VVD: 40, ELLECT: 0, 'NL PLAN': 10 }, 50))!;
+    expect(view.election!.parties).toEqual([
+      { slug: 'vvd', label: 'VVD', share: 80 },
+      { slug: null, label: 'NL PLAN', share: 20 },
+    ]);
   });
 });
 

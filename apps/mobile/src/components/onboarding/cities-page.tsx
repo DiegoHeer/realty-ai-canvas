@@ -38,11 +38,16 @@ export function CitiesPage({
 
   // Pills = the ten biggest, plus any already-selected city (e.g. picked via
   // search) that isn't already among them, so the full selection stays visible.
+  // Selected pills are pulled to the front (stable order otherwise), so picking
+  // one moves it up and unselecting it drops it back among the rest.
   const pillCities = useMemo(() => {
     const popular = biggestCities(cities);
     const popularCodes = new Set(popular.map((c) => c.code));
     const extras = cities.filter((c) => selected.has(c.code) && !popularCodes.has(c.code));
-    return [...popular, ...extras];
+    const all = [...popular, ...extras];
+    const chosen = all.filter((c) => selected.has(c.code));
+    const rest = all.filter((c) => !selected.has(c.code));
+    return [...chosen, ...rest];
   }, [cities, selected]);
 
   const searching = query.trim().length > 0;
@@ -93,7 +98,10 @@ export function CitiesPage({
                 <Pressable
                   key={city.code}
                   testID={`city-result-${city.code}`}
-                  onPress={() => onToggle(city.code)}
+                  onPress={() => {
+                    onToggle(city.code);
+                    setQuery('');
+                  }}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
                   className="flex-row items-center justify-between rounded-xl px-3 py-3 active:opacity-70">

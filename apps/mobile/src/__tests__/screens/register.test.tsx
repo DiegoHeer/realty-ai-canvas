@@ -81,14 +81,19 @@ describe('RegisterScreen', () => {
     expect(await storedSession()).toEqual({ name: 'Alice Smith', email: 'alice@example.com' });
   });
 
-  it('registers via the OAuth provider button', async () => {
-    const { getByTestId } = await renderScreen('en');
+  it('registers via the OAuth provider button and lands on the success view', async () => {
+    const { getByTestId, getByText } = await renderScreen('en');
 
     await tap(getByTestId('oauth-button'));
 
-    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+    // Success is an in-place landing view; navigation waits for Continue.
+    expect(getByText("You're signed in and ready to go.")).toBeOnTheScreen();
+    expect(router.back).not.toHaveBeenCalled();
     const session = await storedSession();
-    expect(session?.email).toMatch(/gmail\.com|appleid\.com/);
+    expect(session?.email).toMatch(/gmail\.com/);
+
+    await tap(getByTestId('auth-continue'));
+    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
   });
 
   it('cross-links to the login screen', async () => {
@@ -113,7 +118,6 @@ describe('RegisterScreen', () => {
         ],
       }),
       signInWithGoogle: jest.fn(),
-      signInWithApple: jest.fn(),
     });
 
     const { getByTestId, getByPlaceholderText, findByText, queryByText } = await renderScreen('en');
@@ -143,7 +147,6 @@ describe('RegisterScreen', () => {
         ],
       }),
       signInWithGoogle: jest.fn(),
-      signInWithApple: jest.fn(),
     });
 
     const { getByTestId, getByPlaceholderText, findByText, queryByText } = await renderScreen('en');
@@ -163,7 +166,6 @@ describe('RegisterScreen', () => {
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
       registerWithEmail: jest.fn().mockResolvedValue({ ok: false, code: 'email_taken' }),
       signInWithGoogle: jest.fn(),
-      signInWithApple: jest.fn(),
     });
 
     const { getByText, getByTestId, getByPlaceholderText } = await renderScreen('en');
@@ -182,7 +184,6 @@ describe('RegisterScreen', () => {
     jest.spyOn(require('@/hooks/use-auth'), 'useAuth').mockReturnValue({
       registerWithEmail: jest.fn().mockResolvedValue({ ok: 'verifyPending' }),
       signInWithGoogle: jest.fn(),
-      signInWithApple: jest.fn(),
     });
 
     const { getByTestId, getByPlaceholderText } = await renderScreen('en');

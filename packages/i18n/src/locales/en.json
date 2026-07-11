@@ -41,7 +41,10 @@
     "behaviorTitle": "What we measure",
     "behaviorBody": "We only track in-app behavior to improve your experience: which features are used and which are rarely used. We focus our effort on improving the features you actually use.",
     "noResaleTitle": "Your searches stay yours",
-    "noResaleBody": "We don't collect or redistribute your search filters and house preferences. What you look for stays private to you."
+    "noResaleBody": "We don't collect or redistribute your search filters and house preferences. What you look for stays private to you.",
+    "optOutTitle": "Usage measurement",
+    "optOutLabel": "Measure my in-app usage",
+    "optOutDescription": "Anonymous, cookieless stats that help us improve the app. Turn this off to stop sending them."
   },
   "aboutPage": {
     "intro": "Huismus helps you explore homes for sale across the Netherlands on a fast, map-first canvas — with rich neighborhood insights at your fingertips.",
@@ -108,7 +111,6 @@
     "logInCta": "Log in",
     "registerCta": "Create account",
     "continueWithGoogle": "Continue with Google",
-    "continueWithApple": "Continue with Apple",
     "orDivider": "or",
     "noAccountPrompt": "Don't have an account?",
     "haveAccountPrompt": "Already have an account?",
@@ -123,6 +125,11 @@
     "errorInvalidCredentials": "Invalid email or password.",
     "errorCodeInvalid": "That code is invalid or expired.",
     "errorEmailTaken": "That email is already registered.",
+    "errorOauthCancelled": "Sign-in was cancelled.",
+    "errorOauthFailed": "Could not sign in with this account. Please try again.",
+    "loggedInTitle": "Login successful",
+    "loggedInSubtitle": "You're signed in and ready to go.",
+    "loggedInCta": "Continue",
     "submitting": "Please wait…",
     "verifyTitle": "Verify your email",
     "verifySubtitle": "Enter the code we emailed you to finish creating your account.",
@@ -335,6 +342,8 @@
       "electricity": "Electricity",
       "districtHeatingTitle": "District heating",
       "districtHeatingHint": "Share of dwellings on district heating",
+      "electionTitle": "Political preference",
+      "electionHint": "Most-voted parties — Tweede Kamer {{year}}",
       "missing": "Not disclosed for this neighborhood"
     }
   },
