@@ -352,3 +352,42 @@ export async function getListing(id: string): Promise<Listing> {
   if (!hasCoordinates(found)) throw new Error(`Listing ${id} not found`);
   return residenceToListing(found);
 }
+
+// --- Feedback ----------------------------------------------------------------
+
+/** Platform tag on submitted feedback; mirrors the backend `FeedbackPlatform`. */
+export type FeedbackPlatform = 'ios' | 'android' | 'web';
+
+/** Locale tag on submitted feedback; mirrors the backend `FeedbackLocale`. */
+export type FeedbackLocale = 'en' | 'nl' | 'pt';
+
+/**
+ * Body for `POST /v1/feedback`. Only `message` is required; the rest is optional
+ * context the app attaches for triage. Spec:
+ * https://api-staging.realty-ai.nl/docs#/feedback/scraping_api_submit_feedback
+ */
+export interface FeedbackIn {
+  message: string;
+  /** App version string; the backend caps this at 20 characters. */
+  app_version?: string | null;
+  platform?: FeedbackPlatform | null;
+  locale?: FeedbackLocale | null;
+}
+
+/** `201` acknowledgement returned when feedback is stored. */
+export interface FeedbackAck {
+  id: number;
+  created_at: string;
+}
+
+/**
+ * Submit user feedback. The endpoint is public (no auth required); we still route
+ * through `request()` for consistent base-URL handling. A Bearer token is sent
+ * when the user happens to be signed in and is ignored by the server otherwise.
+ */
+export async function submitFeedback(input: FeedbackIn): Promise<FeedbackAck> {
+  return request<FeedbackAck>('/v1/feedback', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}

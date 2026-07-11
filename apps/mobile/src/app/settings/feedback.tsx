@@ -1,4 +1,5 @@
-import { useTranslation } from '@realty/i18n';
+import { submitFeedback, type FeedbackIn, type FeedbackPlatform } from '@realty/data';
+import { isSupportedLanguage, useTranslation } from '@realty/i18n';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,10 +14,28 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { APP_VERSION } from '@/constants/app';
+
 /** Placeholder grey that reads on both light and dark inputs (neutral-400). */
 const PLACEHOLDER_COLOR = '#9ca3af';
 
-type Status = 'idle' | 'sending' | 'sent';
+type Status = 'idle' | 'sending' | 'sent' | 'error';
+
+/**
+ * Optional device/app context sent alongside the message for triage. `Platform.OS`
+ * is narrowed to the values the backend accepts, the UI language is sent only when
+ * it's one we ship, and the version is clamped to the backend's 20-char limit.
+ */
+function feedbackContext(language: string): Omit<FeedbackIn, 'message'> {
+  const os = Platform.OS;
+  const platform: FeedbackPlatform | undefined =
+    os === 'ios' || os === 'android' || os === 'web' ? os : undefined;
+  return {
+    app_version: APP_VERSION.slice(0, 20),
+    platform,
+    locale: isSupportedLanguage(language) ? language : undefined,
+  };
+}
 
 /** Feather-style check mark shown on the button once feedback is "sent". */
 function CheckIcon({ color }: { color: string }) {
@@ -35,35 +54,45 @@ function CheckIcon({ color }: { color: string }) {
 
 /**
  * Feedback screen (pushed from the profile Support section). A multiline field
- * plus a submit button. There is no feedback endpoint yet, so submitting runs a
- * short dummy "delivery": the button moves idle → sending → sent in place, and
- * we stay on the screen (the field clears) so more can be sent. Mirrors the
- * keyboard-aware layout of the auth screens (see `components/auth-ui.tsx`).
+ * plus a submit button that POSTs to `/v1/feedback` (see `submitFeedback`). The
+ * button moves idle → sending → sent in place and we stay on the screen (the
+ * field clears) so more can be sent; a failed send surfaces an inline error and
+ * keeps the text so it can be retried. Mirrors the keyboard-aware layout of the
+ * auth screens (see `components/auth-ui.tsx`).
  */
 export default function FeedbackScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [text, setText] = useState('');
   const [status, setStatus] = useState<Status>('idle');
 
-  // Pending dummy-delivery timers, cleared if the screen unmounts mid-send so we
-  // never set state on an unmounted component.
+  // Cleared if the screen unmounts mid-send so the "sent" auto-reset timer and
+  // the post-await state updates never land on an unmounted component.
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+      timers.current.forEach(clearTimeout);
+    },
+    [],
+  );
 
-  const canSubmit = status === 'idle' && text.trim().length > 0;
+  // Retryable from the initial idle state and after a failed send.
+  const canSubmit = (status === 'idle' || status === 'error') && text.trim().length > 0;
 
-  function submit() {
+  async function submit() {
     if (!canSubmit) return;
     setStatus('sending');
-    // Simulate the round-trip to a (not-yet-existing) backend, then confirm
-    // success in place and reset so the user can send more.
-    timers.current.push(
-      setTimeout(() => {
-        setStatus('sent');
-        setText('');
-        timers.current.push(setTimeout(() => setStatus('idle'), 2200));
-      }, 1200),
-    );
+    try {
+      await submitFeedback({ message: text.trim(), ...feedbackContext(i18n.language) });
+      if (!mounted.current) return;
+      setStatus('sent');
+      setText('');
+      // Return to idle in place so more feedback can be sent.
+      timers.current.push(setTimeout(() => setStatus('idle'), 2200));
+    } catch {
+      if (mounted.current) setStatus('error');
+    }
   }
 
   return (
@@ -85,8 +114,9 @@ export default function FeedbackScreen() {
               value={text}
               onChangeText={(next) => {
                 setText(next);
-                // Typing after a successful send returns the button to idle.
-                if (status === 'sent') setStatus('idle');
+                // Typing after a terminal state returns the button to idle,
+                // clearing a shown "sent" confirmation or error message.
+                if (status === 'sent' || status === 'error') setStatus('idle');
               }}
               multiline
               autoFocus
@@ -100,6 +130,14 @@ export default function FeedbackScreen() {
           </View>
 
           <SubmitButton status={status} disabled={!canSubmit} onPress={submit} />
+
+          {status === 'error' ? (
+            <Text
+              accessibilityRole="alert"
+              className="text-center text-sm text-red-600 dark:text-red-400">
+              {t('feedback.error')}
+            </Text>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -107,9 +145,9 @@ export default function FeedbackScreen() {
 }
 
 /**
- * Stateful primary button: blue "Send feedback" when idle, a disabled spinner
- * while sending, and a green confirmation once sent. Styling tracks
- * `PrimaryButton` in `components/auth-ui.tsx`.
+ * Stateful primary button: blue "Send feedback" when idle or after an error
+ * (ready to retry), a disabled spinner while sending, and a green confirmation
+ * once sent. Styling tracks `PrimaryButton` in `components/auth-ui.tsx`.
  */
 function SubmitButton({
   status,
