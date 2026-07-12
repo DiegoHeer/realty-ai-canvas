@@ -23,10 +23,12 @@ export const AnalyticsEvent = {
   outboundLink: 'Outbound Link',
   signup: 'Signup',
   login: 'Login',
+  emailVerified: 'Email Verified',
   onboardingCompleted: 'Onboarding Completed',
   search: 'Search',
   filtersApplied: 'Filters Applied',
   listingFavorited: 'Listing Favorited',
+  overlayEnabled: 'Overlay Enabled',
 } as const;
 
 /** How a sign-up / sign-in was performed. */
@@ -77,8 +79,12 @@ export function outboundLinkEvent(url: string, sourceName: string, position: num
   return { name: AnalyticsEvent.outboundLink, opts: { path: LISTING_PATH, props } };
 }
 
-export function signupEvent(method: AuthMethod): EventSpec {
-  return { name: AnalyticsEvent.signup, opts: { path: '/auth/register', props: { method } } };
+export function signupEvent(method: AuthMethod, emailVerified?: boolean): EventSpec {
+  const props: EventProps = { method };
+  // Only meaningful for email signups: false while the emailed code is pending,
+  // true when the account is active immediately. Omitted for Google (pre-verified).
+  if (emailVerified !== undefined) props.email_verified = emailVerified;
+  return { name: AnalyticsEvent.signup, opts: { path: '/auth/register', props } };
 }
 
 export function loginEvent(method: AuthMethod): EventSpec {
@@ -88,10 +94,15 @@ export function loginEvent(method: AuthMethod): EventSpec {
 export function onboardingCompletedEvent(o: {
   skipped: boolean;
   citiesSelected: number;
+  furthestStep: number;
 }): EventSpec {
+  const lastStep = ONBOARDING_STEP_SLUGS[o.furthestStep] ?? String(o.furthestStep);
   return {
     name: AnalyticsEvent.onboardingCompleted,
-    opts: { path: '/onboarding', props: { skipped: o.skipped, cities_selected: o.citiesSelected } },
+    opts: {
+      path: '/onboarding',
+      props: { skipped: o.skipped, cities_selected: o.citiesSelected, last_step: lastStep },
+    },
   };
 }
 
@@ -110,6 +121,14 @@ export function listingFavoritedEvent(): EventSpec {
   return { name: AnalyticsEvent.listingFavorited };
 }
 
+export function emailVerifiedEvent(): EventSpec {
+  return { name: AnalyticsEvent.emailVerified, opts: { path: '/auth/verify' } };
+}
+
+export function overlayEnabledEvent(overlay: string): EventSpec {
+  return { name: AnalyticsEvent.overlayEnabled, opts: { props: { overlay } } };
+}
+
 /** Virtual pageview path for onboarding step `index`, or null if out of range. */
 export function onboardingStepPath(index: number): string | null {
   const slug = ONBOARDING_STEP_SLUGS[index];
@@ -125,13 +144,17 @@ function send(spec: EventSpec): void {
 export function trackOutboundLink(url: string, sourceName: string, position: number): void {
   send(outboundLinkEvent(url, sourceName, position));
 }
-export function trackSignup(method: AuthMethod): void {
-  send(signupEvent(method));
+export function trackSignup(method: AuthMethod, emailVerified?: boolean): void {
+  send(signupEvent(method, emailVerified));
 }
 export function trackLogin(method: AuthMethod): void {
   send(loginEvent(method));
 }
-export function trackOnboardingCompleted(o: { skipped: boolean; citiesSelected: number }): void {
+export function trackOnboardingCompleted(o: {
+  skipped: boolean;
+  citiesSelected: number;
+  furthestStep: number;
+}): void {
   send(onboardingCompletedEvent(o));
 }
 export function trackSearch(resultType: string, method: SearchMethod): void {
@@ -142,6 +165,12 @@ export function trackFiltersApplied(activeFilterCount: number): void {
 }
 export function trackListingFavorited(): void {
   send(listingFavoritedEvent());
+}
+export function trackEmailVerified(): void {
+  send(emailVerifiedEvent());
+}
+export function trackOverlayEnabled(overlay: string): void {
+  send(overlayEnabledEvent(overlay));
 }
 
 /** Fire a virtual pageview for onboarding step `index` (no-op if out of range). */

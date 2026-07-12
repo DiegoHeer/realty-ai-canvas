@@ -15,6 +15,7 @@ import { BUILDINGS_3D_PITCH } from '@/components/map-shared';
 import { useEffectiveColorScheme } from '@/components/map-style';
 import { OverlayLegend } from '@/components/overlay-legend';
 import { Brand } from '@/constants/theme';
+import { trackOverlayEnabled } from '@/lib/analytics';
 import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat, rampFor, selectInhabitants, statDomain } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
@@ -78,9 +79,14 @@ export default function MapScreen() {
   // The active map overlay (noise, air quality, …) — one at a time: tapping an
   // overlay pill swaps to it, tapping the active one turns it off.
   const [overlayId, setOverlayId] = useState<OverlayId | null>(null);
-  const toggleOverlay = useCallback((id: OverlayId) => {
-    setOverlayId((prev) => (prev === id ? null : id));
-  }, []);
+  const toggleOverlay = useCallback(
+    (id: OverlayId) => {
+      const enabling = overlayId !== id;
+      setOverlayId(enabling ? id : null);
+      if (enabling) trackOverlayEnabled(id);
+    },
+    [overlayId],
+  );
   const overlay = overlayById(overlayId);
   // Viewport zoom as of the last camera settle — drives the legend's "zoom in"
   // hint for overlays that only render at building-level zooms.
