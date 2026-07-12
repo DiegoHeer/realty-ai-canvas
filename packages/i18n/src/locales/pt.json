@@ -95,7 +95,8 @@
     "placeholder": "Partilhe a sua opinião…",
     "submit": "Enviar feedback",
     "submitting": "A enviar…",
-    "sent": "Feedback enviado"
+    "sent": "Feedback enviado",
+    "error": "Não foi possível enviar o seu feedback. Tente novamente."
   },
   "auth": {
     "logInTitle": "Iniciar sessão",

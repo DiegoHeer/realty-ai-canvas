@@ -95,7 +95,8 @@
     "placeholder": "Deel je gedachten…",
     "submit": "Feedback verzenden",
     "submitting": "Verzenden…",
-    "sent": "Feedback verzonden"
+    "sent": "Feedback verzonden",
+    "error": "Kon je feedback niet verzenden. Probeer het opnieuw."
   },
   "auth": {
     "logInTitle": "Inloggen",
