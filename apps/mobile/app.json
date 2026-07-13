@@ -12,7 +12,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.anonymous.huismus"
+      "bundleIdentifier": "com.fastvibes.huismus"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.huismus"
+      "package": "com.fastvibes.huismus"
     },
     "web": {
       "output": "static",
