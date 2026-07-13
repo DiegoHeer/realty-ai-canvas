@@ -11,7 +11,7 @@ import { FilterPills } from '@/components/filter-pills';
 import { ListingCard } from '@/components/listing-card';
 import { ListingMap, type ListingMapRef } from '@/components/listing-map';
 import { LocationSearch, type LocationSearchRef } from '@/components/location-search';
-import { BUILDINGS_3D_PITCH } from '@/components/map-shared';
+import { BUILDINGS_3D_PITCH, DEFAULT_CENTER } from '@/components/map-shared';
 import { useEffectiveColorScheme } from '@/components/map-style';
 import { OverlayLegend } from '@/components/overlay-legend';
 import { Brand } from '@/constants/theme';
@@ -26,7 +26,7 @@ import { useMapSettings } from '@/lib/map-settings';
 import { normalizeStats } from '@/lib/neighborhood-stats';
 import { zoomForType } from '@/lib/pdok';
 import { recordRecentView, useRecentViews } from '@/lib/recent-views';
-import type { SearchResult } from '@/lib/search';
+import type { Origin, SearchResult } from '@/lib/search';
 
 // Zoom level at or above which the map auto-loads the neighborhoods under its
 // centre. The initial framing sits at zoom 11 (no city selected yet); zooming
@@ -101,6 +101,10 @@ export default function MapScreen() {
   // Viewport zoom as of the last camera settle — drives the legend's "zoom in"
   // hint for overlays that only render at building-level zooms.
   const [mapZoom, setMapZoom] = useState(11);
+  // Viewport centre as of the last camera settle — the origin the search bar
+  // ranks its suggestions against (nearest first). Seeded with the national
+  // default and replaced with the real centre once the map reports one.
+  const [mapCenter, setMapCenter] = useState<Origin>(DEFAULT_CENTER);
   // No city is selected until the user taps one. Until then the map shows no
   // neighborhoods; tapping a city loads + shows that city's neighborhoods.
   const [selectedCity, setSelectedCity] = useState<
@@ -254,6 +258,7 @@ export default function MapScreen() {
   const handleCameraIdle = useCallback(
     ({ longitude, latitude, zoom }: { longitude: number; latitude: number; zoom: number }) => {
       setMapZoom(zoom);
+      setMapCenter({ longitude, latitude });
       if (zoom < AUTO_LOAD_AREAS_ZOOM) return;
       selectCityAt({ longitude, latitude });
     },
@@ -330,6 +335,7 @@ export default function MapScreen() {
         <LocationSearch
           ref={searchRef}
           sources={SEARCH_SOURCES}
+          origin={mapCenter}
           onActiveChange={setSearchActive}
           placeholder={cityName}
           activeFilterCount={countActiveFilters(filters)}

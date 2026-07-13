@@ -24,12 +24,12 @@ import {
   resultKey,
   resultLabel,
   resultType,
+  splitSuggestionLabel,
   suggestAll,
-  suggestionCount,
+  type Origin,
   type SearchResult,
   type SearchSource,
   type SearchSuggestion,
-  type SearchSuggestions,
 } from '@/lib/search';
 
 const ICON_COLOR = '#9ca3af';
@@ -110,10 +110,106 @@ function FilterIcon({
   );
 }
 
+// Leading icons that cue each suggestion's kind, mirroring the stroked-SVG style
+// of the settings icons in `app/(tabs)/profile.tsx`. Sized to sit beside a
+// `text-base` label (matching the recents `ClockIcon`) and drawn in the muted
+// `ICON_COLOR` so they read as a secondary cue, not competing with the label.
+
+// A single dwelling — a home with a house number (a residence) or a PDOK `adres`.
+function HouseIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M9 22V12h6v10"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+// A cluster of two houses — a neighborhood (buurt/wijk).
+function NeighborhoodIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3 21v-8l4-3 4 3v8"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M13 21v-8l4-3 4 3v8"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path d="M2 21h20" stroke={ICON_COLOR} strokeWidth={2} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+// Tall buildings — a city (gemeente/woonplaats).
+function CityIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path d="M10 6h4M10 10h4M10 14h4M10 18h4" stroke={ICON_COLOR} strokeWidth={2} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+// A road receding to the horizon with a dashed centerline — a street (a PDOK
+// `weg`/`postcode`, i.e. an address without a house number).
+function StreetIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M5 20L8 4" stroke={ICON_COLOR} strokeWidth={2} strokeLinecap="round" />
+      <Path d="M19 20L16 4" stroke={ICON_COLOR} strokeWidth={2} strokeLinecap="round" />
+      <Path
+        d="M12 4v3M12 10.5v3M12 17v3"
+        stroke={ICON_COLOR}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
 const SUGGEST_DEBOUNCE_MS = 200;
 const MIN_QUERY_LENGTH = 2;
 
-const EMPTY_SUGGESTIONS: SearchSuggestions = { homes: [], buurten: [], places: [] };
 const DEFAULT_SOURCES: readonly SearchSource[] = ['places'];
 
 export interface LocationSearchProps {
@@ -122,9 +218,15 @@ export interface LocationSearchProps {
   /**
    * Which suggestion sources to draw from. Defaults to `['places']` — the
    * original PDOK-only behavior (explore tab). The map screen opts into homes +
-   * buurten as well, which switches the dropdown to a sectioned layout.
+   * buurten as well.
    */
   sources?: readonly SearchSource[];
+  /**
+   * Origin to rank suggestions against — typically the map's current centre.
+   * When set, the merged list is ordered nearest-first; omitted (e.g. on the
+   * explore tab) it stays in relevance order.
+   */
+  origin?: Origin;
   /**
    * Fired when the field gains/loses focus or a dropdown opens/closes. The
    * parent uses this to render a full-screen, tap-catching backdrop while the
@@ -151,6 +253,30 @@ export interface LocationSearchRef {
   dismiss: () => void;
 }
 
+/**
+ * Leading icon for a suggestion, chosen by its kind and — for a place — its PDOK
+ * type. A residence or an `adres` is a specific house; `weg`/`postcode` a street;
+ * a buurt/wijk a neighborhood; everything else (gemeente/woonplaats/…) a city.
+ * The place `type` branch also covers the explore tab, where buurt/wijk arrive
+ * as unsectioned places rather than in their own section.
+ */
+function SuggestionIcon({ item }: { item: SearchSuggestion }) {
+  if (item.kind === 'residence') return <HouseIcon />;
+  if (item.kind === 'buurt') return <NeighborhoodIcon />;
+  switch (item.type) {
+    case 'adres':
+      return <HouseIcon />;
+    case 'weg':
+    case 'postcode':
+      return <StreetIcon />;
+    case 'buurt':
+    case 'wijk':
+      return <NeighborhoodIcon />;
+    default:
+      return <CityIcon />;
+  }
+}
+
 /** One tappable suggestion row (shared by every section). */
 function SuggestionRow({
   item,
@@ -161,16 +287,30 @@ function SuggestionRow({
   bordered: boolean;
   onPick: (item: SearchSuggestion) => void;
 }) {
+  // Left: the street + house number (or neighborhood name). Right: the zipcode
+  // (if any) and city, in a softer tone, aligned to the row's trailing edge.
+  const { primary, secondary } = splitSuggestionLabel(item);
+  // A city/town (gemeente or woonplaats) is the headline kind of result — its
+  // name is the whole left side — so give it bold weight.
+  const isCity = item.kind === 'place' && (item.type === 'gemeente' || item.type === 'woonplaats');
   return (
     <Pressable
       onPress={() => onPick(item)}
       accessibilityRole="button"
-      className={`px-4 py-3 active:bg-neutral-100 dark:active:bg-neutral-700 ${
+      className={`flex-row items-center gap-2 px-4 py-3 active:bg-neutral-100 dark:active:bg-neutral-700 ${
         bordered ? 'border-t border-neutral-100 dark:border-neutral-700' : ''
       }`}>
-      <Text className="text-base text-neutral-900 dark:text-white" numberOfLines={1}>
-        {item.label}
+      <SuggestionIcon item={item} />
+      <Text
+        className={`flex-1 text-base text-neutral-900 dark:text-white ${isCity ? 'font-semibold' : ''}`}
+        numberOfLines={1}>
+        {primary}
       </Text>
+      {secondary.length > 0 && (
+        <Text className="shrink-0 text-base text-neutral-400" numberOfLines={1}>
+          {secondary}
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -178,16 +318,18 @@ function SuggestionRow({
 /**
  * Search bar overlaying the map. As the user types we fetch autocomplete
  * suggestions from the configured {@link SearchSource}s — homes (the backend's
- * fuzzy residence search), buurten and places (PDOK) — and show them grouped by
- * section; picking one (or pressing Enter, which takes the top place) resolves
- * it and hands a {@link SearchResult} to the parent, which acts per kind. Built
- * on React Native primitives so the single file serves web and native.
+ * fuzzy residence search), buurten and places (PDOK) — merge them into one list
+ * ranked by distance from {@link origin} (the map centre), and each row's icon
+ * cues its kind. Picking one (or pressing Enter, which takes the top place)
+ * resolves it and hands a {@link SearchResult} to the parent, which acts per
+ * kind. Built on React Native primitives so the single file serves web and native.
  */
 export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>(
   function LocationSearch(
     {
       onResult,
       sources = DEFAULT_SOURCES,
+      origin,
       onActiveChange,
       placeholder,
       onOpenFilters,
@@ -213,13 +355,10 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } =
     useRecentSearches();
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<SearchSuggestions>(EMPTY_SUGGESTIONS);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Sectioned layout (a header per group) only when more than one source feeds
-  // the dropdown; a places-only bar keeps the original flat list.
-  const sectioned = sources.length > 1;
   // Show the recents dropdown while the field is focused and empty. Set on
   // focus and cleared when the user acts (resolve), mirroring how `open` is
   // managed — we deliberately don't hide on blur so a recent stays tappable.
@@ -264,21 +403,21 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     suggestCtrl.current?.abort();
     const q = text.trim();
     if (q.length < MIN_QUERY_LENGTH) {
-      setSuggestions(EMPTY_SUGGESTIONS);
+      setSuggestions([]);
       setOpen(false);
       return;
     }
     const controller = new AbortController();
     suggestCtrl.current = controller;
-    suggestAll(q, sources, controller.signal)
-      .then((groups) => {
+    suggestAll(q, sources, controller.signal, origin)
+      .then((list) => {
         if (controller.signal.aborted) return;
-        setSuggestions(groups);
-        setOpen(suggestionCount(groups) > 0);
+        setSuggestions(list);
+        setOpen(list.length > 0);
       })
       .catch((err) => {
         if (controller.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
-        setSuggestions(EMPTY_SUGGESTIONS);
+        setSuggestions([]);
         setOpen(false);
       });
   }
@@ -318,7 +457,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
       if (result) {
         skipNextSuggest.current = true;
         setQuery(resultLabel(result));
-        setSuggestions(EMPTY_SUGGESTIONS);
+        setSuggestions([]);
         addRecentSearch(result);
         onResult(result);
         trackSearch(resultType(result), method);
@@ -360,7 +499,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     setError(null);
     skipNextSuggest.current = true;
     setQuery(resultLabel(item));
-    setSuggestions(EMPTY_SUGGESTIONS);
+    setSuggestions([]);
     addRecentSearch(item);
     onResult(item);
     trackSearch(resultType(item), 'recent');
@@ -372,18 +511,11 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     if (debounce.current) clearTimeout(debounce.current);
     inFlight.current = null;
     setQuery('');
-    setSuggestions(EMPTY_SUGGESTIONS);
+    setSuggestions([]);
     setOpen(false);
     setError(null);
     setLoading(false);
   }
-
-  // Ordered, non-empty sections for the dropdown.
-  const sections: { key: string; title: string; items: SearchSuggestion[] }[] = [
-    { key: 'homes', title: t('search.sectionHomes'), items: suggestions.homes },
-    { key: 'buurten', title: t('search.sectionNeighborhoods'), items: suggestions.buurten },
-    { key: 'places', title: t('search.sectionPlaces'), items: suggestions.places },
-  ].filter((section) => section.items.length > 0);
 
   return (
     <View>
@@ -408,7 +540,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
             onSubmitEditing={handleSubmit}
             onFocus={() => {
               setFocused(true);
-              if (suggestionCount(suggestions) > 0) setOpen(true);
+              if (suggestions.length > 0) setOpen(true);
             }}
             placeholder={placeholderText}
             placeholderTextColor="transparent"
@@ -505,24 +637,10 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
         </View>
       )}
 
-      {open && sections.length > 0 && (
+      {open && suggestions.length > 0 && (
         <View className="mt-1 overflow-hidden rounded-2xl bg-white shadow-md shadow-black/20 dark:bg-neutral-800">
-          {sections.map((section) => (
-            <View key={section.key}>
-              {sectioned && (
-                <Text className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  {section.title}
-                </Text>
-              )}
-              {section.items.map((item, index) => (
-                <SuggestionRow
-                  key={item.id}
-                  item={item}
-                  bordered={index > 0}
-                  onPick={handlePick}
-                />
-              ))}
-            </View>
+          {suggestions.map((item, index) => (
+            <SuggestionRow key={item.id} item={item} bordered={index > 0} onPick={handlePick} />
           ))}
         </View>
       )}

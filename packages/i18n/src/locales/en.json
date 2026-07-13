@@ -167,10 +167,7 @@
     "recentTitle": "Recent searches",
     "clearRecent": "Clear",
     "removeRecent": "Remove from recent searches",
-    "filters": "Filters",
-    "sectionHomes": "Homes",
-    "sectionNeighborhoods": "Neighborhoods",
-    "sectionPlaces": "Places"
+    "filters": "Filters"
   },
   "filters": {
     "favorites": "Favorites",
