@@ -67,12 +67,14 @@ it, **no privacy-copy change is required.**
 | Goal (dashboard name) | Fires when · site | Properties | Serves |
 |-----------------------|-------------------|------------|--------|
 | `Outbound Link` | Tap a listing source · `listing/[id].tsx` | `host`, `source_name`, `position` | **North-star** / lead-out |
-| `Signup` | Register success (email `verifyPending`/`ok`, or Google) · `auth/register.tsx` | `method` | Signup funnel |
+| `Signup` | Register success (email `verifyPending`/`ok`, or Google) · `auth/register.tsx` | `method`; `email_verified` (email only — `false` while code pending, `true` if active) | Signup funnel |
 | `Login` | Login success (email or Google) · `auth/login.tsx` | `method` | — |
-| `Onboarding Completed` | `flow.tsx` `finish()` **and** `skip()` | `skipped`, `cities_selected` | Activation |
+| `Email Verified` | Verification code accepted · `auth/verify.tsx` | — | Signup funnel (pending → verified) |
+| `Onboarding Completed` | `flow.tsx` `finish()` **and** `skip()` | `skipped`, `cities_selected`, `last_step` (furthest step reached) | Activation |
 | `Search` | Resolve a search · `location-search.tsx` | `result_type`, `method` (typed/suggestion/recent) | Discovery |
 | `Filters Applied` | "Show homes" · `settings/filters.tsx` | `active_filter_count` | Discovery |
 | `Listing Favorited` | Heart on (choke point) · `lib/likes.ts` `toggleLike` | — | Engagement |
+| `Overlay Enabled` | Enable a map layer · `index.tsx` `toggleOverlay` | `overlay` (noise/airQuality/energyLabels/buildingAge/wozValue/zoning/treeHeight) | Layer usage (e.g. `overlay=wozValue`) |
 
 Plus **virtual pageviews** `/onboarding/{welcome,features,filters,cities,account}`
 fired on step settle in `flow.tsx`.
@@ -86,7 +88,6 @@ fired on step settle in `flow.tsx`.
 
 | Goal | Fires when | Properties |
 |------|-----------|------------|
-| `Overlay Enabled` | `index.tsx` `toggleOverlay` (on) | `overlay` (noise/airQuality/energyLabels/buildingAge/wozValue/zoning/treeHeight) |
 | `Quick Filter Toggled` | `index.tsx` `toggleFilter` | `pill` (favorites/recent/popular/new/sold), `enabled` |
 | `Filters Applied` (extend) | as Phase 1 | + `facets` = comma list of active facet _names_ (no values) |
 | `Setting Changed` | appearance / language / map screens | `setting`; `value` only for appearance, language, buildings_3d |
@@ -94,7 +95,7 @@ fired on step settle in `flow.tsx`.
 | `Listing Shared` | `listing/[id].tsx` `onShare` | — |
 | `Listing Unfavorited` | `lib/likes.ts` `toggleLike` (off) | — |
 | `Replay Intro` | profile replay action | — |
-| `Email Verified`, `Password Reset Requested` | `auth/verify.tsx`, `auth/forgot-password.tsx` | — |
+| `Password Reset Requested` | `auth/forgot-password.tsx` | — |
 
 ## Funnels (no native CE view)
 
@@ -112,15 +113,17 @@ CE cannot render funnels, so read them as:
 ## Dashboard checklist (no code)
 
 1. Create a custom-event **Goal** per name in the Phase 1 table.
-2. Under **Properties**, enable: `host`, `source_name`, `method`, `result_type`,
-   `active_filter_count`, `cities_selected`, `skipped` (add Phase 2 keys later).
+2. Under **Properties**, enable: `host`, `source_name`, `method`, `email_verified`,
+   `result_type`, `active_filter_count`, `cities_selected`, `skipped`, `last_step`,
+   `overlay`.
 3. To read funnels, use the goal/property filters described above.
 
 ## Enabling
 
-Native ingestion needs no key. To turn analytics on in a build, set
-`EXPO_PUBLIC_PLAUSIBLE_ENABLED=true` (+ `_URL`, `_DOMAIN`) — it stays off by
-default and respects the privacy-screen opt-out. Keep the **read** key
+Native ingestion needs no key. Analytics is **on by default** — `.env.example`
+ships `EXPO_PUBLIC_PLAUSIBLE_ENABLED=true` (+ `_URL`, `_DOMAIN`), inlined into a
+build from its env; it still respects the privacy-screen opt-out, and should be
+set `false` for local dev/e2e. Keep the **read** key
 (`PLAUSIBLE_API_KEY`, used only for stats/dashboard queries) **un-prefixed** so
 it is never bundled into the shipped app. Ensure the E2E web-export build leaves
 `EXPO_PUBLIC_PLAUSIBLE_ENABLED=false` so Playwright runs don't emit events.

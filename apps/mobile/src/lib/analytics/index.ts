@@ -10,12 +10,14 @@ export { track, trackPageview } from './client';
 export type { EventProps, TrackOptions } from './client';
 export {
   AnalyticsEvent,
+  trackEmailVerified,
   trackFiltersApplied,
   trackListingFavorited,
   trackLogin,
   trackOnboardingCompleted,
   trackOnboardingStep,
   trackOutboundLink,
+  trackOverlayEnabled,
   trackSearch,
   trackSignup,
 } from './events';

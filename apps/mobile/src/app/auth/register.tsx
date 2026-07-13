@@ -69,7 +69,8 @@ export default function RegisterScreen() {
     const outcome = await registerWithEmail({ name, email, password });
     setSubmitting(false);
 
-    if (outcome.ok === 'verifyPending' || outcome.ok === true) trackSignup('email');
+    if (outcome.ok === 'verifyPending') trackSignup('email', false);
+    else if (outcome.ok === true) trackSignup('email', true);
 
     if (outcome.ok === 'verifyPending') {
       router.push('/auth/verify');

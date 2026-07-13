@@ -100,8 +100,11 @@ export function OnboardingFlow() {
   // Emit a virtual pageview per step (see lib/analytics/events). CE has no
   // funnel view, so these `/onboarding/<step>` pages let the tour be read as a
   // drop-off series in Plausible's Top Pages. `index` only changes on settle,
-  // so this fires once per step (and once for the resume step on mount).
+  // so this fires once per step (and once for the resume step on mount). Also
+  // track the furthest step reached, reported on completion as `last_step`.
+  const furthestStepRef = useRef(index);
   useEffect(() => {
+    if (index > furthestStepRef.current) furthestStepRef.current = index;
     trackOnboardingStep(index);
   }, [index]);
 
@@ -320,14 +323,22 @@ export function OnboardingFlow() {
     });
     setPreferredCities(preferred);
     if (preferred.length > 0) setMapFocus(preferred[0]);
-    trackOnboardingCompleted({ skipped: false, citiesSelected: cityCodes.length });
+    trackOnboardingCompleted({
+      skipped: false,
+      citiesSelected: cityCodes.length,
+      furthestStep: furthestStepRef.current,
+    });
     completeOnboarding();
     leaveToApp();
   }
 
   function skip() {
     // Skipping applies nothing — just close the tour for good.
-    trackOnboardingCompleted({ skipped: true, citiesSelected: cityCodes.length });
+    trackOnboardingCompleted({
+      skipped: true,
+      citiesSelected: cityCodes.length,
+      furthestStep: furthestStepRef.current,
+    });
     completeOnboarding();
     leaveToApp();
   }
