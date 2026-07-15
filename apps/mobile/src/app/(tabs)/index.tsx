@@ -236,13 +236,17 @@ export default function MapScreen() {
   // Find which city a coordinate lands in and switch to it (loading its
   // neighborhoods). A hit on the already-selected city is a no-op (its own
   // overlays handle taps); cities don't overlap, so at most one matches.
+  // `deselectListing` (on by default) also clears any selected marker — right
+  // for an explicit tap, where picking a city/area and viewing a listing card
+  // are mutually exclusive, but wrong for the passive camera-idle auto-load
+  // below, which must not clobber a marker the user just flew to on purpose.
   const selectCityAt = useCallback(
-    (coord: { longitude: number; latitude: number }) => {
+    (coord: { longitude: number; latitude: number }, opts: { deselectListing?: boolean } = {}) => {
       const hit = findCityAt([coord.longitude, coord.latitude], cityIndex);
       if (!hit || hit.code === selectedCity?.code) return;
       setSelectedCity({ code: hit.code, name: hit.name, geometry: hit.geometry });
       setSelectedAreaId(null);
-      setSelectedId(null);
+      if (opts.deselectListing ?? true) setSelectedId(null);
     },
     [cityIndex, selectedCity],
   );
@@ -254,13 +258,15 @@ export default function MapScreen() {
   // centre — but only when zoomed in far enough that the user is clearly
   // looking at a single city, as if they'd tapped the middle of the map. Below
   // that zoom we leave it to an explicit tap, so panning the country at a
-  // glance doesn't keep swapping cities underfoot.
+  // glance doesn't keep swapping cities underfoot. This can fire right after
+  // flying to a searched residence (its zoom crosses the threshold), so it
+  // must leave the just-selected marker alone.
   const handleCameraIdle = useCallback(
     ({ longitude, latitude, zoom }: { longitude: number; latitude: number; zoom: number }) => {
       setMapZoom(zoom);
       setMapCenter({ longitude, latitude });
       if (zoom < AUTO_LOAD_AREAS_ZOOM) return;
-      selectCityAt({ longitude, latitude });
+      selectCityAt({ longitude, latitude }, { deselectListing: false });
     },
     [selectCityAt],
   );
