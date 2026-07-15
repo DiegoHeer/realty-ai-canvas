@@ -13,6 +13,12 @@ const store = createPersistedListStore<SearchResult>({
   key: StorageKeys.recentSearches,
   limit: 8,
   idOf: resultKey,
+  // Drop entries from the pre-`kind` schema (a flat PDOK result with no
+  // discriminant) so a device that persisted recents before this shape
+  // shipped doesn't feed `resultKey`/`resultLabel` an unmatched `kind`,
+  // which renders as `undefined` and collides as a duplicate React key.
+  isValid: (result) =>
+    result?.kind === 'place' || result?.kind === 'buurt' || result?.kind === 'residence',
 });
 
 export function useRecentSearches() {
