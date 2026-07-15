@@ -115,7 +115,8 @@ function FilterIcon({
 // `text-base` label (matching the recents `ClockIcon`) and drawn in the muted
 // `ICON_COLOR` so they read as a secondary cue, not competing with the label.
 
-// A single dwelling — a home with a house number (a residence) or a PDOK `adres`.
+// A PDOK `adres` — an address without a matched listing behind it. Stroked,
+// matching the other PDOK-sourced icons below.
 function HouseIcon({ size = 18 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -133,6 +134,16 @@ function HouseIcon({ size = 18 }: { size?: number }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </Svg>
+  );
+}
+
+// A home from the backend's fuzzy residence search — filled, so it reads as a
+// heavier, more specific match than a bare PDOK address.
+function HouseIconFilled({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill={ICON_COLOR} />
     </Svg>
   );
 }
@@ -255,13 +266,14 @@ export interface LocationSearchRef {
 
 /**
  * Leading icon for a suggestion, chosen by its kind and — for a place — its PDOK
- * type. A residence or an `adres` is a specific house; `weg`/`postcode` a street;
- * a buurt/wijk a neighborhood; everything else (gemeente/woonplaats/…) a city.
- * The place `type` branch also covers the explore tab, where buurt/wijk arrive
- * as unsectioned places rather than in their own section.
+ * type. A residence (a matched home from the backend's fuzzy search) gets the
+ * filled house icon so it stands out from a bare `adres`; `weg`/`postcode` a
+ * street; a buurt/wijk a neighborhood; everything else (gemeente/woonplaats/…)
+ * a city. The place `type` branch also covers the explore tab, where buurt/wijk
+ * arrive as unsectioned places rather than in their own section.
  */
 function SuggestionIcon({ item }: { item: SearchSuggestion }) {
-  if (item.kind === 'residence') return <HouseIcon />;
+  if (item.kind === 'residence') return <HouseIconFilled />;
   if (item.kind === 'buurt') return <NeighborhoodIcon />;
   switch (item.type) {
     case 'adres':
