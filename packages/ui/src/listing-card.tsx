@@ -1,5 +1,6 @@
 import { formatPrice } from '@realty/data';
 import type { Listing } from '@realty/types';
+import { BlurView } from 'expo-blur';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Pressable, Text, View } from 'react-native';
@@ -32,7 +33,19 @@ export function ListingCard({ listing, onPress, likeButton }: ListingCardProps) 
         ) : (
           <View className="h-44 w-full bg-neutral-200 dark:bg-neutral-800" />
         )}
-        <View className="gap-1 p-3">
+        <View className="gap-1 overflow-hidden p-3">
+          {cover ? (
+            <>
+              <Image
+                source={{ uri: cover.url }}
+                resizeMode="cover"
+                className="absolute inset-0 h-full w-full"
+                style={{ transform: [{ scaleX: -1 }, { scaleY: -1 }] }}
+              />
+              <BlurView intensity={100} tint="default" className="absolute inset-0" />
+              <View className="absolute inset-0 bg-white/20 dark:bg-black/20" />
+            </>
+          ) : null}
           <View className="flex-row items-center justify-between">
             <Text className="text-lg font-semibold text-neutral-900 dark:text-white">
               {formatPrice(listing.price, listing.currency, i18n.language)}

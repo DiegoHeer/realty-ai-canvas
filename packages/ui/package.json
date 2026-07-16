@@ -12,6 +12,7 @@
     "@realty/types": "workspace:*"
   },
   "peerDependencies": {
+    "expo-blur": "*",
     "nativewind": "*",
     "react": "*",
     "react-i18next": "*",
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/react": "~19.2.2",
+    "expo-blur": "~56.0.4",
     "nativewind": "^4.1.23",
     "react": "19.2.3",
     "react-i18next": "^15.4.0",
