@@ -24,3 +24,4 @@ export {
 export type { AuthMethod, SearchMethod } from './events';
 export { isHydrated, isOptedOut, setOptedOut, useAnalyticsOptOut } from './opt-out';
 export { useScreenView } from './use-screen-view';
+export { withUtmParams } from './utm';

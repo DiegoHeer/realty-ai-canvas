@@ -34,6 +34,7 @@ describe('client (API mode)', () => {
       house_letter: null,
       house_number_suffix: null,
       postcode: '2500 AA',
+      slug: 'laan-1',
       latitude: 52.07,
       longitude: 4.27,
       current_price_eur: 200000,
@@ -52,6 +53,7 @@ describe('client (API mode)', () => {
       house_letter: null,
       house_number_suffix: null,
       postcode: '2500 BB',
+      slug: 'straat-2',
       latitude: null,
       longitude: null,
       current_price_eur: 300000,
@@ -209,6 +211,7 @@ describe('client (API mode)', () => {
         house_letter: null,
         house_number_suffix: null,
         postcode: '2500 AA',
+        slug: 'laan-1',
         latitude: 52.07,
         longitude: 4.27,
         neighbourhood: null,
@@ -247,6 +250,7 @@ describe('client (API mode)', () => {
       createdAt: '2026-01-01T00:00:00Z',
       sourceUrl: 'https://funda.nl/koop/den-haag/huis-10/',
       sources: [{ url: 'https://funda.nl/koop/den-haag/huis-10/', name: 'Funda' }],
+      slug: 'laan-1',
     });
   });
 
