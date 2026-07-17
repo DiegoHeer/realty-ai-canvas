@@ -42,8 +42,8 @@ export function ListingCard({ listing, onPress, likeButton }: ListingCardProps) 
                 className="absolute inset-0 h-full w-full"
                 style={{ transform: [{ scaleX: -1 }, { scaleY: -1 }] }}
               />
-              <BlurView intensity={60} tint="default" style={StyleSheet.absoluteFill} />
-              <View className="absolute inset-0 bg-white/20 dark:bg-black/20" />
+              <BlurView intensity={30} tint="default" style={StyleSheet.absoluteFill} />
+              <View className="absolute inset-0 bg-white/5 dark:bg-black/5" />
             </>
           ) : null}
           <View className="flex-row items-center justify-between">
