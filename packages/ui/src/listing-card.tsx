@@ -3,7 +3,7 @@ import type { Listing } from '@realty/types';
 import { BlurView } from 'expo-blur';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 export interface ListingCardProps {
   listing: Listing;
@@ -42,7 +42,7 @@ export function ListingCard({ listing, onPress, likeButton }: ListingCardProps) 
                 className="absolute inset-0 h-full w-full"
                 style={{ transform: [{ scaleX: -1 }, { scaleY: -1 }] }}
               />
-              <BlurView intensity={100} tint="default" className="absolute inset-0" />
+              <BlurView intensity={60} tint="default" style={StyleSheet.absoluteFill} />
               <View className="absolute inset-0 bg-white/20 dark:bg-black/20" />
             </>
           ) : null}
