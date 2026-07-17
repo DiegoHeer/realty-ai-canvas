@@ -45,10 +45,13 @@ validation/error conventions of [`residences-search-api.md`](./backend/residence
 >    `GOOGLE_OAUTH_CLIENT_SECRET` **before the next image rollout** — `prod.py` refuses to boot
 >    without them now that #218 is merged. Optionally `GOOGLE_OAUTH_ANDROID_CLIENT_ID` /
 >    `GOOGLE_OAUTH_IOS_CLIENT_ID` (PR #220) when native ships.
-> 3. **Android (later):** register the reversed-client-id scheme
->    (`com.googleusercontent.apps.<android-client>`) in `app.json` and rebuild; note the console
->    clients were registered under the old `com.anonymous.realtyaicanvas` id while the app is now
->    `com.anonymous.huismus` — re-check the Android client's package/SHA-1 before that milestone.
+> 3. **Android:** the reversed-client-id scheme
+>    (`com.googleusercontent.apps.751654542404-066oobvgungucgk2v8diuoedas0atha2`) is now
+>    registered in `app.json`. The package id is pinned to `com.fastvibes.huismus` (previously
+>    `com.anonymous.realtyaicanvas`, then `com.anonymous.huismus`) — **owner action still
+>    needed:** update the Android OAuth client in Google Cloud Console to package name
+>    `com.fastvibes.huismus` and re-register the signing SHA-1 (the project-local debug
+>    keystore's fingerprint; see `apps/mobile/android/app/debug.keystore`).
 > 4. **Static web export:** confirm `/auth/callback` is served by the production host / e2e
 >    static server (dev server routes it fine).
 >
@@ -283,8 +286,8 @@ failure strings **in all three locales** and map them in `authErrorKey` (`auth-u
 
 ## 11. Decisions to make now  *(they gate console setup)*
 
-- **Bundle / package id is the placeholder `com.anonymous.realtyaicanvas`** (`app.json`). Google
-  and Apple registration — and especially a future iOS app — want a real reverse-domain id;
-  renaming the Android `package` later is disruptive. **Pin it before console setup.**
+- **Bundle / package id is pinned to `com.fastvibes.huismus`** (`app.json`, both platforms; was
+  `com.anonymous.realtyaicanvas`, then briefly `com.anonymous.huismus`). Google console
+  registrations (and any future Apple / iOS App Store setup) must be re-checked against this id.
 - **Apple Developer membership** ($99/yr) is required even for the web/Android Apple flow. Confirm
   it's available, or ship Google-first and add Apple later.
