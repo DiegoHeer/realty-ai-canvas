@@ -1,10 +1,29 @@
 import { useTranslation } from '@realty/i18n';
 import { useRouter } from 'expo-router';
 import { Pressable, Switch, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import { InfoCard, Paragraph, SettingsContentScreen } from '@/components/settings-content';
 import { Brand } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAnalyticsOptOut } from '@/lib/analytics';
+
+/** Document/paper icon for the full-legal-text links below — mirrors profile.tsx's icon style. */
+function PaperIcon({ color }: { color: string }) {
+  const stroke = { strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+        stroke={color}
+        {...stroke}
+      />
+      <Path d="M14 2v6h6" stroke={color} {...stroke} />
+      <Path d="M16 13H8" stroke={color} {...stroke} />
+      <Path d="M16 17H8" stroke={color} {...stroke} />
+    </Svg>
+  );
+}
 
 /**
  * Privacy & security page (pushed from the profile screen). Static copy that
@@ -16,6 +35,8 @@ export default function PrivacySettingsScreen() {
   const { t } = useTranslation();
   const { optedOut, setOptedOut } = useAnalyticsOptOut();
   const router = useRouter();
+  const scheme = useColorScheme();
+  const iconColor = scheme === 'dark' ? '#ffffff' : '#171717';
 
   return (
     <SettingsContentScreen>
@@ -51,18 +72,24 @@ export default function PrivacySettingsScreen() {
           onPress={() => router.push('/settings/legal/privacy-policy')}
           accessibilityRole="button"
           className="flex-row items-center justify-between active:opacity-60">
-          <Text className="text-lg text-neutral-900 dark:text-white">
-            {t('privacyPolicyPage.title')}
-          </Text>
+          <View className="flex-row items-center gap-3">
+            <PaperIcon color={iconColor} />
+            <Text className="text-lg text-neutral-900 dark:text-white">
+              {t('privacyPolicyPage.title')}
+            </Text>
+          </View>
           <Text className="text-xl text-neutral-400">›</Text>
         </Pressable>
         <Pressable
           onPress={() => router.push('/settings/legal/terms-of-use')}
           accessibilityRole="button"
           className="flex-row items-center justify-between border-t border-neutral-100 pt-3 active:opacity-60 dark:border-neutral-800">
-          <Text className="text-lg text-neutral-900 dark:text-white">
-            {t('termsOfUsePage.title')}
-          </Text>
+          <View className="flex-row items-center gap-3">
+            <PaperIcon color={iconColor} />
+            <Text className="text-lg text-neutral-900 dark:text-white">
+              {t('termsOfUsePage.title')}
+            </Text>
+          </View>
           <Text className="text-xl text-neutral-400">›</Text>
         </Pressable>
       </InfoCard>
