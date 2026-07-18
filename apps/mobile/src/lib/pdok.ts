@@ -17,6 +17,14 @@ export interface GeocodeResult {
   type: string;
 }
 
+/** A WGS84 geographic window (min/max lng+lat) to scope a {@link suggest} query. */
+export interface BoundingBox {
+  minLng: number;
+  minLat: number;
+  maxLng: number;
+  maxLat: number;
+}
+
 /**
  * An autocomplete suggestion. Carries the record's centroid (when PDOK returns
  * one) purely so callers can rank suggestions by distance; the authoritative
@@ -101,21 +109,36 @@ export async function geocode(query: string, signal?: AbortSignal): Promise<Geoc
  * each record's centroid (`centroide_ll`) so callers can rank by distance, but
  * still call {@link lookup} with a suggestion's `id` once the user picks one to
  * get its authoritative coordinate. Returns `[]` for a blank query.
+ *
+ * Pass a {@link BoundingBox} to restrict results to a geographic window (a Solr
+ * `centroide_ll` range filter). PDOK relevance-orders by text score and breaks
+ * the (very common) score ties alphabetically by city, so a common street name
+ * — "Oranjestraat" is in 150+ towns — buries the nearby instance far past the
+ * row cap. A box scopes the query to the map's vicinity, and more rows are
+ * fetched so the whole regional set comes back for the caller to rank by distance.
  */
 export async function suggest(
   query: string,
   signal?: AbortSignal,
   /** Optional Solr `fq` to restrict result types, e.g. `type:(buurt OR wijk)`. */
   typeFilter?: string,
+  /** Optional geographic window; restricts results to records inside it. */
+  bbox?: BoundingBox,
 ): Promise<GeocodeSuggestion[]> {
   const q = query.trim();
   if (!q) return [];
 
-  // Fetch a few extra rows since some are dropped below, so the caller still
-  // has enough to fill its per-section cap. `bron` distinguishes real streets
-  // from motorway links (see isMotorwayLink).
-  const fq = typeFilter ? `&fq=${encodeURIComponent(typeFilter)}` : '';
-  const url = `${SUGGEST_ENDPOINT}?q=${encodeURIComponent(q)}&rows=10&fl=id,weergavenaam,type,centroide_ll,bron${fq}`;
+  // A boxed query returns only the regional set (bounded, usually a few dozen),
+  // so fetch enough rows to get all of it; an unboxed one keeps the small
+  // relevance-ordered cap. `bron` distinguishes real streets from motorway
+  // links (see isMotorwayLink); a couple extra rows cover those we drop below.
+  const clauses: string[] = [];
+  if (typeFilter) clauses.push(typeFilter);
+  // Solr LatLonPointSpatialField range: [minLat,minLng TO maxLat,maxLng].
+  if (bbox) clauses.push(`centroide_ll:[${bbox.minLat},${bbox.minLng} TO ${bbox.maxLat},${bbox.maxLng}]`);
+  const fq = clauses.map((clause) => `&fq=${encodeURIComponent(clause)}`).join('');
+  const rows = bbox ? 60 : 10;
+  const url = `${SUGGEST_ENDPOINT}?q=${encodeURIComponent(q)}&rows=${rows}&fl=id,weergavenaam,type,centroide_ll,bron${fq}`;
   const res = await fetch(url, { headers: { Accept: 'application/json' }, signal });
   if (!res.ok) throw new Error(`PDOK Locatieserver responded ${res.status}`);
 

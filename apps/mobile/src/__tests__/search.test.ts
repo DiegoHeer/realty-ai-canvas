@@ -78,6 +78,36 @@ describe('suggestAll', () => {
     expect(list.filter((s) => s.kind === 'residence')).toHaveLength(5);
   });
 
+  it('fetches a proximity-boxed query when an origin is given, surfacing a nearby match the unbounded query drops', async () => {
+    mockSearchResidences.mockResolvedValue([]);
+    // Unbounded query → only a far city (as PDOK's alphabetical tie-break would);
+    // the boxed query (4th arg present) → the nearby Delft street.
+    mockSuggest.mockImplementation(
+      (_q: string, _signal?: AbortSignal, fq?: string, bbox?: unknown) => {
+        if (fq?.includes('buurt')) return Promise.resolve([]);
+        return Promise.resolve(
+          bbox
+            ? [{ id: 'delft', label: 'Oranjestraat, Delft', type: 'weg', longitude: 4.36, latitude: 52.01 }]
+            : [{ id: 'far', label: 'Oranjestraat, Aalten', type: 'weg', longitude: 6.58, latitude: 51.92 }],
+        );
+      },
+    );
+    const list = await suggestAll('oranjestraat', ['places'], undefined, {
+      longitude: 4.36,
+      latitude: 52.01,
+    });
+    const ids = list.map((s) => s.id);
+    expect(ids).toContain('delft'); // the proximity box surfaced the local street…
+    expect(ids[0]).toBe('delft'); // …and distance ranking put it first.
+    // Exactly one boxed PDOK call (4th arg present) alongside the unbounded one.
+    expect(mockSuggest.mock.calls.filter((c) => c[3] !== undefined)).toHaveLength(1);
+  });
+
+  it('issues no proximity-boxed query without an origin (e.g. the explore tab)', async () => {
+    await suggestAll('x', ['places']);
+    expect(mockSuggest.mock.calls.every((c) => c[3] === undefined)).toBe(true);
+  });
+
   it('excludes buurt/wijk from Places only when the Buurten source is also on', async () => {
     await suggestAll('x', ['homes', 'buurten', 'places']);
     const placeFilters = mockSuggest.mock.calls.map((c) => c[2] as string | undefined);

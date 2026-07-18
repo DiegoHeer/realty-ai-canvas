@@ -6,6 +6,7 @@ import {
   lookup,
   lookupBuurt,
   suggest,
+  type BoundingBox,
   type GeocodeResult,
   type GeocodeSuggestion,
 } from './pdok';
@@ -137,7 +138,7 @@ export function splitSuggestionLabel(suggestion: SearchSuggestion): {
 }
 
 function toHomeSuggestions(listings: Listing[]): SearchSuggestion[] {
-  return listings.slice(0, HOME_LIMIT).map((listing) => ({
+  return listings.map((listing) => ({
     kind: 'residence',
     id: listing.id,
     label: homeLabel(listing),
@@ -146,7 +147,7 @@ function toHomeSuggestions(listings: Listing[]): SearchSuggestion[] {
 }
 
 function toBuurtSuggestions(docs: GeocodeSuggestion[]): SearchSuggestion[] {
-  return docs.slice(0, BUURT_LIMIT).map((doc) => ({
+  return docs.map((doc) => ({
     kind: 'buurt',
     id: doc.id,
     label: doc.label,
@@ -157,7 +158,7 @@ function toBuurtSuggestions(docs: GeocodeSuggestion[]): SearchSuggestion[] {
 }
 
 function toPlaceSuggestions(docs: GeocodeSuggestion[]): SearchSuggestion[] {
-  return docs.slice(0, PLACE_LIMIT).map((doc) => ({
+  return docs.map((doc) => ({
     kind: 'place',
     id: doc.id,
     label: doc.label,
@@ -165,6 +166,67 @@ function toPlaceSuggestions(docs: GeocodeSuggestion[]): SearchSuggestion[] {
     longitude: doc.longitude,
     latitude: doc.latitude,
   }));
+}
+
+/**
+ * Keep at most the per-kind limit ({@link HOME_LIMIT}/{@link BUURT_LIMIT}/
+ * {@link PLACE_LIMIT}), preserving order. Applied *after* ranking so the cap
+ * keeps the best (nearest/most-relevant) rows, not the first-fetched — which,
+ * for a PDOK source, is alphabetical-by-city and so drops the local match.
+ */
+function capPerKind(list: SearchSuggestion[]): SearchSuggestion[] {
+  const limits: Record<SearchSuggestion['kind'], number> = {
+    residence: HOME_LIMIT,
+    buurt: BUURT_LIMIT,
+    place: PLACE_LIMIT,
+  };
+  const kept: Record<string, number> = { residence: 0, buurt: 0, place: 0 };
+  return list.filter((suggestion) => (kept[suggestion.kind] += 1) <= limits[suggestion.kind]);
+}
+
+// Half-size (degrees latitude) of the proximity box the map's search uses to
+// bias PDOK suggestions toward the viewport. ~22 km — a metropolitan radius:
+// wide enough to include the surrounding towns, tight enough that even a
+// name in every village ("Kerkstraat") comes back as a regional few-dozen the
+// distance ranker can order, rather than an alphabetical nationwide slice.
+const NEARBY_RADIUS_DEG = 0.2;
+
+/** A {@link BoundingBox} of ~{@link NEARBY_RADIUS_DEG} around an origin. */
+function bboxAround(origin: Origin): BoundingBox {
+  const dLat = NEARBY_RADIUS_DEG;
+  // Widen the longitude span so the box stays roughly square in kilometres at
+  // this latitude (a degree of longitude shrinks toward the poles). The clamp
+  // guards the degenerate near-pole case; the Netherlands sits around 52°.
+  const dLng = NEARBY_RADIUS_DEG / Math.max(0.2, Math.cos((origin.latitude * Math.PI) / 180));
+  return {
+    minLng: origin.longitude - dLng,
+    minLat: origin.latitude - dLat,
+    maxLng: origin.longitude + dLng,
+    maxLat: origin.latitude + dLat,
+  };
+}
+
+/**
+ * Fetch a PDOK source, merging an unbounded relevance query with a
+ * proximity-boxed one when an {@link Origin} is known. The box guarantees the
+ * nearby instances of a common name are in the candidate set (the unbounded
+ * query alone orders ties alphabetically by city and truncates long before the
+ * local one); the unbounded query still surfaces far or exact-string matches.
+ * Deduped by PDOK id — the caller distance-ranks the merged set.
+ */
+async function suggestPdok(
+  query: string,
+  signal: AbortSignal | undefined,
+  typeFilter: string | undefined,
+  origin: Origin | undefined,
+): Promise<GeocodeSuggestion[]> {
+  const batches = await Promise.all([
+    suggest(query, signal, typeFilter),
+    ...(origin ? [suggest(query, signal, typeFilter, bboxAround(origin))] : []),
+  ]);
+  const byId = new Map<string, GeocodeSuggestion>();
+  for (const batch of batches) for (const doc of batch) if (!byId.has(doc.id)) byId.set(doc.id, doc);
+  return [...byId.values()];
 }
 
 /** A suggestion's centre coordinate, when known — a home's location or a PDOK centroid. */
@@ -325,13 +387,16 @@ function rankSuggestions(
 /**
  * Fetch suggestions from every requested source in parallel and return them as a
  * single list: the same city coming back as both a gemeente and a woonplaats is
- * collapsed (see {@link dedupeCities}), then the rest is ranked by a 50/50 blend
- * of text relevance to `query` and distance from `origin` (see
- * {@link rankSuggestions}) when an origin is given. Sources fail independently —
- * a slow or erroring source contributes nothing rather than sinking the others —
- * matching the bar's "show what we have" behavior. Merge order before ranking is
- * homes, buurten, then places, which also stands in as the relevance order when
- * no origin is supplied.
+ * collapsed (see {@link dedupeCities}), the rest is ranked by a 50/50 blend of
+ * text relevance to `query` and distance from `origin` (see
+ * {@link rankSuggestions}) when an origin is given, then capped per kind (see
+ * {@link capPerKind}). Sources fail independently — a slow or erroring source
+ * contributes nothing rather than sinking the others — matching the bar's "show
+ * what we have" behavior. When an origin is given each PDOK source is also
+ * fetched within a proximity box (see {@link suggestPdok}) so the nearby instance
+ * of a common name isn't lost to PDOK's alphabetical tie-break. Merge order
+ * before ranking is homes, buurten, then places, which also stands in as the
+ * relevance order when no origin is supplied.
  */
 export async function suggestAll(
   query: string,
@@ -349,14 +414,15 @@ export async function suggestAll(
   const [homes, buurten, places] = await Promise.all([
     want('homes') ? searchResidences(query, signal).then(toHomeSuggestions).catch(onError) : none,
     want('buurten')
-      ? suggest(query, signal, BUURT_TYPES_FQ).then(toBuurtSuggestions).catch(onError)
+      ? suggestPdok(query, signal, BUURT_TYPES_FQ, origin).then(toBuurtSuggestions).catch(onError)
       : none,
     want('places')
-      ? suggest(query, signal, placesFilter).then(toPlaceSuggestions).catch(onError)
+      ? suggestPdok(query, signal, placesFilter, origin).then(toPlaceSuggestions).catch(onError)
       : none,
   ]);
 
-  return rankSuggestions(dedupeCities([...homes, ...buurten, ...places]), query, origin);
+  const ranked = rankSuggestions(dedupeCities([...homes, ...buurten, ...places]), query, origin);
+  return capPerKind(ranked);
 }
 
 /**

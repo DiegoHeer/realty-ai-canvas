@@ -48,3 +48,30 @@ describe('pdok motorway-link (afrit) filtering', () => {
     expect((await suggest('delft')).map((s) => s.id)).toEqual(['city', 'street']);
   });
 });
+
+describe('pdok bbox proximity filter', () => {
+  it('adds a centroide_ll range fq and fetches more rows when a bounding box is given', async () => {
+    mockDocs([]);
+    await suggest('x', undefined, 'type:weg', {
+      minLng: 4.1,
+      minLat: 51.9,
+      maxLng: 4.6,
+      maxLat: 52.1,
+    });
+    const url = decodeURIComponent((global.fetch as jest.Mock).mock.calls[0][0] as string);
+    // Solr LatLon range is lat-first: [minLat,minLng TO maxLat,maxLng].
+    expect(url).toContain('centroide_ll:[51.9,4.1 TO 52.1,4.6]');
+    expect(url).toContain('type:weg');
+    expect(url).toContain('rows=60');
+  });
+
+  it('omits the bbox fq and uses the base row count without a box', async () => {
+    mockDocs([]);
+    await suggest('x', undefined, 'type:weg');
+    const url = decodeURIComponent((global.fetch as jest.Mock).mock.calls[0][0] as string);
+    // `centroide_ll` still appears in the field list (`fl`); only the range
+    // *filter* must be absent.
+    expect(url).not.toContain('centroide_ll:[');
+    expect(url).toContain('rows=10');
+  });
+});
