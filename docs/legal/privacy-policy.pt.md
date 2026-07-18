@@ -64,6 +64,7 @@ A aplicação Huismus não utiliza cookies de rastreio. As nossas estatísticas 
 
 - **Fornecedor de alojamento:** os nossos servidores e base de dados funcionam junto de um fornecedor de alojamento que atua exclusivamente como subcontratante e não utiliza os dados para fins próprios.
 - **Google:** se iniciar sessão com o Google, o Google processa os dados de início de sessão necessários para confirmar a sua identidade, de acordo com a política de privacidade própria do Google.
+- **Apple:** se iniciar sessão com a Apple, a Apple processa os dados de início de sessão necessários para confirmar a sua identidade, de acordo com a política de privacidade própria da Apple.
 - **As nossas estatísticas anónimas** são processadas em infraestrutura que gerimos nós próprios — não são partilhadas com terceiros de publicidade ou rastreio.
 
 Não trabalhamos com redes de publicidade, corretores de dados ou pixels de rastreio de terceiros.

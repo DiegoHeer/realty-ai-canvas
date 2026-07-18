@@ -440,7 +440,7 @@
       },
       "sharing": {
         "title": "Com quem partilhamos dados",
-        "body": "• Fornecedor de alojamento: os nossos servidores e base de dados funcionam junto de um fornecedor de alojamento que atua exclusivamente como subcontratante e não utiliza os dados para fins próprios.\n• Google: se iniciar sessão com o Google, o Google processa os dados de início de sessão necessários para confirmar a sua identidade, de acordo com a política de privacidade própria do Google.\n• As nossas estatísticas anónimas são processadas em infraestrutura que gerimos nós próprios — não são partilhadas com terceiros de publicidade ou rastreio.\nNão trabalhamos com redes de publicidade, corretores de dados ou pixels de rastreio de terceiros."
+        "body": "• Fornecedor de alojamento: os nossos servidores e base de dados funcionam junto de um fornecedor de alojamento que atua exclusivamente como subcontratante e não utiliza os dados para fins próprios.\n• Google: se iniciar sessão com o Google, o Google processa os dados de início de sessão necessários para confirmar a sua identidade, de acordo com a política de privacidade própria do Google.\n• Apple: se iniciar sessão com a Apple, a Apple processa os dados de início de sessão necessários para confirmar a sua identidade, de acordo com a política de privacidade própria da Apple.\n• As nossas estatísticas anónimas são processadas em infraestrutura que gerimos nós próprios — não são partilhadas com terceiros de publicidade ou rastreio.\nNão trabalhamos com redes de publicidade, corretores de dados ou pixels de rastreio de terceiros."
       },
       "transfers": {
         "title": "Transferências para fora do EEE",

@@ -64,6 +64,7 @@ The Huismus app doesn't use tracking cookies. Our usage analytics are cookie-fre
 
 - **Hosting provider:** our servers and database run with a hosting provider that acts solely as a processor and doesn't use data for its own purposes.
 - **Google:** if you sign in with Google, Google processes the sign-in data needed to confirm your identity, under Google's own privacy policy.
+- **Apple:** if you sign in with Apple, Apple processes the sign-in data needed to confirm your identity, under Apple's own privacy policy.
 - **Our anonymous analytics** run on infrastructure we manage ourselves — not shared with an external advertising or tracking party.
 
 We don't work with ad networks, data brokers, or third-party tracking pixels.

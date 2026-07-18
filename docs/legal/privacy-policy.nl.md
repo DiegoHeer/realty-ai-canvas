@@ -64,6 +64,7 @@ De Huismus-app gebruikt geen trackingcookies. Onze gebruiksstatistieken zijn coo
 
 - **Hostingpartij:** onze servers en database draaien bij een hostingprovider die uitsluitend als verwerker optreedt en gegevens niet voor eigen doeleinden gebruikt.
 - **Google:** als je inlogt met Google, verwerkt Google de aanmeldgegevens die nodig zijn om jouw identiteit te bevestigen, volgens Googles eigen privacybeleid.
+- **Apple:** als je inlogt met Apple, verwerkt Apple de aanmeldgegevens die nodig zijn om jouw identiteit te bevestigen, volgens Apples eigen privacybeleid.
 - **Onze anonieme statistieken** worden verwerkt op infrastructuur die wijzelf beheren — niet gedeeld met een externe advertentie- of trackingpartij.
 
 We werken niet met advertentienetwerken, data-brokers of trackingpixels van derden.

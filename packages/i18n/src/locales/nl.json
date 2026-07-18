@@ -440,7 +440,7 @@
       },
       "sharing": {
         "title": "Met wie we gegevens delen",
-        "body": "• Hostingpartij: onze servers en database draaien bij een hostingprovider die uitsluitend als verwerker optreedt en gegevens niet voor eigen doeleinden gebruikt.\n• Google: als je inlogt met Google, verwerkt Google de aanmeldgegevens die nodig zijn om jouw identiteit te bevestigen, volgens Googles eigen privacybeleid.\n• Onze anonieme statistieken worden verwerkt op infrastructuur die wijzelf beheren — niet gedeeld met een externe advertentie- of trackingpartij.\nWe werken niet met advertentienetwerken, data-brokers of trackingpixels van derden."
+        "body": "• Hostingpartij: onze servers en database draaien bij een hostingprovider die uitsluitend als verwerker optreedt en gegevens niet voor eigen doeleinden gebruikt.\n• Google: als je inlogt met Google, verwerkt Google de aanmeldgegevens die nodig zijn om jouw identiteit te bevestigen, volgens Googles eigen privacybeleid.\n• Apple: als je inlogt met Apple, verwerkt Apple de aanmeldgegevens die nodig zijn om jouw identiteit te bevestigen, volgens Apples eigen privacybeleid.\n• Onze anonieme statistieken worden verwerkt op infrastructuur die wijzelf beheren — niet gedeeld met een externe advertentie- of trackingpartij.\nWe werken niet met advertentienetwerken, data-brokers of trackingpixels van derden."
       },
       "transfers": {
         "title": "Doorgifte buiten de EER",
