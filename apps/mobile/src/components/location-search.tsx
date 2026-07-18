@@ -380,7 +380,8 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
             onPress={handleClear}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel={t('search.clear')}>
+            accessibilityLabel={t('search.clear')}
+            className="mr-4">
             <Text className="ml-2 text-lg text-neutral-400">✕</Text>
           </Pressable>
         ) : null}

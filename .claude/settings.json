@@ -1,0 +1,8 @@
+{
+  "includeCoAuthoredBy": false,
+  "permissions" : {
+    "deny" : [
+      "Skill(artifact-design)"
+    ]
+  }
+}
