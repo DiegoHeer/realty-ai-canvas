@@ -28,7 +28,7 @@ shape — see `listingWebUrl` below.
 
 ## What shipped
 
-### Backend (`realty-alerts`, uncommitted — pending your review)
+### Backend (`realty-alerts`, merged to `main` and live on staging)
 
 - `Residence.slug` — a computed `@property` (`services/api/scraping/models.py`),
   not a DB column: `slugify(f"{street} {house_number}{house_letter}{house_number_suffix}")`
@@ -107,9 +107,11 @@ the app itself doesn't validate it before generating a link.
 not OTA-updatable. Nothing will actually open the app from a real
 `huismusapp.com` link until a new build ships via EAS with this `app.json`.
 
-### 3. Backend deploy
+### 3. ~~Backend deploy~~ (done)
 
-The `slug` field only exists in the local backend checkout described above.
-Until it's deployed, `listingWebUrl` keeps working (falls back to repeating
-the id) but every shared link looks like `.../listing/11292/11292` instead of
-a readable slug.
+The `slug` field is deployed — confirmed live on staging (`api-staging.realty-ai.nl`),
+returning `slug: string | null` on both `ResidenceOut` and `ResidenceSummaryOut`
+per the OpenAPI schema, matching what `packages/data/src/residences.ts` expects.
+`listingWebUrl` still falls back to repeating the id for the (rare) residence
+with no street to derive a slug from — e.g. `.../listing/11292/11292` — rather
+than breaking the URL shape.
