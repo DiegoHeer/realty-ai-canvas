@@ -408,7 +408,7 @@
       },
       "accountData": {
         "title": "Dados da conta",
-        "body": "Se iniciar sessão com o Google ou criar uma conta com um e-mail, recebemos e guardamos o seu e-mail e (se disponível através do Google) o seu nome. Isto é necessário para que a sua conta funcione e para o reconhecermos na próxima visita. Ao iniciar sessão com e-mail, a sua palavra-passe é guardada de forma encriptada; não conseguimos lê-la em texto simples.\n\nA sua sessão é protegida por um token de acesso temporário (JWT). Em telemóveis e tablets, este token é guardado no porta-chaves seguro do sistema operativo; na versão web, é guardado no armazenamento local do seu navegador, já que um navegador não tem porta-chaves."
+        "body": "Se iniciar sessão com o Google ou criar uma conta com um e-mail, recebemos e guardamos o seu e-mail e (se disponível através do Google) o seu nome. Isto é necessário para que a sua conta funcione e para o reconhecermos na próxima visita. Ao iniciar sessão com e-mail, a sua palavra-passe é guardada de forma encriptada; não conseguimos lê-la em texto simples.\n\nQuando tem sessão iniciada, a sua conta também contém os dados que sincroniza a partir do seu dispositivo — os seus favoritos, imóveis vistos recentemente e preferências de pesquisa e de notificações — para que fiquem disponíveis em todos os seus dispositivos (ver secção 2.2). Usamo-los apenas para fornecer as funcionalidades que utiliza, não para criar um perfil sobre si.\n\nA sua sessão é protegida por um token de acesso temporário (JWT). Em telemóveis e tablets, este token é guardado no porta-chaves seguro do sistema operativo; na versão web, é guardado no armazenamento local do seu navegador, já que um navegador não tem porta-chaves."
       },
       "deviceOnlyData": {
         "title": "Dados no seu dispositivo e sincronização na cloud ao iniciar sessão",
@@ -448,7 +448,7 @@
       },
       "retention": {
         "title": "Prazos de conservação",
-        "body": "• Dados da conta — Enquanto a conta existir; eliminados após a eliminação da conta\n• Token de sessão — Até terminar sessão ou o token expirar\n• Estatísticas de utilização anónimas — Agregadas, não rastreáveis até um indivíduo — não se aplica prazo de conservação\n• Mensagem de feedback — Enquanto necessário para tratar o seu relato, depois eliminada\n• Dados guardados localmente no dispositivo — Até desinstalar a aplicação ou apagar os dados"
+        "body": "• Dados da conta — Enquanto a conta existir; eliminados após a eliminação da conta\n• Favoritos, imóveis vistos recentemente e preferências sincronizadas — Enquanto a conta existir (imóveis vistos recentemente até 90 dias); eliminados quando elimina a conta\n• Token de sessão — Até terminar sessão ou o token expirar\n• Estatísticas de utilização anónimas — Agregadas, não rastreáveis até um indivíduo — não se aplica prazo de conservação\n• Mensagem de feedback — Enquanto necessário para tratar o seu relato, depois eliminada\n• Dados guardados localmente no dispositivo — Até desinstalar a aplicação ou apagar os dados"
       },
       "rights": {
         "title": "Os seus direitos",

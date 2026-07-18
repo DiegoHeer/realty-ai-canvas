@@ -18,6 +18,8 @@ Huismus (“we”, “us”) is an app and website for discovering homes for sal
 ### 2.1 Account data
 If you sign in with Google or create an account with an email address, we receive and store your **email address** and (if available via Google) your **name**. This is needed to make your account work and to recognize you on your next visit. When signing in with an email address, your password is stored encrypted; we cannot read it in plain text.
 
+When you're signed in, your account also holds the data you sync from your device — your favorites, recently viewed listings, and search and notification preferences — so they're available across your devices (see section 2.2). We use these only to provide the features you use, not to build a profile of you.
+
 Your session is secured with a temporary access token (JWT). On phones and tablets this token is kept in the operating system's secure keychain; on the web version it's kept in your browser's local storage, since a browser has no keychain.
 
 ### 2.2 Data on your device, and cloud sync when you sign in
@@ -78,6 +80,7 @@ Wherever possible, we process and store data within the European Economic Area (
 | Data | Retention period |
 |---|---|
 | Account data | For as long as your account exists; deleted after account deletion |
+| Favorites, recently viewed listings & synced preferences | While your account exists — recently viewed listings for up to 90 days; deleted when you delete your account |
 | Session token | Until you sign out or the token expires |
 | Anonymous usage analytics | Aggregated, not traceable to an individual — no retention period applies |
 | Feedback message | As long as needed to handle your report, then deleted |

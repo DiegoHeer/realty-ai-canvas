@@ -18,6 +18,8 @@ Huismus (“wij”, “we”, “ons”) is een app en website waarmee je koopwo
 ### 2.1 Accountgegevens
 Als je inlogt met Google of een account aanmaakt met e-mailadres, ontvangen en bewaren we je **e-mailadres** en (indien beschikbaar via Google) je **naam**. Dit is nodig om je account te laten functioneren en om je bij een volgend bezoek te herkennen. Bij inloggen met e-mailadres wordt je wachtwoord versleuteld opgeslagen; wij kunnen het niet in leesbare vorm inzien.
 
+Als je bent ingelogd, bevat je account ook de gegevens die je vanaf je toestel synchroniseert — je favorieten, recent bekeken woningen en zoek- en meldingsvoorkeuren — zodat ze op al je apparaten beschikbaar zijn (zie sectie 2.2). We gebruiken deze alleen om de functies te bieden die je gebruikt, niet om een profiel van je op te bouwen.
+
 Je sessie wordt beveiligd met een tijdelijk toegangstoken (JWT). Op telefoons en tablets staat dit token in de beveiligde sleutelhanger van het besturingssysteem; in de webversie staat het in de lokale opslag van je browser, omdat een browser geen sleutelhanger heeft.
 
 ### 2.2 Gegevens op je toestel, en cloudsynchronisatie als je inlogt
@@ -78,6 +80,7 @@ Waar mogelijk verwerken en bewaren we gegevens binnen de Europese Economische Ru
 | Gegevens | Bewaartermijn |
 |---|---|
 | Accountgegevens | Zolang je account bestaat; verwijderd na accountverwijdering |
+| Favorieten, recent bekeken woningen en gesynchroniseerde voorkeuren | Zolang je account bestaat — recent bekeken woningen tot 90 dagen; verwijderd wanneer je je account verwijdert |
 | Sessietoken | Tot je uitlogt of het token verloopt |
 | Anonieme gebruiksstatistieken | Geaggregeerd, niet herleidbaar tot een individu — geen bewaartermijn van toepassing |
 | Feedbackbericht | Zolang nodig om je melding te behandelen, daarna verwijderd |

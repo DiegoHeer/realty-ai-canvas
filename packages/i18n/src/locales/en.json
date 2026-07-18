@@ -408,7 +408,7 @@
       },
       "accountData": {
         "title": "Account data",
-        "body": "If you sign in with Google or create an account with an email address, we receive and store your email address and (if available via Google) your name. This is needed to make your account work and to recognize you on your next visit. When signing in with an email address, your password is stored encrypted; we cannot read it in plain text.\n\nYour session is secured with a temporary access token (JWT). On phones and tablets this token is kept in the operating system's secure keychain; on the web version it's kept in your browser's local storage, since a browser has no keychain."
+        "body": "If you sign in with Google or create an account with an email address, we receive and store your email address and (if available via Google) your name. This is needed to make your account work and to recognize you on your next visit. When signing in with an email address, your password is stored encrypted; we cannot read it in plain text.\n\nWhen you're signed in, your account also holds the data you sync from your device — your favorites, recently viewed listings, and search and notification preferences — so they're available across your devices (see section 2.2). We use these only to provide the features you use, not to build a profile of you.\n\nYour session is secured with a temporary access token (JWT). On phones and tablets this token is kept in the operating system's secure keychain; on the web version it's kept in your browser's local storage, since a browser has no keychain."
       },
       "deviceOnlyData": {
         "title": "Data on your device, and cloud sync when you sign in",
@@ -448,7 +448,7 @@
       },
       "retention": {
         "title": "Retention periods",
-        "body": "• Account data — For as long as your account exists; deleted after account deletion\n• Session token — Until you sign out or the token expires\n• Anonymous usage analytics — Aggregated, not traceable to an individual — no retention period applies\n• Feedback message — As long as needed to handle your report, then deleted\n• Data stored locally on your device — Until you uninstall the app or clear the data yourself"
+        "body": "• Account data — For as long as your account exists; deleted after account deletion\n• Favorites, recently viewed listings & synced preferences — While your account exists (recently viewed listings for up to 90 days); deleted when you delete your account\n• Session token — Until you sign out or the token expires\n• Anonymous usage analytics — Aggregated, not traceable to an individual — no retention period applies\n• Feedback message — As long as needed to handle your report, then deleted\n• Data stored locally on your device — Until you uninstall the app or clear the data yourself"
       },
       "rights": {
         "title": "Your rights",
