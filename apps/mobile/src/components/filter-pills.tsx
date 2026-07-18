@@ -285,7 +285,13 @@ export function FilterPills({ selected, onToggle, activeOverlay, onToggleOverlay
       horizontal
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
+      // The pills carry a drop shadow that extends below/above their box, which a
+      // horizontal ScrollView clips against its tight content-sized frame. Pad the
+      // content vertically to give the shadow room, then pull the frame back with a
+      // matching negative margin so the surrounding layout is unaffected. Left/right
+      // padding stays minimal so the row lines up with the search bar above it.
+      style={{ marginVertical: -8 }}
+      contentContainerStyle={{ gap: 8, paddingVertical: 8, paddingHorizontal: 2 }}>
       {FILTERS.map((key) => {
         const Icon = FILTER_ICONS[key];
         const active = selected?.has(key) ?? false;

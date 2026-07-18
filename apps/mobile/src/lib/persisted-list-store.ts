@@ -29,6 +29,15 @@ export function createPersistedListStore<T>(opts: {
   limit: number;
   /** Stable identity used for dedupe; most-recent add wins and moves to front. */
   idOf: (item: T) => string;
+  /**
+   * Guards against stale entries from an earlier, incompatible schema (the item
+   * shape can change across app versions, but AsyncStorage/localStorage persists
+   * indefinitely). Entries that fail this check are dropped on hydration instead
+   * of flowing into `idOf`/consumers, where a shape mismatch would otherwise
+   * surface as `undefined` fields (and duplicate React keys). Defaults to
+   * accepting everything.
+   */
+  isValid?: (item: T) => boolean;
 }): PersistedListStore<T> {
   let items: T[] = [];
   const listeners = new Set<() => void>();
@@ -41,7 +50,7 @@ export function createPersistedListStore<T>(opts: {
   // re-slice in case `limit` shrank since the data was written.
   void loadJSON<T[]>(opts.key).then((stored) => {
     if (stored && stored.length) {
-      items = stored.slice(0, opts.limit);
+      items = (opts.isValid ? stored.filter(opts.isValid) : stored).slice(0, opts.limit);
       emit();
     }
   });

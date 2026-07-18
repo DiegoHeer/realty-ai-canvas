@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 
-import { trackOutboundLink } from '@/lib/analytics';
+import { trackOutboundLink, withUtmParams } from '@/lib/analytics';
 import { toggleLike, useIsLiked } from '@/lib/likes';
 import { recordRecentView } from '@/lib/recent-views';
 import { Brand } from '@/constants/theme';
@@ -210,7 +210,7 @@ export default function ListingDetailScreen() {
                   accessibilityRole="link"
                   onPress={() => {
                     trackOutboundLink(source.url, source.name, i + 1);
-                    void openBrowserAsync(source.url);
+                    void openBrowserAsync(withUtmParams(source.url));
                   }}
                   className="flex-1 items-center rounded-full bg-blue-600 py-3 active:opacity-80">
                   <Text className="text-base font-semibold text-white text-center">
