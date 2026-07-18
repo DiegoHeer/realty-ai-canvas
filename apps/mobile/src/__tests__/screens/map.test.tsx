@@ -151,3 +151,41 @@ describe('MapScreen snapshot pills', () => {
     });
   });
 });
+
+// The Sold pill takes the opposite path from the snapshot pills: rather than
+// swapping the data source to local snapshots, it narrows the *server* query to
+// sold residences. Spying on fetch lets us assert the request carries the
+// status filter (the API's `status=sold`, mapped from the app's `sold` status).
+describe('MapScreen sold pill', () => {
+  const realFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
+  });
+
+  afterEach(() => {
+    global.fetch = realFetch;
+  });
+
+  // URLs of the residence-list requests fetch has seen so far.
+  const residenceUrls = () =>
+    (global.fetch as jest.Mock).mock.calls
+      .map((c) => String(c[0]))
+      .filter((u) => u.includes('/v1/residences'));
+
+  it('requests only sold residences from the API while the Sold pill is active', async () => {
+    const { getByText } = await renderScreen();
+
+    // The map mounts with the default, unfiltered query — no status constraint.
+    await waitFor(() => expect(residenceUrls().length).toBeGreaterThan(0));
+    expect(residenceUrls().some((u) => u.includes('status=sold'))).toBe(false);
+
+    fireEvent.press(getByText('Sold'));
+
+    // Toggling Sold re-queries the API with status=sold, so the markers become
+    // the sold homes the backend returns.
+    await waitFor(() => {
+      expect(residenceUrls().some((u) => u.includes('status=sold'))).toBe(true);
+    });
+  });
+});

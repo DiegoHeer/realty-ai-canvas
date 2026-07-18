@@ -266,8 +266,9 @@ interface FilterPillsProps {
  * group are listing quick-filters: tapping one toggles its selection (a filled
  * pill = active); the number selected feeds the count badge on the search
  * bar's filters button. Favorites and Recent source the map from the locally
- * saved likes / recent-views snapshots (the map screen owns that logic); the
- * remaining pills only track "configured" state for now and don't yet filter
+ * saved likes / recent-views snapshots, and Sold narrows the server query to
+ * sold residences (the map screen owns all three); the remaining pills
+ * (Popular, New) only track "configured" state for now and don't yet filter
  * the listings. After a divider follow the map-layer pills
  * (noise, air quality, …): mutually exclusive toggles, the active one filled
  * with the brand blue to read as a map state rather than a listing filter.
@@ -284,7 +285,13 @@ export function FilterPills({ selected, onToggle, activeOverlay, onToggleOverlay
       horizontal
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
+      // The pills carry a drop shadow that extends below/above their box, which a
+      // horizontal ScrollView clips against its tight content-sized frame. Pad the
+      // content vertically to give the shadow room, then pull the frame back with a
+      // matching negative margin so the surrounding layout is unaffected. Left/right
+      // padding stays minimal so the row lines up with the search bar above it.
+      style={{ marginVertical: -8 }}
+      contentContainerStyle={{ gap: 8, paddingVertical: 8, paddingHorizontal: 2 }}>
       {FILTERS.map((key) => {
         const Icon = FILTER_ICONS[key];
         const active = selected?.has(key) ?? false;

@@ -1,8 +1,8 @@
 {
   "android": {
-    "package": "com.anonymous.huismus"
+    "package": "com.fastvibes.huismus"
   },
   "ios": {
-    "bundleIdentifier": "com.anonymous.huismus"
+    "bundleIdentifier": "com.fastvibes.huismus"
   }
 }

@@ -47,8 +47,8 @@ validation/error conventions of [`residences-search-api.md`](./backend/residence
 >    `GOOGLE_OAUTH_IOS_CLIENT_ID` (PR #220) when native ships.
 > 3. **Android (later):** register the reversed-client-id scheme
 >    (`com.googleusercontent.apps.<android-client>`) in `app.json` and rebuild; note the console
->    clients were registered under the old `com.anonymous.realtyaicanvas` id while the app is now
->    `com.anonymous.huismus` — re-check the Android client's package/SHA-1 before that milestone.
+>    clients were registered under an older placeholder id while the app is now
+>    `com.fastvibes.huismus` — re-check the Android client's package/SHA-1 before that milestone.
 > 4. **Static web export:** confirm `/auth/callback` is served by the production host / e2e
 >    static server (dev server routes it fine).
 >
@@ -283,7 +283,7 @@ failure strings **in all three locales** and map them in `authErrorKey` (`auth-u
 
 ## 11. Decisions to make now  *(they gate console setup)*
 
-- **Bundle / package id is the placeholder `com.anonymous.realtyaicanvas`** (`app.json`). Google
+- **Bundle / package id is `com.fastvibes.huismus`** (`app.json`). Google
   and Apple registration — and especially a future iOS app — want a real reverse-domain id;
   renaming the Android `package` later is disruptive. **Pin it before console setup.**
 - **Apple Developer membership** ($99/yr) is required even for the web/Android Apple flow. Confirm

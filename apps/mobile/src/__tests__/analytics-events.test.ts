@@ -1,4 +1,5 @@
 import {
+  emailVerifiedEvent,
   filtersAppliedEvent,
   hostOf,
   listingFavoritedEvent,
@@ -6,6 +7,7 @@ import {
   onboardingCompletedEvent,
   onboardingStepPath,
   outboundLinkEvent,
+  overlayEnabledEvent,
   searchEvent,
   signupEvent,
 } from '@/lib/analytics/events';
@@ -31,21 +33,39 @@ describe('event builders', () => {
     });
   });
 
-  it('signup/login carry the auth method and their own screen path', () => {
+  it('signup carries method, and email_verified only for email signups', () => {
+    // Google is pre-verified, so no email_verified prop.
     expect(signupEvent('google')).toEqual({
       name: 'Signup',
       opts: { path: '/auth/register', props: { method: 'google' } },
     });
+    // Email pending verification.
+    expect(signupEvent('email', false)).toEqual({
+      name: 'Signup',
+      opts: { path: '/auth/register', props: { method: 'email', email_verified: false } },
+    });
+    // Email active immediately.
+    expect(signupEvent('email', true).opts?.props).toEqual({ method: 'email', email_verified: true });
+  });
+
+  it('loginEvent carries the auth method and its screen path', () => {
     expect(loginEvent('email')).toEqual({
       name: 'Login',
       opts: { path: '/auth/login', props: { method: 'email' } },
     });
   });
 
-  it('onboardingCompletedEvent carries the skipped flag and a cities COUNT (never which cities)', () => {
-    expect(onboardingCompletedEvent({ skipped: false, citiesSelected: 3 })).toEqual({
+  it('emailVerifiedEvent is attributed to the verify screen', () => {
+    expect(emailVerifiedEvent()).toEqual({ name: 'Email Verified', opts: { path: '/auth/verify' } });
+  });
+
+  it('onboardingCompletedEvent carries skipped, a cities COUNT, and the furthest step slug', () => {
+    expect(onboardingCompletedEvent({ skipped: true, citiesSelected: 2, furthestStep: 3 })).toEqual({
       name: 'Onboarding Completed',
-      opts: { path: '/onboarding', props: { skipped: false, cities_selected: 3 } },
+      opts: {
+        path: '/onboarding',
+        props: { skipped: true, cities_selected: 2, last_step: 'cities' },
+      },
     });
   });
 
@@ -60,6 +80,13 @@ describe('event builders', () => {
     expect(filtersAppliedEvent(4)).toEqual({
       name: 'Filters Applied',
       opts: { path: '/settings/filters', props: { active_filter_count: 4 } },
+    });
+  });
+
+  it('overlayEnabledEvent carries the overlay id', () => {
+    expect(overlayEnabledEvent('wozValue')).toEqual({
+      name: 'Overlay Enabled',
+      opts: { props: { overlay: 'wozValue' } },
     });
   });
 
@@ -94,18 +121,23 @@ describe('privacy: event props stay feature identifiers / counts only', () => {
     'source_name',
     'position',
     'method',
+    'email_verified',
     'skipped',
     'cities_selected',
+    'last_step',
     'result_type',
     'active_filter_count',
+    'overlay',
   ]);
   const specs = [
     outboundLinkEvent('https://funda.nl/x', 'Funda', 1),
-    signupEvent('email'),
+    signupEvent('email', false),
     loginEvent('google'),
-    onboardingCompletedEvent({ skipped: true, citiesSelected: 0 }),
+    emailVerifiedEvent(),
+    onboardingCompletedEvent({ skipped: true, citiesSelected: 0, furthestStep: 1 }),
     searchEvent('buurt', 'recent'),
     filtersAppliedEvent(0),
+    overlayEnabledEvent('wozValue'),
     listingFavoritedEvent(),
   ];
 

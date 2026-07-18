@@ -15,6 +15,7 @@ import { BUILDINGS_3D_PITCH, DEFAULT_CENTER } from '@/components/map-shared';
 import { useEffectiveColorScheme } from '@/components/map-style';
 import { OverlayLegend } from '@/components/overlay-legend';
 import { Brand } from '@/constants/theme';
+import { trackOverlayEnabled } from '@/lib/analytics';
 import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat, rampFor, selectInhabitants, statDomain } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
@@ -40,10 +41,6 @@ const SEARCH_SOURCES = ['homes', 'buurten', 'places'] as const;
 
 export default function MapScreen() {
   const { filters } = useFilters();
-  // Filters (and sort) drive the query: the server returns only matching,
-  // geocoded homes (capped at the page size), so the map renders them directly.
-  const query = useMemo(() => filtersToQuery(filters), [filters]);
-  const { data: listings = [], isLoading } = useListings(query);
   const { data: cities = [] } = useCities(loadCities);
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ListingMapRef>(null);
@@ -73,6 +70,17 @@ export default function MapScreen() {
   const favoritesActive = activeFilters.has('favorites');
   const recentActive = activeFilters.has('recent');
   const snapshotsActive = favoritesActive || recentActive;
+  // The Sold pill takes a different path from the snapshot pills above: instead
+  // of swapping the data source, it narrows the *server* query to sold
+  // residences (status=sold), so the API returns only sold homes. Filters and
+  // sort otherwise drive the query — the server returns only matching, geocoded
+  // homes (capped at the page size), which the map renders directly.
+  const soldActive = activeFilters.has('sold');
+  const query = useMemo(() => {
+    const base = filtersToQuery(filters);
+    return soldActive ? { ...base, status: 'sold' as const } : base;
+  }, [filters, soldActive]);
+  const { data: listings = [], isLoading } = useListings(query);
   // A home picked from the search bar. Injected into `shownListings` (deduped) so
   // its marker + card appear even when it's outside the current query/snapshot set.
   const [searchedListing, setSearchedListing] = useState<Listing | null>(null);
@@ -94,9 +102,14 @@ export default function MapScreen() {
   // The active map overlay (noise, air quality, …) — one at a time: tapping an
   // overlay pill swaps to it, tapping the active one turns it off.
   const [overlayId, setOverlayId] = useState<OverlayId | null>(null);
-  const toggleOverlay = useCallback((id: OverlayId) => {
-    setOverlayId((prev) => (prev === id ? null : id));
-  }, []);
+  const toggleOverlay = useCallback(
+    (id: OverlayId) => {
+      const enabling = overlayId !== id;
+      setOverlayId(enabling ? id : null);
+      if (enabling) trackOverlayEnabled(id);
+    },
+    [overlayId],
+  );
   const overlay = overlayById(overlayId);
   // Viewport zoom as of the last camera settle — drives the legend's "zoom in"
   // hint for overlays that only render at building-level zooms.
