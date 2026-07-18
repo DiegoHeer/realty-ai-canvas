@@ -404,15 +404,15 @@
     "sections": {
       "shortVersion": {
         "title": "De korte versie",
-        "body": "• We bouwen geen profiel van je op en verkopen of verhuren je gegevens nooit aan derden.\n• Je zoekopdrachten, favorieten, recent bekeken woningen en filterinstellingen blijven op je toestel — die versturen we niet naar onze servers.\n• We meten alleen anonieme, cookieloze app-statistieken om te zien welke functies gebruikt worden. Je kunt dit uitzetten in Instellingen.\n• Als je een account aanmaakt, bewaren we alleen je e-mailadres en naam om dat account te laten werken."
+        "body": "• We bouwen geen profiel van je op en verkopen of verhuren je gegevens nooit aan derden.\n• Zonder account blijven je zoekopdrachten, favorieten, recent bekeken woningen en filters op je toestel. Als je inlogt, synchroniseren we ze met je account, zodat ze op al je apparaten hetzelfde zijn.\n• We meten alleen anonieme, cookieloze app-statistieken om te zien welke functies gebruikt worden. Je kunt dit uitzetten in Instellingen.\n• Als je een account aanmaakt, bewaren we je e-mailadres en naam om dat account te laten werken."
       },
       "accountData": {
         "title": "Accountgegevens",
         "body": "Als je inlogt met Google of een account aanmaakt met e-mailadres, ontvangen en bewaren we je e-mailadres en (indien beschikbaar via Google) je naam. Dit is nodig om je account te laten functioneren en om je bij een volgend bezoek te herkennen. Bij inloggen met e-mailadres wordt je wachtwoord versleuteld opgeslagen; wij kunnen het niet in leesbare vorm inzien.\n\nJe sessie wordt beveiligd met een tijdelijk toegangstoken (JWT). Op telefoons en tablets staat dit token in de beveiligde sleutelhanger van het besturingssysteem; in de webversie staat het in de lokale opslag van je browser, omdat een browser geen sleutelhanger heeft."
       },
       "deviceOnlyData": {
-        "title": "Gegevens die alleen op je toestel blijven",
-        "body": "De volgende gegevens worden lokaal op je toestel opgeslagen (niet naar onze servers verstuurd), tenzij je uitdrukkelijk kiest voor een functie die dat wel doet:\n• Favoriete woningen\n• Recent bekeken woningen\n• Zoekfilters en voorkeuren (bijvoorbeeld prijsklasse, aantal kamers, geselecteerde gemeenten)\n• Recente zoekopdrachten\n• Taal- en weergave-instellingen (licht/donker)\n• Of je de introductie-tour al hebt gezien\nAls we deze gegevens ooit aan een account koppelen zodat ze meeverhuizen naar een ander toestel, passen we deze verklaring aan voordat die functie actief wordt."
+        "title": "Gegevens op je toestel, en cloudsynchronisatie als je inlogt",
+        "body": "Zolang je de app zonder account gebruikt, blijven de volgende gegevens alleen op je toestel — we versturen ze niet naar onze servers:\n• Favoriete woningen\n• Recent bekeken woningen\n• Zoekfilters en voorkeuren (bijvoorbeeld prijsklasse, aantal kamers, geselecteerde gemeenten)\n• Recente zoekopdrachten\n• Taal- en weergave-instellingen (licht/donker)\n• Of je de introductie-tour al hebt gezien\nZodra je inlogt met een account, synchroniseren we je favorieten, recent bekeken woningen en zoekfilters en voorkeuren met de cloud (onze servers), gekoppeld aan je account. Zo blijven je voorkeuren op al je apparaten hetzelfde en reizen ze met je mee van het ene toestel naar het andere. Instellingen die per toestel blijven — de app-taal, weergave (licht/donker), recente zoekopdrachten en of je de introductie hebt gezien — worden niet gesynchroniseerd."
       },
       "analytics": {
         "title": "Anonieme gebruiksstatistieken",

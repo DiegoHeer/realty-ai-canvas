@@ -9,9 +9,9 @@ Huismus (“we”, “us”) is an app and website for discovering homes for sal
 ## 1. The short version
 
 - We don't build a profile of you, and we never sell or rent your data to third parties.
-- Your searches, favorites, recently viewed listings, and filter settings stay **on your device** — we don't send them to our servers.
+- Without an account, your searches, favorites, recently viewed listings, and filters stay **on your device**. When you sign in, we sync them to your account so they're the same on all your devices.
 - We only measure anonymous, cookie-free app usage to see which features get used. You can turn this off in Settings.
-- If you create an account, we only store your email address and name to make that account work.
+- If you create an account, we store your email address and name to make that account work.
 
 ## 2. What data we process
 
@@ -20,8 +20,8 @@ If you sign in with Google or create an account with an email address, we receiv
 
 Your session is secured with a temporary access token (JWT). On phones and tablets this token is kept in the operating system's secure keychain; on the web version it's kept in your browser's local storage, since a browser has no keychain.
 
-### 2.2 Data that stays on your device only
-The following data is **stored locally on your device** (not sent to our servers), unless you explicitly opt into a feature that does:
+### 2.2 Data on your device, and cloud sync when you sign in
+As long as you use the app **without an account**, the following data stays **only on your device** — we don't send it to our servers:
 
 - Favorited listings
 - Recently viewed listings
@@ -30,7 +30,7 @@ The following data is **stored locally on your device** (not sent to our servers
 - Language and appearance settings (light/dark)
 - Whether you've already seen the intro tour
 
-If we ever link this data to your account so it follows you to another device, we'll update this policy before that feature goes live.
+When you **sign in with an account**, we sync your favorites, recently viewed listings, and search filters and preferences to the cloud (our servers), linked to your account, so your preferences stay the same across every device you sign in on. This lets your preferences follow you from one device to another. Settings that remain specific to each device — app language, appearance (light/dark), recent searches, and whether you've seen the intro — are not synced.
 
 ### 2.3 Anonymous usage analytics
 We measure anonymized, cookie-free app usage (e.g. which screens get visited) via a self-hosted analytics service (Plausible). These measurements contain no name, email address, stored IP address, or other personally identifiable data, and are never used to track or profile you individually. You can turn this off entirely in **Settings → Privacy & security**.

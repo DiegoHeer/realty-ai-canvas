@@ -404,15 +404,15 @@
     "sections": {
       "shortVersion": {
         "title": "The short version",
-        "body": "• We don't build a profile of you, and we never sell or rent your data to third parties.\n• Your searches, favorites, recently viewed listings, and filter settings stay on your device — we don't send them to our servers.\n• We only measure anonymous, cookie-free app usage to see which features get used. You can turn this off in Settings.\n• If you create an account, we only store your email address and name to make that account work."
+        "body": "• We don't build a profile of you, and we never sell or rent your data to third parties.\n• Without an account, your searches, favorites, recently viewed listings, and filters stay on your device. When you sign in, we sync them to your account so they're the same on all your devices.\n• We only measure anonymous, cookie-free app usage to see which features get used. You can turn this off in Settings.\n• If you create an account, we store your email address and name to make that account work."
       },
       "accountData": {
         "title": "Account data",
         "body": "If you sign in with Google or create an account with an email address, we receive and store your email address and (if available via Google) your name. This is needed to make your account work and to recognize you on your next visit. When signing in with an email address, your password is stored encrypted; we cannot read it in plain text.\n\nYour session is secured with a temporary access token (JWT). On phones and tablets this token is kept in the operating system's secure keychain; on the web version it's kept in your browser's local storage, since a browser has no keychain."
       },
       "deviceOnlyData": {
-        "title": "Data that stays on your device only",
-        "body": "The following data is stored locally on your device (not sent to our servers), unless you explicitly opt into a feature that does:\n• Favorited listings\n• Recently viewed listings\n• Search filters and preferences (e.g. price range, number of rooms, selected cities)\n• Recent searches\n• Language and appearance settings (light/dark)\n• Whether you've already seen the intro tour\nIf we ever link this data to your account so it follows you to another device, we'll update this policy before that feature goes live."
+        "title": "Data on your device, and cloud sync when you sign in",
+        "body": "As long as you use the app without an account, the following data stays only on your device — we don't send it to our servers:\n• Favorited listings\n• Recently viewed listings\n• Search filters and preferences (e.g. price range, number of rooms, selected cities)\n• Recent searches\n• Language and appearance settings (light/dark)\n• Whether you've already seen the intro tour\nWhen you sign in with an account, we sync your favorites, recently viewed listings, and search filters and preferences to the cloud (our servers), linked to your account, so your preferences stay the same across every device you sign in on. This lets your preferences follow you from one device to another. Settings that remain specific to each device — app language, appearance (light/dark), recent searches, and whether you've seen the intro — are not synced."
       },
       "analytics": {
         "title": "Anonymous usage analytics",

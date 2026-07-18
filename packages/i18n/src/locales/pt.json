@@ -404,15 +404,15 @@
     "sections": {
       "shortVersion": {
         "title": "A versão resumida",
-        "body": "• Não criamos um perfil sobre si, e nunca vendemos nem alugamos os seus dados a terceiros.\n• As suas pesquisas, favoritos, imóveis vistos recentemente e definições de filtros permanecem no seu dispositivo — não os enviamos para os nossos servidores.\n• Apenas medimos a utilização anónima e sem cookies da aplicação, para perceber que funcionalidades são usadas. Pode desativar isto nas Definições.\n• Se criar uma conta, guardamos apenas o seu e-mail e nome para que essa conta funcione."
+        "body": "• Não criamos um perfil sobre si, e nunca vendemos nem alugamos os seus dados a terceiros.\n• Sem uma conta, as suas pesquisas, favoritos, imóveis vistos recentemente e filtros permanecem no seu dispositivo. Quando inicia sessão, sincronizamo-los com a sua conta, para que sejam iguais em todos os seus dispositivos.\n• Apenas medimos a utilização anónima e sem cookies da aplicação, para perceber que funcionalidades são usadas. Pode desativar isto nas Definições.\n• Se criar uma conta, guardamos o seu e-mail e nome para que essa conta funcione."
       },
       "accountData": {
         "title": "Dados da conta",
         "body": "Se iniciar sessão com o Google ou criar uma conta com um e-mail, recebemos e guardamos o seu e-mail e (se disponível através do Google) o seu nome. Isto é necessário para que a sua conta funcione e para o reconhecermos na próxima visita. Ao iniciar sessão com e-mail, a sua palavra-passe é guardada de forma encriptada; não conseguimos lê-la em texto simples.\n\nA sua sessão é protegida por um token de acesso temporário (JWT). Em telemóveis e tablets, este token é guardado no porta-chaves seguro do sistema operativo; na versão web, é guardado no armazenamento local do seu navegador, já que um navegador não tem porta-chaves."
       },
       "deviceOnlyData": {
-        "title": "Dados que ficam apenas no seu dispositivo",
-        "body": "Os seguintes dados são guardados localmente no seu dispositivo (não são enviados para os nossos servidores), a menos que opte explicitamente por uma funcionalidade que o faça:\n• Imóveis favoritos\n• Imóveis vistos recentemente\n• Filtros e preferências de pesquisa (por exemplo, faixa de preço, número de quartos, cidades selecionadas)\n• Pesquisas recentes\n• Definições de idioma e aparência (claro/escuro)\n• Se já viu o tour de introdução\nSe algum dia associarmos estes dados à sua conta para que o acompanhem noutro dispositivo, atualizaremos esta política antes de essa funcionalidade entrar em funcionamento."
+        "title": "Dados no seu dispositivo e sincronização na cloud ao iniciar sessão",
+        "body": "Enquanto usar a aplicação sem uma conta, os seguintes dados ficam apenas no seu dispositivo — não os enviamos para os nossos servidores:\n• Imóveis favoritos\n• Imóveis vistos recentemente\n• Filtros e preferências de pesquisa (por exemplo, faixa de preço, número de quartos, cidades selecionadas)\n• Pesquisas recentes\n• Definições de idioma e aparência (claro/escuro)\n• Se já viu o tour de introdução\nQuando inicia sessão com uma conta, sincronizamos os seus favoritos, imóveis vistos recentemente e filtros e preferências de pesquisa com a cloud (os nossos servidores), associados à sua conta. Assim, as suas preferências ficam iguais em todos os dispositivos e acompanham-no de um dispositivo para outro. As definições que permanecem específicas de cada dispositivo — o idioma da aplicação, a aparência (claro/escuro), as pesquisas recentes e se já viu a introdução — não são sincronizadas."
       },
       "analytics": {
         "title": "Estatísticas de utilização anónimas",

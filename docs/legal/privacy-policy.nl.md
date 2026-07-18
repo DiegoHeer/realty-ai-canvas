@@ -9,9 +9,9 @@ Huismus (“wij”, “we”, “ons”) is een app en website waarmee je koopwo
 ## 1. De korte versie
 
 - We bouwen geen profiel van je op en verkopen of verhuren je gegevens nooit aan derden.
-- Je zoekopdrachten, favorieten, recent bekeken woningen en filterinstellingen blijven **op je toestel** — die versturen we niet naar onze servers.
+- Zonder account blijven je zoekopdrachten, favorieten, recent bekeken woningen en filters **op je toestel**. Als je inlogt, synchroniseren we ze met je account, zodat ze op al je apparaten hetzelfde zijn.
 - We meten alleen anonieme, cookieloze app-statistieken om te zien welke functies gebruikt worden. Je kunt dit uitzetten in Instellingen.
-- Als je een account aanmaakt, bewaren we alleen je e-mailadres en naam om dat account te laten werken.
+- Als je een account aanmaakt, bewaren we je e-mailadres en naam om dat account te laten werken.
 
 ## 2. Welke gegevens we verwerken
 
@@ -20,8 +20,8 @@ Als je inlogt met Google of een account aanmaakt met e-mailadres, ontvangen en b
 
 Je sessie wordt beveiligd met een tijdelijk toegangstoken (JWT). Op telefoons en tablets staat dit token in de beveiligde sleutelhanger van het besturingssysteem; in de webversie staat het in de lokale opslag van je browser, omdat een browser geen sleutelhanger heeft.
 
-### 2.2 Gegevens die alleen op je toestel blijven
-De volgende gegevens worden **lokaal op je toestel opgeslagen** (niet naar onze servers verstuurd), tenzij je uitdrukkelijk kiest voor een functie die dat wel doet:
+### 2.2 Gegevens op je toestel, en cloudsynchronisatie als je inlogt
+Zolang je de app **zonder account** gebruikt, blijven de volgende gegevens **alleen op je toestel** — we versturen ze niet naar onze servers:
 
 - Favoriete woningen
 - Recent bekeken woningen
@@ -30,7 +30,7 @@ De volgende gegevens worden **lokaal op je toestel opgeslagen** (niet naar onze 
 - Taal- en weergave-instellingen (licht/donker)
 - Of je de introductie-tour al hebt gezien
 
-Als we deze gegevens ooit aan een account koppelen zodat ze meeverhuizen naar een ander toestel, passen we deze verklaring aan voordat die functie actief wordt.
+Zodra je **inlogt met een account**, synchroniseren we je favorieten, recent bekeken woningen en zoekfilters en voorkeuren met de cloud (onze servers), gekoppeld aan je account. Zo blijven je voorkeuren op al je apparaten hetzelfde en reizen ze met je mee van het ene toestel naar het andere. Instellingen die per toestel blijven — de app-taal, weergave (licht/donker), recente zoekopdrachten en of je de introductie hebt gezien — worden niet gesynchroniseerd.
 
 ### 2.3 Anonieme gebruiksstatistieken
 We meten geanonimiseerd en cookieloos hoe de app gebruikt wordt (bijvoorbeeld welke schermen bezocht worden), via een door onszelf beheerde analytics-dienst (Plausible). Deze metingen bevatten geen naam, e-mailadres, IP-adres-opslag of ander persoonlijk identificeerbaar gegeven, en worden niet gebruikt om je individueel te volgen of te profileren. Je kunt dit volledig uitzetten via **Instellingen → Privacy en beveiliging**.
