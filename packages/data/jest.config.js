@@ -6,5 +6,6 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@realty/types$': '<rootDir>/../types/src/index.ts',
+    '^@realty/i18n$': '<rootDir>/../i18n/src/index.ts',
   },
 };

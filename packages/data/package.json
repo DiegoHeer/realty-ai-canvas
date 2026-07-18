@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@realty/i18n": "workspace:*",
     "@realty/types": "workspace:*"
   },
   "peerDependencies": {

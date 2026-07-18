@@ -1,4 +1,5 @@
 import { API_URL } from './env';
+import { activeLanguage } from './language';
 
 /**
  * allauth headless app-client base (HEADLESS_CLIENTS=("app",)).
@@ -101,7 +102,11 @@ async function call(
 ): Promise<AllauthEnvelope> {
   const res = await fetch(`${AUTH_BASE}${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...init.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept-Language': activeLanguage(),
+      ...init.headers,
+    },
   });
   // allauth mirrors the HTTP status in the body and uses non-2xx for valid
   // pending states (e.g. verification), so always read the JSON body. A

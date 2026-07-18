@@ -70,6 +70,7 @@
       "name": "@realty/data",
       "version": "0.0.0",
       "dependencies": {
+        "@realty/i18n": "workspace:*",
         "@realty/types": "workspace:*",
       },
       "devDependencies": {
