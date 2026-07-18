@@ -28,6 +28,7 @@ import {
   TextButton,
 } from '@/components/onboarding/shared';
 import { RangeSlider } from '@/components/range-slider';
+import { trackOnboardingCompleted, trackOnboardingStep } from '@/lib/analytics';
 import { cityDisplayName } from '@/lib/city-search';
 import {
   nearestPriceIndex,
@@ -39,6 +40,7 @@ import {
 } from '@/lib/filters';
 import { setMapFocus } from '@/lib/map-focus';
 import { useOnboarding } from '@/lib/onboarding';
+import { getPreferredCities, setPreferredCities } from '@/lib/preferred-cities';
 import { useAuth } from '@/hooks/use-auth';
 
 const PAGE_COUNT = 5;
@@ -75,8 +77,9 @@ function compactEuro(v: number): string {
  * content fades up in step with how much of the page is scrolled into view,
  * and a page left idle briefly nudges sideways to hint at swiping. The
  * user's buy/rent + price choices and selected cities are staged locally and
- * only applied on finish — committing the filters to the live store and asking
- * the map to focus the first city — so nothing changes under the user mid-tour.
+ * only applied on finish — committing the filters to the live store, saving
+ * the cities as the persisted preferred-cities list, and asking the map to
+ * focus the first one — so nothing changes under the user mid-tour.
  * Skipping (or finishing) marks the tour done so it never auto-shows again.
  */
 export function OnboardingFlow() {
@@ -94,13 +97,28 @@ export function OnboardingFlow() {
     indexRef.current = index;
   }, [index]);
 
+  // Emit a virtual pageview per step (see lib/analytics/events). CE has no
+  // funnel view, so these `/onboarding/<step>` pages let the tour be read as a
+  // drop-off series in Plausible's Top Pages. `index` only changes on settle,
+  // so this fires once per step (and once for the resume step on mount). Also
+  // track the furthest step reached, reported on completion as `last_step`.
+  const furthestStepRef = useRef(index);
+  useEffect(() => {
+    if (index > furthestStepRef.current) furthestStepRef.current = index;
+    trackOnboardingStep(index);
+  }, [index]);
+
   // Staged filter choices (committed to the live store only on finish).
   const [mode, setMode] = useState<ListingMode>(filters.mode);
   const [price, setPrice] = useState<[number | null, number | null]>([
     filters.minPrice,
     filters.maxPrice,
   ]);
-  const [cityCodes, setCityCodes] = useState<string[]>([]);
+  // Seeded from the saved preferred cities, so replaying the tour starts from
+  // the current preference instead of silently wiping it on finish.
+  const [cityCodes, setCityCodes] = useState<string[]>(() =>
+    getPreferredCities().map((c) => c.code),
+  );
   const toggleCity = useCallback((code: string) => {
     setCityCodes((prev) =>
       prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
@@ -290,17 +308,37 @@ export function OnboardingFlow() {
 
   function finish() {
     // Apply the staged buy/rent + price onto the live filters (preserving the
-    // rest), and ask the map to focus the first chosen city.
+    // rest), save the chosen cities as the preferred-cities list, and ask the
+    // map to focus the first one now (each later boot re-queues that focus
+    // itself — see lib/preferred-cities.ts).
     setFilters({ ...filters, mode, minPrice: price[0], maxPrice: price[1] });
-    const firstCode = cityCodes[0];
-    const city = firstCode ? cities.find((c) => c.code === firstCode) : undefined;
-    if (city) setMapFocus({ code: city.code, name: cityDisplayName(city) });
+    // Resolve display names from the loaded list, falling back to the already
+    // saved name for seeded codes — so finishing a replay while the city list
+    // is still loading (or failed) can't wipe the preference.
+    const savedNames = new Map(getPreferredCities().map((c) => [c.code, c.name]));
+    const preferred = cityCodes.flatMap((code) => {
+      const city = cities.find((c) => c.code === code);
+      const name = city ? cityDisplayName(city) : savedNames.get(code);
+      return name ? [{ code, name }] : [];
+    });
+    setPreferredCities(preferred);
+    if (preferred.length > 0) setMapFocus(preferred[0]);
+    trackOnboardingCompleted({
+      skipped: false,
+      citiesSelected: cityCodes.length,
+      furthestStep: furthestStepRef.current,
+    });
     completeOnboarding();
     leaveToApp();
   }
 
   function skip() {
     // Skipping applies nothing — just close the tour for good.
+    trackOnboardingCompleted({
+      skipped: true,
+      citiesSelected: cityCodes.length,
+      furthestStep: furthestStepRef.current,
+    });
     completeOnboarding();
     leaveToApp();
   }

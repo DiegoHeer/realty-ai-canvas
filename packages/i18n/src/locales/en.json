@@ -95,7 +95,8 @@
     "placeholder": "Share your thoughts…",
     "submit": "Send feedback",
     "submitting": "Sending…",
-    "sent": "Feedback sent"
+    "sent": "Feedback sent",
+    "error": "Couldn't send your feedback. Please try again."
   },
   "auth": {
     "logInTitle": "Log in",
@@ -234,6 +235,7 @@
   },
   "listings": {
     "title": "Listings",
+    "sortBy": "Sort by",
     "count_one": "{{count}} home",
     "count_other": "{{count}} homes",
     "recentlyViewed": "Recently viewed",

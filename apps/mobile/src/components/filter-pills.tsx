@@ -265,8 +265,11 @@ interface FilterPillsProps {
  * Horizontal, scrollable row of pills shown under the search bar. The first
  * group are listing quick-filters: tapping one toggles its selection (a filled
  * pill = active); the number selected feeds the count badge on the search
- * bar's filters button. Selection only tracks "configured" state for now — it
- * doesn't yet filter the listings. After a divider follow the map-layer pills
+ * bar's filters button. Favorites and Recent source the map from the locally
+ * saved likes / recent-views snapshots, and Sold narrows the server query to
+ * sold residences (the map screen owns all three); the remaining pills
+ * (Popular, New) only track "configured" state for now and don't yet filter
+ * the listings. After a divider follow the map-layer pills
  * (noise, air quality, …): mutually exclusive toggles, the active one filled
  * with the brand blue to read as a map state rather than a listing filter.
  * Labels read from i18n; each pill carries a stroked SVG icon matching its

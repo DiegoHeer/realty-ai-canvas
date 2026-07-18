@@ -12,6 +12,7 @@ import {
   SuccessBadge,
 } from '@/components/auth-ui';
 import { useAuth } from '@/hooks/use-auth';
+import { trackEmailVerified } from '@/lib/analytics';
 import { mapAuthFieldErrors } from '@/lib/auth-errors';
 import { deferNavigation } from '@/lib/navigation';
 
@@ -61,6 +62,7 @@ export default function VerifyScreen() {
     const outcome = await verifyEmail(entered);
     setSubmitting(false);
     if (outcome.ok === true) {
+      trackEmailVerified();
       setVerified(true);
     } else if (outcome.ok === false) {
       // The verification code maps to allauth's `key` param; show its message

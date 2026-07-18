@@ -1,13 +1,38 @@
 import { DataProvider, queryClient } from '@realty/data';
 import { initI18n } from '@realty/i18n';
+import type { Listing } from '@realty/types';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { I18nextProvider } from 'react-i18next';
 
 import MapScreen from '@/app/(tabs)/index';
+import { clearLikes, toggleLike } from '@/lib/likes';
+import { clearRecentViews, recordRecentView } from '@/lib/recent-views';
 
 afterEach(() => {
   queryClient.clear();
+  // The likes / recent-views stores are module singletons — reset them so each
+  // test starts clean.
+  clearLikes();
+  clearRecentViews();
 });
+
+// Prices are distinct so each marker's price bubble identifies its listing.
+function makeListing(id: string, price: number): Listing {
+  return {
+    id,
+    title: `Home ${id}`,
+    price,
+    currency: 'EUR',
+    status: 'for_sale',
+    bedrooms: 2,
+    bathrooms: 1,
+    areaSqm: 84,
+    address: { line1: 'Teststraat 1', city: 'Amsterdam', postalCode: '1011 AB', country: 'NL' },
+    location: { latitude: 52.37, longitude: 4.89 },
+    images: [{ id: `${id}_img`, url: 'https://example.test/cover.jpg' }],
+    createdAt: '2024-01-01T00:00:00.000Z',
+  };
+}
 
 async function renderScreen() {
   const i18n = initI18n('en');
@@ -67,6 +92,100 @@ describe('MapScreen', () => {
     fireEvent.press(getByText('Energy labels'));
     await waitFor(() => {
       expect(getByText('Zoom in to see this layer')).toBeTruthy();
+    });
+  });
+});
+
+// The Favorites/Recent pills swap the map's markers to the locally stored
+// snapshots. The server query yields no listings in tests, so every price
+// bubble on screen comes from the likes / recent-views stores.
+describe('MapScreen snapshot pills', () => {
+  it('shows liked homes while the Favorites pill is active, and reverts on toggle-off', async () => {
+    toggleLike(makeListing('lst_fav', 500_000));
+    const { getByText, queryByText } = await renderScreen();
+
+    // Not filtered yet — the liked home's marker isn't on the map.
+    expect(queryByText('€500k')).toBeNull();
+
+    fireEvent.press(getByText('Favorites'));
+    await waitFor(() => {
+      expect(getByText('€500k')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Favorites'));
+    await waitFor(() => {
+      expect(queryByText('€500k')).toBeNull();
+    });
+  });
+
+  it('shows recently viewed homes while the Recent pill is active', async () => {
+    recordRecentView(makeListing('lst_seen', 750_000));
+    const { getByText, queryByText } = await renderScreen();
+
+    expect(queryByText('€750k')).toBeNull();
+
+    fireEvent.press(getByText('Recent'));
+    await waitFor(() => {
+      expect(getByText('€750k')).toBeTruthy();
+    });
+  });
+
+  it('shows the union, deduped by id, when both pills are active', async () => {
+    // One home is liked AND recently viewed; another is only recently viewed.
+    const both = makeListing('lst_both', 500_000);
+    toggleLike(both);
+    recordRecentView(both);
+    recordRecentView(makeListing('lst_seen', 750_000));
+    const { getByText, getAllByText } = await renderScreen();
+
+    fireEvent.press(getByText('Favorites'));
+    await waitFor(() => {
+      expect(getAllByText('€500k')).toHaveLength(1);
+    });
+
+    fireEvent.press(getByText('Recent'));
+    await waitFor(() => {
+      // Exactly one marker for the home in both stores — not two.
+      expect(getAllByText('€500k')).toHaveLength(1);
+      expect(getByText('€750k')).toBeTruthy();
+    });
+  });
+});
+
+// The Sold pill takes the opposite path from the snapshot pills: rather than
+// swapping the data source to local snapshots, it narrows the *server* query to
+// sold residences. Spying on fetch lets us assert the request carries the
+// status filter (the API's `status=sold`, mapped from the app's `sold` status).
+describe('MapScreen sold pill', () => {
+  const realFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
+  });
+
+  afterEach(() => {
+    global.fetch = realFetch;
+  });
+
+  // URLs of the residence-list requests fetch has seen so far.
+  const residenceUrls = () =>
+    (global.fetch as jest.Mock).mock.calls
+      .map((c) => String(c[0]))
+      .filter((u) => u.includes('/v1/residences'));
+
+  it('requests only sold residences from the API while the Sold pill is active', async () => {
+    const { getByText } = await renderScreen();
+
+    // The map mounts with the default, unfiltered query — no status constraint.
+    await waitFor(() => expect(residenceUrls().length).toBeGreaterThan(0));
+    expect(residenceUrls().some((u) => u.includes('status=sold'))).toBe(false);
+
+    fireEvent.press(getByText('Sold'));
+
+    // Toggling Sold re-queries the API with status=sold, so the markers become
+    // the sold homes the backend returns.
+    await waitFor(() => {
+      expect(residenceUrls().some((u) => u.includes('status=sold'))).toBe(true);
     });
   });
 });

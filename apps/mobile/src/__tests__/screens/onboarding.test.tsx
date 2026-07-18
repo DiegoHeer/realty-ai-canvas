@@ -12,6 +12,7 @@ import { signOut } from '@/hooks/use-auth';
 import { resetFilters, useFilters } from '@/lib/filters';
 import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
 import { resetOnboarding, useOnboarding } from '@/lib/onboarding';
+import { getPreferredCities, setPreferredCities } from '@/lib/preferred-cities';
 
 async function renderScreen(language: 'en' | 'nl' = 'en') {
   const i18n = initI18n(language);
@@ -66,6 +67,7 @@ beforeEach(async () => {
   resetFilters();
   signOut();
   clearMapFocus();
+  setPreferredCities([]);
   clock = 1_000_000;
   nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => clock) as ReturnType<typeof jest.spyOn>;
 });
@@ -162,7 +164,7 @@ describe('OnboardingScreen', () => {
     expect(router.push).toHaveBeenCalledWith('/auth/login');
   });
 
-  it('finishing applies the chosen city to the map and marks the tour done', async () => {
+  it('finishing saves the preferred cities, focuses the map and marks the tour done', async () => {
     // The city list is fetched from the API (mocks were removed); seed the query
     // cache so the picker has a deterministic set to search. useCityNames pins
     // staleTime: Infinity, so this seeded data is used without a network fetch.
@@ -178,12 +180,17 @@ describe('OnboardingScreen', () => {
     await tapPage(getByTestId, 1, 0.8);
     await tapPage(getByTestId, 2, 0.8);
 
-    // Search the full list and select Amsterdam (code 0363).
-    await act(async () => {
-      fireEvent.changeText(getByTestId('city-search-input'), 'amsterdam');
-    });
-    await waitFor(() => expect(getByTestId('city-result-0363')).toBeTruthy());
-    await tap(getByTestId('city-result-0363'));
+    // Search the full list and select Amsterdam (0363), then Rotterdam (0599).
+    for (const [query, code] of [
+      ['amsterdam', '0363'],
+      ['rotterdam', '0599'],
+    ]) {
+      await act(async () => {
+        fireEvent.changeText(getByTestId('city-search-input'), query);
+      });
+      await waitFor(() => expect(getByTestId(`city-result-${code}`)).toBeTruthy());
+      await tap(getByTestId(`city-result-${code}`));
+    }
 
     // On to the account step, then finish without an account.
     await tapPage(getByTestId, 3, 0.8);
@@ -193,12 +200,33 @@ describe('OnboardingScreen', () => {
 
     const onboarding = await renderHook(() => useOnboarding());
     expect(onboarding.result.current.status).toBe('done');
+    // The full selection is saved, in pick order, as the preferred cities.
+    expect(getPreferredCities()).toEqual([
+      { code: '0363', name: 'Amsterdam' },
+      { code: '0599', name: 'Rotterdam' },
+    ]);
     // The first selected city is handed to the map to focus on.
     const focus = await renderHook(() => useMapFocus());
     expect(focus.result.current?.code).toBe('0363');
     // Buy/rent stays at the default "buy" and is committed to the live filters.
     const filters = await renderHook(() => useFilters());
     expect(filters.result.current.filters.mode).toBe('buy');
+  });
+
+  it('replaying the tour keeps the saved preferred cities when left untouched', async () => {
+    queryClient.setQueryData(cityNameKeys.all, [{ code: '0363', name: 'Amsterdam' }]);
+    setPreferredCities([{ code: '0363', name: 'Amsterdam' }]);
+    const { getByTestId } = await renderScreen('en');
+
+    // Straight through to the last page and finish, never touching the cities
+    // step — the seeded selection must survive, not be wiped by the finish.
+    await advanceToLastPage(getByTestId);
+    await tap(getByTestId('onboarding-get-started'));
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
+    expect(getPreferredCities()).toEqual([{ code: '0363', name: 'Amsterdam' }]);
+    const focus = await renderHook(() => useMapFocus());
+    expect(focus.result.current?.code).toBe('0363');
   });
 
   it('localizes its copy (Dutch)', async () => {

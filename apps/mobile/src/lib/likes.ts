@@ -1,5 +1,6 @@
 import type { Listing } from '@realty/types';
 
+import { trackListingFavorited } from './analytics/events';
 import { createPersistedListStore } from './persisted-list-store';
 import { StorageKeys } from './storage';
 
@@ -21,8 +22,12 @@ const store = createPersistedListStore<Listing>({
 
 /** Like the listing if it isn't liked yet, otherwise remove it. */
 export function toggleLike(listing: Listing): void {
-  if (store.has(listing.id)) store.remove(listing.id);
-  else store.add(listing);
+  if (store.has(listing.id)) {
+    store.remove(listing.id);
+  } else {
+    store.add(listing);
+    trackListingFavorited();
+  }
 }
 
 /** Reactive: whether this listing id is currently liked. */

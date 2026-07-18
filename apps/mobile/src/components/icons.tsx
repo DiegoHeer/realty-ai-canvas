@@ -86,3 +86,38 @@ export function ShareIcon({ color }: { color: string }) {
     </View>
   );
 }
+
+/**
+ * A downward chevron for dropdown/disclosure affordances. Callers rotate it
+ * (e.g. 180°) to signal an expanded state.
+ */
+export function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M6 9l6 6 6-6"
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** A checkmark glyph, used to flag the selected row in a menu. */
+export function CheckIcon({ color, size = 20 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M20 6L9 17l-5-5"
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}

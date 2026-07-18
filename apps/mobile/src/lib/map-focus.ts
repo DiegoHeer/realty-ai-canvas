@@ -16,9 +16,11 @@ function emit() {
 
 /**
  * Ask the map to focus on a city the next time it mounts. In-memory only (never
- * persisted): the map consumes the target once and clears it, so it doesn't
- * re-fire on every launch. Set from the onboarding tour when the user picks
- * cities — the map flies to the first one and selects it so its neighborhoods load.
+ * persisted): the map consumes the target once and clears it, so it can't
+ * re-fire when the map screen remounts mid-session. Set from the onboarding
+ * tour when the user picks cities, and again on every boot from the persisted
+ * preference (see lib/preferred-cities.ts) — the map flies to the first
+ * preferred city and selects it so its neighborhoods load.
  */
 export function setMapFocus(target: MapFocusTarget | null) {
   pending = target;

@@ -12,8 +12,10 @@ import {
   hasCoordinates,
   LISTING_TO_RESIDENCE_STATUS,
   residenceToListing,
+  summaryToListing,
   type ResidenceOut,
   type ResidencePage,
+  type ResidenceSummaryOut,
 } from './residences';
 
 /** Max residences the API returns per request (the `limit` ceiling). */
@@ -93,10 +95,11 @@ function matchesSearch(listing: Listing, search: string): boolean {
 
 /**
  * Translate a {@link ListingQuery} into `GET /v1/residences` query params. Pins
- * `api_version` so the response is the paginated envelope; every filter is
- * additive and omitted when unset (= no constraint). `limit`/`offset` are set by
- * the caller. Multi-value facets repeat the param (OR-combined server-side).
- * `includeSort` is false for the count-only request, where order is irrelevant.
+ * `api_version` so older backends also return the paginated envelope (current
+ * ones always do and ignore the param); every filter is additive and omitted
+ * when unset (= no constraint). `limit`/`offset` are set by the caller.
+ * Multi-value facets repeat the param (OR-combined server-side). `includeSort`
+ * is false for the count-only request, where order is irrelevant.
  */
 function buildResidenceParams(query: ListingQuery, includeSort = true): URLSearchParams {
   const params = new URLSearchParams();
@@ -117,8 +120,8 @@ function buildResidenceParams(query: ListingQuery, includeSort = true): URLSearc
   return params;
 }
 
-/** Unwrap the v2 envelope; tolerate a legacy bare array from an older backend. */
-function pageItems(res: ResidenceOut[] | ResidencePage): ResidenceOut[] {
+/** Unwrap the envelope; tolerate a legacy bare array from an older backend. */
+function pageItems(res: ResidenceSummaryOut[] | ResidencePage): ResidenceSummaryOut[] {
   return Array.isArray(res) ? res : res.items;
 }
 
@@ -126,9 +129,9 @@ export async function getListings(query: ListingQuery = {}): Promise<Listing[]> 
   const params = buildResidenceParams(query);
   params.set('limit', String(RESIDENCE_PAGE_SIZE));
 
-  const res = await request<ResidenceOut[] | ResidencePage>(`/v1/residences?${params}`);
+  const res = await request<ResidenceSummaryOut[] | ResidencePage>(`/v1/residences?${params}`);
   // Only geocoded residences can be placed on the map.
-  const listings = pageItems(res).filter(hasCoordinates).map(residenceToListing);
+  const listings = pageItems(res).filter(hasCoordinates).map(summaryToListing);
   // The API has no free-text search, so honor `search` client-side.
   return query.search ? listings.filter((l) => matchesSearch(l, query.search!)) : listings;
 }
@@ -141,7 +144,7 @@ export async function getListings(query: ListingQuery = {}): Promise<Listing[]> 
 export async function getListingsCount(query: ListingQuery = {}): Promise<number> {
   const params = buildResidenceParams(query, false);
   params.set('limit', '0');
-  const res = await request<ResidenceOut[] | ResidencePage>(`/v1/residences?${params}`);
+  const res = await request<ResidenceSummaryOut[] | ResidencePage>(`/v1/residences?${params}`);
   return Array.isArray(res) ? res.length : res.total;
 }
 
@@ -343,11 +346,50 @@ export async function getStats(city: string = DEN_HAAG_CITY_CODE): Promise<Neigh
 }
 
 export async function getListing(id: string): Promise<Listing> {
-  // No public detail endpoint exists yet, so resolve the id against the list.
-  const residences = await request<ResidenceOut[]>(
-    `/v1/residences?limit=${RESIDENCE_PAGE_SIZE}`,
-  );
-  const found = residences.find((r) => String(r.id) === id);
-  if (!found || !hasCoordinates(found)) throw new Error(`Listing ${id} not found`);
+  // The detail endpoint returns the full residence — source listings,
+  // foundation risk, timestamps — which the summary list items no longer carry.
+  const found = await request<ResidenceOut>(`/v1/residences/${encodeURIComponent(id)}`);
+  if (!hasCoordinates(found)) throw new Error(`Listing ${id} not found`);
   return residenceToListing(found);
+}
+
+// --- Feedback ----------------------------------------------------------------
+
+/** Platform tag on submitted feedback; mirrors the backend `FeedbackPlatform`. */
+export type FeedbackPlatform = 'ios' | 'android' | 'web';
+
+/**
+ * Body for `POST /v1/feedback`. Only `message` is required; the rest is optional
+ * context the app attaches for triage. Spec:
+ * https://api-staging.realty-ai.nl/docs#/feedback/scraping_api_submit_feedback
+ */
+export interface FeedbackIn {
+  message: string;
+  /** App version string; the backend caps this at 20 characters. */
+  app_version?: string | null;
+  platform?: FeedbackPlatform | null;
+  /**
+   * UI language code the app is running in (e.g. `en`). Left as a free string so
+   * new languages flow through without changing this type — the app's supported
+   * set is the single source of truth in `@realty/i18n`.
+   */
+  locale?: string | null;
+}
+
+/** `201` acknowledgement returned when feedback is stored. */
+export interface FeedbackAck {
+  id: number;
+  created_at: string;
+}
+
+/**
+ * Submit user feedback. The endpoint is public (no auth required); we still route
+ * through `request()` for consistent base-URL handling. A Bearer token is sent
+ * when the user happens to be signed in and is ignored by the server otherwise.
+ */
+export async function submitFeedback(input: FeedbackIn): Promise<FeedbackAck> {
+  return request<FeedbackAck>('/v1/feedback', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 }

@@ -23,10 +23,11 @@ describe('client (no backend configured)', () => {
 // module before client.ts imports it.
 
 describe('client (API mode)', () => {
+  // List items are the flattened `ResidenceSummaryOut` shape — no `listings`
+  // array; the per-source attributes are pre-merged server-side.
   const mockResidences = [
     {
       id: 10,
-      bag_id: 'BAG010',
       city: 'Den Haag',
       street: 'Laan',
       house_number: 1,
@@ -35,19 +36,16 @@ describe('client (API mode)', () => {
       postcode: '2500 AA',
       latitude: 52.07,
       longitude: 4.27,
-      neighbourhood: null,
-      district: null,
       current_price_eur: 200000,
       current_status: 'new' as const,
-      last_scraped_at: null,
-      status_changed_at: null,
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
-      listings: [],
+      surface_area_m2: 95,
+      bedroom_count: 2,
+      bathroom_count: 1,
+      energy_label: 'B',
+      image_url: 'https://example.com/laan-1.jpg',
     },
     {
       id: 11,
-      bag_id: 'BAG011',
       city: 'Den Haag',
       street: 'Straat',
       house_number: 2,
@@ -56,21 +54,20 @@ describe('client (API mode)', () => {
       postcode: '2500 BB',
       latitude: null,
       longitude: null,
-      neighbourhood: null,
-      district: null,
       current_price_eur: 300000,
       current_status: 'new' as const,
-      last_scraped_at: null,
-      status_changed_at: null,
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
-      listings: [],
+      surface_area_m2: null,
+      bedroom_count: null,
+      bathroom_count: null,
+      energy_label: null,
+      image_url: null,
     },
   ];
 
   // Re-import client with mocked env for each test
   let getListingsApi: typeof getListings;
   let getListingsCountApi: typeof getListingsCount;
+  let getListingApi: typeof import('../client').getListing;
   let getAreasApi: typeof getAreas;
   let getStatsApi: typeof import('../client').getStats;
   let getCitiesApi: typeof import('../client').getCities;
@@ -89,6 +86,7 @@ describe('client (API mode)', () => {
     const client = require('../client');
     getListingsApi = client.getListings;
     getListingsCountApi = client.getListingsCount;
+    getListingApi = client.getListing;
     getAreasApi = client.getAreas;
     getStatsApi = client.getStats;
     getCitiesApi = client.getCities;
@@ -112,6 +110,14 @@ describe('client (API mode)', () => {
     // Only the geocoded residence (id:10) should be returned
     expect(listings).toHaveLength(1);
     expect(listings[0]!.id).toBe('10');
+    // The flattened summary attributes land on the listing.
+    expect(listings[0]).toMatchObject({
+      areaSqm: 95,
+      bedrooms: 2,
+      bathrooms: 1,
+      energyLabel: 'B',
+      images: [{ id: '10-0', url: 'https://example.com/laan-1.jpg', alt: 'Laan 1' }],
+    });
   });
 
   it('getListings passes status filter as query param', async () => {
@@ -189,6 +195,88 @@ describe('client (API mode)', () => {
     // Only the geocoded residence (id:10) survives.
     expect(listings).toHaveLength(1);
     expect(listings[0]!.id).toBe('10');
+  });
+
+  it('getListing fetches the detail endpoint and maps the full residence', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 10,
+        bag_id: 'BAG010',
+        city: 'Den Haag',
+        street: 'Laan',
+        house_number: 1,
+        house_letter: null,
+        house_number_suffix: null,
+        postcode: '2500 AA',
+        latitude: 52.07,
+        longitude: 4.27,
+        neighbourhood: null,
+        district: null,
+        surface_area_m2: 95,
+        bedroom_count: 2,
+        bathroom_count: 1,
+        build_year: 1964,
+        energy_label: 'B',
+        current_price_eur: 200000,
+        current_status: 'new',
+        last_scraped_at: null,
+        status_changed_at: null,
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+        listings: [
+          {
+            url: 'https://funda.nl/koop/den-haag/huis-10/',
+            website: 'funda',
+            image_url: 'https://example.com/laan-1.jpg',
+            room_count: 4,
+          },
+        ],
+      }),
+    });
+
+    const listing = await getListingApi('10');
+
+    const url = (global.fetch as jest.Mock).mock.calls[0]![0] as string;
+    expect(url).toContain('/v1/residences/10');
+    expect(listing).toMatchObject({
+      id: '10',
+      areaSqm: 95,
+      roomCount: 4,
+      constructionPeriod: '1964',
+      createdAt: '2026-01-01T00:00:00Z',
+      sourceUrl: 'https://funda.nl/koop/den-haag/huis-10/',
+      sources: [{ url: 'https://funda.nl/koop/den-haag/huis-10/', name: 'Funda' }],
+    });
+  });
+
+  it('getListing rejects a residence without coordinates', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 11,
+        bag_id: 'BAG011',
+        city: 'Den Haag',
+        street: 'Straat',
+        house_number: 2,
+        house_letter: null,
+        house_number_suffix: null,
+        postcode: '2500 BB',
+        latitude: null,
+        longitude: null,
+        neighbourhood: null,
+        district: null,
+        current_price_eur: 300000,
+        current_status: 'new',
+        last_scraped_at: null,
+        status_changed_at: null,
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+        listings: [],
+      }),
+    });
+
+    await expect(getListingApi('11')).rejects.toThrow('Listing 11 not found');
   });
 
   it('getListingsCount requests a count-only page and returns the envelope total', async () => {

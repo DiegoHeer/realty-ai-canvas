@@ -2,8 +2,10 @@ import { useTranslation } from '@realty/i18n';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Keyboard,
   Pressable,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -13,6 +15,8 @@ import {
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useEffectiveColorScheme } from '@/components/map-style';
+import { useFadingText } from '@/components/use-fading-text';
+import { trackSearch, type SearchMethod } from '@/lib/analytics';
 import { geocode, lookup, suggest, type GeocodeResult, type GeocodeSuggestion } from '@/lib/pdok';
 import { useRecentSearches } from '@/lib/recent-searches';
 
@@ -147,6 +151,12 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
   const scheme = useEffectiveColorScheme();
   const filterColor = scheme === 'dark' ? '#ffffff' : '#171717';
   const filterPillBg = scheme === 'dark' ? '#404040' : '#e5e5e5';
+  // The visible placeholder is an overlay <Text> (a native placeholder can't
+  // animate): when the hint changes — the map screen swaps in the selected
+  // city's name — the old text fades out, holds, and the new one fades in.
+  const placeholderText = placeholder ?? t('search.placeholder');
+  const { displayed: displayedPlaceholder, opacity: placeholderOpacity } =
+    useFadingText(placeholderText);
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } =
     useRecentSearches();
   const [query, setQuery] = useState('');
@@ -229,7 +239,11 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
   }
 
   // Resolve a coordinate via `resolver`, then hand it up and collapse the UI.
-  async function resolve(label: string, resolver: (signal: AbortSignal) => Promise<GeocodeResult | null>) {
+  async function resolve(
+    label: string,
+    resolver: (signal: AbortSignal) => Promise<GeocodeResult | null>,
+    method: SearchMethod,
+  ) {
     inFlight.current?.abort();
     suggestCtrl.current?.abort();
     if (debounce.current) clearTimeout(debounce.current);
@@ -251,6 +265,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
         setSuggestions([]);
         addRecentSearch(result);
         onResult(result);
+        trackSearch(result.type, method);
       } else {
         setError(t('search.noResults'));
       }
@@ -268,13 +283,13 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
   function handleSubmit(e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) {
     const text = e.nativeEvent.text.trim();
     if (!text) return;
-    void resolve(text, (signal) => geocode(text, signal));
+    void resolve(text, (signal) => geocode(text, signal), 'typed');
   }
 
   function handlePick(item: GeocodeSuggestion) {
     // Dismiss the soft keyboard on native; no-op on web.
     Keyboard.dismiss();
-    void resolve(item.label, (signal) => lookup(item.id, signal));
+    void resolve(item.label, (signal) => lookup(item.id, signal), 'suggestion');
   }
 
   // A recent already carries its coordinate, so skip the network and fly there
@@ -292,6 +307,7 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
     setSuggestions([]);
     addRecentSearch(item);
     onResult(item);
+    trackSearch(item.type, 'recent');
   }
 
   function handleClear() {
@@ -320,23 +336,43 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
           className="mr-2">
           {focused ? <BackIcon /> : <SearchIcon />}
         </Pressable>
-        <TextInput
-          ref={inputRef}
-          className="flex-1 text-xl py-2 text-base text-neutral-900 dark:text-white"
-          value={query}
-          onChangeText={handleChange}
-          onSubmitEditing={handleSubmit}
-          onFocus={() => {
-            setFocused(true);
-            if (suggestions.length > 0) setOpen(true);
-          }}
-          placeholder={placeholder ?? t('search.placeholder')}
-          placeholderTextColor="#9ca3af"
-          returnKeyType="search"
-          autoCapitalize="words"
-          autoCorrect={false}
-          clearButtonMode="never"
-        />
+        <View className="flex-1">
+          <TextInput
+            ref={inputRef}
+            className="text-xl py-2 text-base text-neutral-900 dark:text-white"
+            value={query}
+            onChangeText={handleChange}
+            onSubmitEditing={handleSubmit}
+            onFocus={() => {
+              setFocused(true);
+              if (suggestions.length > 0) setOpen(true);
+            }}
+            placeholder={placeholderText}
+            placeholderTextColor="transparent"
+            returnKeyType="search"
+            autoCapitalize="words"
+            autoCorrect={false}
+            clearButtonMode="never"
+          />
+          {/* The native placeholder above is kept but painted transparent, so
+              screen readers and the web DOM still see it; this overlay draws
+              it instead. Font classes match the input's so they align. */}
+          {query.length === 0 && (
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                { justifyContent: 'center', opacity: placeholderOpacity },
+              ]}
+              pointerEvents="none">
+              <Text
+                className="text-xl text-base"
+                style={{ color: '#9ca3af' }}
+                numberOfLines={1}>
+                {displayedPlaceholder}
+              </Text>
+            </Animated.View>
+          )}
+        </View>
         {loading ? (
           <ActivityIndicator className="ml-2" />
         ) : query.length > 0 ? (

@@ -1,11 +1,13 @@
 import type { Page, Route } from '@playwright/test';
 
 /**
- * Deterministic stand-in for the live `GET /v1/residences` response, used to make
- * the data-driven visual specs reproducible. The app itself has no bundled data
+ * Deterministic stand-in for the live residence endpoints, used to make the
+ * data-driven visual specs reproducible. The app itself has no bundled data
  * (mocks were removed — see packages/data); this is test-layer network stubbing,
  * the Playwright equivalent of the package's Jest fetch mocks. Objects mirror the
- * `ResidenceOut` schema from packages/data/src/residences.ts.
+ * `ResidenceOut` schema from packages/data/src/residences.ts — the detail
+ * endpoint serves them as-is, while the list endpoint serves the flattened
+ * `ResidenceSummaryOut` projection derived below.
  *
  * Residence id 1 (Prinsengracht 412) is the one the listing-detail spec opens.
  */
@@ -202,6 +204,24 @@ const RESIDENCES = [
   },
 ];
 
+/**
+ * The list endpoint's flattened `ResidenceSummaryOut` projection of the fixtures
+ * above: per-source attributes pre-merged onto the item, no `listings` array —
+ * mirroring what the backend serves (see packages/data/src/residences.ts).
+ */
+const SUMMARIES = RESIDENCES.map(
+  ({ id, city, street, house_number, house_letter, house_number_suffix, postcode,
+     latitude, longitude, current_price_eur, current_status, listings }) => ({
+    id, city, street, house_number, house_letter, house_number_suffix, postcode,
+    latitude, longitude, current_price_eur, current_status,
+    surface_area_m2: listings[0]?.surface_area_m2 ?? null,
+    bedroom_count: listings[0]?.bedroom_count ?? null,
+    bathroom_count: listings[0]?.bathroom_count ?? null,
+    energy_label: listings[0]?.energy_label ?? null,
+    image_url: null,
+  }),
+);
+
 function json(route: Route, payload: unknown) {
   return route.fulfill({
     status: 200,
@@ -213,25 +233,28 @@ function json(route: Route, payload: unknown) {
 /**
  * Intercept the residence/geo endpoints with deterministic fixtures so screenshots
  * don't depend on live staging data. `/v1/residences` answers three call shapes:
- * the paginated envelope (`getListings`, has `api_version`), the count-only envelope
- * (`limit=0`), and a bare array (`getListing`, which omits `api_version`). Shapes,
- * stats and city-names resolve to empty arrays — none are rendered by these specs.
+ * the detail path (`getListing`, `/v1/residences/{id}` → full `ResidenceOut`),
+ * the count-only envelope (`limit=0`), and the paginated summary envelope
+ * (`getListings`). Shapes, stats and city-names resolve to empty arrays — none
+ * are rendered by these specs.
  */
 export async function stubApi(page: Page): Promise<void> {
   await page.route('**/v1/residences**', (route) => {
-    const params = new URL(route.request().url()).searchParams;
-    if (!params.has('api_version')) {
-      // getListing() resolves an id against a bare ResidenceOut[].
-      return json(route, RESIDENCES);
+    const url = new URL(route.request().url());
+    const detailId = /\/v1\/residences\/(\d+)$/.exec(url.pathname)?.[1];
+    if (detailId) {
+      // getListing() fetches the full residence from the detail endpoint.
+      const found = RESIDENCES.find((r) => String(r.id) === detailId);
+      return found ? json(route, found) : route.fulfill({ status: 404 });
     }
-    if (params.get('limit') === '0') {
+    if (url.searchParams.get('limit') === '0') {
       // getListingsCount() count-only mode.
-      return json(route, { items: [], total: RESIDENCES.length, limit: 0, offset: 0, has_more: false });
+      return json(route, { items: [], total: SUMMARIES.length, limit: 0, offset: 0, has_more: false });
     }
-    // getListings() paginated envelope.
+    // getListings() paginated envelope of flattened summaries.
     return json(route, {
-      items: RESIDENCES,
-      total: RESIDENCES.length,
+      items: SUMMARIES,
+      total: SUMMARIES.length,
       limit: 100,
       offset: 0,
       has_more: false,

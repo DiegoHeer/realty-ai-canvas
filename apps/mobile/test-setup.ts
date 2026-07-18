@@ -6,6 +6,7 @@ require('@testing-library/react-native/dist/matchers/extend-expect');
 // --- expo-router mocks ---
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
+const mockNavigate = jest.fn();
 const mockBack = jest.fn();
 const mockDismissAll = jest.fn();
 const mockCanGoBack = jest.fn(() => true);
@@ -17,6 +18,7 @@ jest.mock('expo-router', () => {
     router: {
       push: mockPush,
       replace: mockReplace,
+      navigate: mockNavigate,
       back: mockBack,
       dismissAll: mockDismissAll,
       canGoBack: mockCanGoBack,
@@ -24,6 +26,7 @@ jest.mock('expo-router', () => {
     useRouter: () => ({
       push: mockPush,
       replace: mockReplace,
+      navigate: mockNavigate,
       back: mockBack,
       dismissAll: mockDismissAll,
       canGoBack: mockCanGoBack,
@@ -222,6 +225,7 @@ jest.mock('react-native-svg', () => {
 export {
   mockPush,
   mockReplace,
+  mockNavigate,
   mockBack,
   mockCanGoBack,
   mockDismissAll,

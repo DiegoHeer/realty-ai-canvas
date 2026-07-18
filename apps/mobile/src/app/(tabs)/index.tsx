@@ -1,5 +1,5 @@
 import { useAreas, useCities, useListings, useStats } from '@realty/data';
-import type { AreaPolygon } from '@realty/types';
+import type { AreaPolygon, Listing } from '@realty/types';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
@@ -15,16 +15,18 @@ import { BUILDINGS_3D_PITCH } from '@/components/map-shared';
 import { useEffectiveColorScheme } from '@/components/map-style';
 import { OverlayLegend } from '@/components/overlay-legend';
 import { Brand } from '@/constants/theme';
+import { trackOverlayEnabled } from '@/lib/analytics';
 import { loadAreas, loadCities, loadStats } from '@/lib/area-cache';
 import { colorAreasByStat, rampFor, selectInhabitants, statDomain } from '@/lib/area-choropleth';
 import { buildCityIndex, findCityAt } from '@/lib/city-hit-test';
 import { countActiveFilters, filtersToQuery, useFilters } from '@/lib/filters';
+import { useLikes } from '@/lib/likes';
 import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
 import { overlayById, type OverlayId } from '@/lib/map-overlays';
 import { useMapSettings } from '@/lib/map-settings';
 import { normalizeStats } from '@/lib/neighborhood-stats';
 import { type GeocodeResult, zoomForType } from '@/lib/pdok';
-import { recordRecentView } from '@/lib/recent-views';
+import { recordRecentView, useRecentViews } from '@/lib/recent-views';
 
 // Zoom level at or above which the map auto-loads the neighborhoods under its
 // centre. The initial framing sits at zoom 11 (no city selected yet); zooming
@@ -34,10 +36,6 @@ const AUTO_LOAD_AREAS_ZOOM = 12;
 
 export default function MapScreen() {
   const { filters } = useFilters();
-  // Filters (and sort) drive the query: the server returns only matching,
-  // geocoded homes (capped at the page size), so the map renders them directly.
-  const query = useMemo(() => filtersToQuery(filters), [filters]);
-  const { data: listings = [], isLoading } = useListings(query);
   const { data: cities = [] } = useCities(loadCities);
   const insets = useSafeAreaInsets();
   const mapRef = useRef<ListingMapRef>(null);
@@ -56,12 +54,46 @@ export default function MapScreen() {
       return next;
     });
   }, []);
+  // The Favorites/Recent pills swap the map's data source: instead of the
+  // server's search results, show the locally stored snapshots — every liked /
+  // recently viewed home, wherever it is, regardless of the current search
+  // query (the stores keep whole Listings for exactly this). Both pills
+  // together show the union, deduped by id (a home can be both). The camera
+  // stays put, matching the rule that selection never pans the map.
+  const { likes } = useLikes();
+  const { recentViews } = useRecentViews();
+  const favoritesActive = activeFilters.has('favorites');
+  const recentActive = activeFilters.has('recent');
+  const snapshotsActive = favoritesActive || recentActive;
+  // The Sold pill takes a different path from the snapshot pills above: instead
+  // of swapping the data source, it narrows the *server* query to sold
+  // residences (status=sold), so the API returns only sold homes. Filters and
+  // sort otherwise drive the query — the server returns only matching, geocoded
+  // homes (capped at the page size), which the map renders directly.
+  const soldActive = activeFilters.has('sold');
+  const query = useMemo(() => {
+    const base = filtersToQuery(filters);
+    return soldActive ? { ...base, status: 'sold' as const } : base;
+  }, [filters, soldActive]);
+  const { data: listings = [], isLoading } = useListings(query);
+  const shownListings = useMemo(() => {
+    if (!snapshotsActive) return listings;
+    const merged = new Map<string, Listing>();
+    if (favoritesActive) for (const listing of likes) merged.set(listing.id, listing);
+    if (recentActive) for (const listing of recentViews) merged.set(listing.id, listing);
+    return [...merged.values()];
+  }, [snapshotsActive, favoritesActive, recentActive, listings, likes, recentViews]);
   // The active map overlay (noise, air quality, …) — one at a time: tapping an
   // overlay pill swaps to it, tapping the active one turns it off.
   const [overlayId, setOverlayId] = useState<OverlayId | null>(null);
-  const toggleOverlay = useCallback((id: OverlayId) => {
-    setOverlayId((prev) => (prev === id ? null : id));
-  }, []);
+  const toggleOverlay = useCallback(
+    (id: OverlayId) => {
+      const enabling = overlayId !== id;
+      setOverlayId(enabling ? id : null);
+      if (enabling) trackOverlayEnabled(id);
+    },
+    [overlayId],
+  );
   const overlay = overlayById(overlayId);
   // Viewport zoom as of the last camera settle — drives the legend's "zoom in"
   // hint for overlays that only render at building-level zooms.
@@ -89,13 +121,15 @@ export default function MapScreen() {
     mapRef.current?.setPitch(buildings3D ? BUILDINGS_3D_PITCH : 0);
   }, [buildings3D]);
 
-  // A city chosen during the intro tour: once the city shapes are loaded, focus
-  // the map on it (fly + select, so its neighborhoods load) and clear the
-  // request so it fires only once. Needs the geometry from `cities`, which is
-  // empty in mock/offline builds — there the request is simply left unconsumed.
+  // A city chosen during the intro tour, or the first saved preferred city
+  // re-queued at boot: once the city shapes are loaded, focus the map on it
+  // (fly + select, so its neighborhoods load) and clear the request so it
+  // fires only once. Needs the geometry from `cities`, which is empty in
+  // mock/offline builds — there the request is simply left unconsumed.
   const pendingFocus = useMapFocus();
-  // Consume a one-shot external signal (set when the tour finishes, before the
-  // map mounts) and reflect it into local selection + an imperative camera move.
+  // Consume a one-shot external signal (set when the tour finishes or at boot,
+  // before the map mounts) and reflect it into local selection + an imperative
+  // camera move.
   // This is the "subscribe to an external system" effect the rule is meant to
   // allow; it just can't see that through the store indirection, so disable it
   // here (cf. hooks/use-color-scheme.web.ts).
@@ -117,9 +151,12 @@ export default function MapScreen() {
   // whose bbox contains it. Cities load once and are cached, so this is cheap.
   const cityIndex = useMemo(() => buildCityIndex(cities), [cities]);
 
+  // Resolve the selection against what's on the map — a snapshot marker must
+  // open its card even when the listing isn't in the server results. A side
+  // effect: deselecting happens for free when a toggle removes the marker.
   const selected = useMemo(
-    () => listings.find((l) => l.id === selectedId) ?? null,
-    [listings, selectedId],
+    () => shownListings.find((l) => l.id === selectedId) ?? null,
+    [shownListings, selectedId],
   );
 
   const selectedArea = useMemo(
@@ -175,10 +212,10 @@ export default function MapScreen() {
     (id: string) => {
       setSelectedId(id);
       setSelectedAreaId(null);
-      const listing = listings.find((l) => l.id === id);
+      const listing = shownListings.find((l) => l.id === id);
       if (listing) recordRecentView(listing);
     },
-    [listings],
+    [shownListings],
   );
 
   // Selecting an area and a listing are mutually exclusive — the area sheet and
@@ -236,7 +273,7 @@ export default function MapScreen() {
     <View className="flex-1 bg-neutral-100 dark:bg-black">
       <ListingMap
         ref={mapRef}
-        listings={listings}
+        listings={shownListings}
         polygons={coloredAreas}
         onSelect={handleSelect}
         onSelectPolygon={handleSelectPolygon}
@@ -303,7 +340,9 @@ export default function MapScreen() {
           />
         </View>
       )}
-      {isLoading && (
+      {/* The spinner tracks the server query — irrelevant (and misleading)
+          while a snapshot pill sources the map from disk instead. */}
+      {isLoading && !snapshotsActive && (
         <View className="absolute inset-0 items-center justify-center" pointerEvents="none">
           <ActivityIndicator />
         </View>
