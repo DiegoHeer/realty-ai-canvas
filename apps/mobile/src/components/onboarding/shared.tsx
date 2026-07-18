@@ -30,11 +30,45 @@ export function OnboardingPage({ children }: { children: ReactNode }) {
       // flex:1 so the body fills its (fixed-height) pager cell on web, where a
       // ScrollView with no height otherwise collapses and hides its content.
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 24, gap: 20 }}
+      // flexGrow:1 lets a page whose content is shorter than the viewport
+      // (e.g. the welcome page's flex-1 + justify-between wrapper) stretch to
+      // fill it; pages with more content than the viewport still scroll as before.
+      contentContainerStyle={{
+        flexGrow: 1,
+        padding: 24,
+        paddingTop: 8,
+        paddingBottom: 24,
+        gap: 20,
+      }}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}>
       {children}
     </ScrollView>
+  );
+}
+
+/** Low-key footer link row (Privacy / Terms) — light gray, deliberately unobtrusive. */
+export function LegalLinksRow({
+  onPrivacyPress,
+  onTermsPress,
+  privacyLabel,
+  termsLabel,
+}: {
+  onPrivacyPress: () => void;
+  onTermsPress: () => void;
+  privacyLabel: string;
+  termsLabel: string;
+}) {
+  return (
+    <View className="flex-row items-center justify-center gap-3">
+      <Pressable onPress={onPrivacyPress} accessibilityRole="link" hitSlop={8}>
+        <Text className="text-xs text-neutral-400 dark:text-neutral-600">{privacyLabel}</Text>
+      </Pressable>
+      <Text className="text-xs text-neutral-300 dark:text-neutral-700">·</Text>
+      <Pressable onPress={onTermsPress} accessibilityRole="link" hitSlop={8}>
+        <Text className="text-xs text-neutral-400 dark:text-neutral-600">{termsLabel}</Text>
+      </Pressable>
+    </View>
   );
 }
 

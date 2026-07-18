@@ -2,9 +2,7 @@
 
 **Laatst bijgewerkt:** 18 juli 2026
 
-> **Let op voor de eigenaar:** de tekst tussen vierkante haken (zoals `[BEDRIJFSNAAM]`) is een placeholder. Vul de echte bedrijfsgegevens in voordat je deze voorwaarden publiceert.
-
-Deze gebruiksvoorwaarden gelden voor het gebruik van de Huismus-app en -website (samen: “de Dienst”), aangeboden door [BEDRIJFSNAAM], gevestigd te [ADRES], KvK-nummer [KVK-NUMMER] (“wij”, “Huismus”). Door de Dienst te gebruiken ga je akkoord met deze voorwaarden. Ga je hier niet mee akkoord, gebruik de Dienst dan niet.
+Deze gebruiksvoorwaarden gelden voor het gebruik van de Huismus-app en -website (samen: “de Dienst”), aangeboden door Fastvibes (“wij”, “Huismus”). Door de Dienst te gebruiken ga je akkoord met deze voorwaarden. Ga je hier niet mee akkoord, gebruik de Dienst dan niet.
 
 ## 1. Wat Huismus is
 
@@ -12,7 +10,7 @@ Huismus is een app waarmee je koopwoningen in Nederland kunt zoeken en verkennen
 
 ## 2. Wie de Dienst mag gebruiken
 
-Je moet ten minste 16 jaar oud zijn om een account aan te maken. Als je een account aanmaakt, moet je juiste en actuele gegevens opgeven en ben je zelf verantwoordelijk voor het geheimhouden van je inloggegevens. Merk je onbevoegd gebruik van je account op, meld dit dan direct via [SUPPORT-E-MAILADRES].
+Je moet ten minste 16 jaar oud zijn om een account aan te maken. Als je een account aanmaakt, moet je juiste en actuele gegevens opgeven en ben je zelf verantwoordelijk voor het geheimhouden van je inloggegevens. Merk je onbevoegd gebruik van je account op, meld dit dan direct via support@huismusapp.com.
 
 ## 3. Account en beveiliging
 
@@ -44,7 +42,7 @@ Huismus is op dit moment gratis te gebruiken. Mochten we in de toekomst betaalde
 
 ## 8. Intellectueel eigendom
 
-Alle rechten op de Huismus-naam, het beeldmerk, de app, en de onderliggende software en vormgeving berusten bij [BEDRIJFSNAAM] of onze licentiegevers. Je krijgt een persoonlijke, niet-overdraagbare licentie om de app te gebruiken voor het beoogde doel. Het is niet toegestaan de app of onderdelen daarvan te kopiëren, aan te passen, te decompileren, of commercieel te (her)gebruiken zonder onze schriftelijke toestemming.
+Alle rechten op de Huismus-naam, het beeldmerk, de app, en de onderliggende software en vormgeving berusten bij Fastvibes of onze licentiegevers. Je krijgt een persoonlijke, niet-overdraagbare licentie om de app te gebruiken voor het beoogde doel. Het is niet toegestaan de app of onderdelen daarvan te kopiëren, aan te passen, te decompileren, of commercieel te (her)gebruiken zonder onze schriftelijke toestemming.
 
 ## 9. Aansprakelijkheid
 
@@ -60,7 +58,7 @@ We kunnen deze voorwaarden aanpassen. Bij ingrijpende wijzigingen informeren we 
 
 ## 12. Toepasselijk recht en geschillen
 
-Op deze voorwaarden is Nederlands recht van toepassing. Geschillen leggen we bij voorkeur eerst samen op tafel — neem contact op via [SUPPORT-E-MAILADRES]. Kom je er met ons niet uit, dan is de rechter in [VESTIGINGSPLAATS] bevoegd, tenzij dwingend consumentenrecht anders bepaalt. Als consument kun je ook gebruikmaken van het Europese ODR-platform: ec.europa.eu/consumers/odr.
+Op deze voorwaarden is Nederlands recht van toepassing. Geschillen leggen we bij voorkeur eerst samen op tafel — neem contact op via support@huismusapp.com. Kom je er met ons niet uit, dan is de Nederlandse rechter bevoegd, tenzij dwingend consumentenrecht anders bepaalt. Als consument kun je ook gebruikmaken van het Europese ODR-platform: ec.europa.eu/consumers/odr.
 
 ## 13. Overig
 
@@ -68,7 +66,5 @@ Als een bepaling uit deze voorwaarden ongeldig blijkt, blijven de overige bepali
 
 ## 14. Contact
 
-[BEDRIJFSNAAM]
-[ADRES]
-KvK: [KVK-NUMMER]
-E-mail: [SUPPORT-E-MAILADRES]
+Fastvibes
+E-mail: support@huismusapp.com

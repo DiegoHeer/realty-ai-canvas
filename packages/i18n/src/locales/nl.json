@@ -356,6 +356,8 @@
     "getStarted": "Aan de slag",
     "stepOf": "Stap {{current}} van {{total}}",
     "replay": "Introductie opnieuw bekijken",
+    "privacyLink": "Privacy",
+    "termsLink": "Voorwaarden",
     "welcome": {
       "title": "Welkom bij Huismus",
       "subtitle": "Vind je volgende woning op een kaart, opgebouwd rond de buurten die er voor jou toe doen."
@@ -397,7 +399,7 @@
   "privacyPolicyPage": {
     "title": "Privacyverklaring",
     "lastUpdated": "Laatst bijgewerkt: 18 juli 2026",
-    "controller": "Verwerkingsverantwoordelijke: [BEDRIJFSNAAM], [ADRES], KvK-nummer [KVK-NUMMER], e-mail [PRIVACY-E-MAILADRES].",
+    "controller": "Verwerkingsverantwoordelijke: Fastvibes, e-mail support@huismusapp.com.",
     "intro": "Huismus (“wij”, “we”, “ons”) is een app en website waarmee je koopwoningen in Nederland kunt ontdekken op een kaart, met buurtinzichten op basis van openbare statistieken. Deze verklaring legt uit welke gegevens we verwerken, waarom, en welke rechten je hebt. Ze is geschreven om te kloppen met wat de app daadwerkelijk doet — niet met wat gebruikelijk is bij vergelijkbare apps.",
     "sections": {
       "shortVersion": {
@@ -450,11 +452,11 @@
       },
       "rights": {
         "title": "Jouw rechten",
-        "body": "Onder de Algemene Verordening Gegevensbescherming (AVG) heb je het recht om:\n• inzage te vragen in de gegevens die we van je verwerken;\n• onjuiste gegevens te laten corrigeren;\n• je gegevens te laten verwijderen (“recht op vergetelheid”);\n• de verwerking te laten beperken;\n• je gegevens in een gestructureerd formaat te ontvangen (dataportabiliteit);\n• bezwaar te maken tegen verwerking op basis van gerechtvaardigd belang;\n• eerder gegeven toestemming in te trekken.\nJe kunt je account en de bijbehorende gegevens zelf verwijderen via Instellingen, of een verzoek sturen naar [PRIVACY-E-MAILADRES]. We reageren binnen een maand. Ben je het niet eens met hoe we je verzoek afhandelen, dan kun je een klacht indienen bij de Autoriteit Persoonsgegevens (autoriteitpersoonsgegevens.nl)."
+        "body": "Onder de Algemene Verordening Gegevensbescherming (AVG) heb je het recht om:\n• inzage te vragen in de gegevens die we van je verwerken;\n• onjuiste gegevens te laten corrigeren;\n• je gegevens te laten verwijderen (“recht op vergetelheid”);\n• de verwerking te laten beperken;\n• je gegevens in een gestructureerd formaat te ontvangen (dataportabiliteit);\n• bezwaar te maken tegen verwerking op basis van gerechtvaardigd belang;\n• eerder gegeven toestemming in te trekken.\nJe kunt je account en de bijbehorende gegevens zelf verwijderen via Instellingen, of een verzoek sturen naar support@huismusapp.com. We reageren binnen een maand. Ben je het niet eens met hoe we je verzoek afhandelen, dan kun je een klacht indienen bij de Autoriteit Persoonsgegevens (autoriteitpersoonsgegevens.nl)."
       },
       "children": {
         "title": "Kinderen",
-        "body": "Huismus is niet gericht op kinderen jonger dan 16 jaar. We verzamelen niet bewust gegevens van kinderen onder deze leeftijd. Vermoed je dat we dit toch doen? Neem contact op via [PRIVACY-E-MAILADRES], dan verwijderen we deze gegevens."
+        "body": "Huismus is niet gericht op kinderen jonger dan 16 jaar. We verzamelen niet bewust gegevens van kinderen onder deze leeftijd. Vermoed je dat we dit toch doen? Neem contact op via support@huismusapp.com, dan verwijderen we deze gegevens."
       },
       "security": {
         "title": "Beveiliging",
@@ -466,7 +468,7 @@
       },
       "contact": {
         "title": "Contact",
-        "body": "Vragen over deze verklaring of over je gegevens? Mail naar [PRIVACY-E-MAILADRES].\n\n[BEDRIJFSNAAM]\n[ADRES]\nKvK: [KVK-NUMMER]"
+        "body": "Vragen over deze verklaring of over je gegevens? Mail naar support@huismusapp.com.\n\nFastvibes"
       }
     }
   },
@@ -474,7 +476,7 @@
     "title": "Gebruiksvoorwaarden",
     "lastUpdated": "Laatst bijgewerkt: 18 juli 2026",
     "controller": "",
-    "intro": "Deze gebruiksvoorwaarden gelden voor het gebruik van de Huismus-app en -website (samen: “de Dienst”), aangeboden door [BEDRIJFSNAAM], gevestigd te [ADRES], KvK-nummer [KVK-NUMMER] (“wij”, “Huismus”). Door de Dienst te gebruiken ga je akkoord met deze voorwaarden. Ga je hier niet mee akkoord, gebruik de Dienst dan niet.",
+    "intro": "Deze gebruiksvoorwaarden gelden voor het gebruik van de Huismus-app en -website (samen: “de Dienst”), aangeboden door Fastvibes (“wij”, “Huismus”). Door de Dienst te gebruiken ga je akkoord met deze voorwaarden. Ga je hier niet mee akkoord, gebruik de Dienst dan niet.",
     "sections": {
       "whatIsHuismus": {
         "title": "Wat Huismus is",
@@ -482,7 +484,7 @@
       },
       "eligibility": {
         "title": "Wie de Dienst mag gebruiken",
-        "body": "Je moet ten minste 16 jaar oud zijn om een account aan te maken. Als je een account aanmaakt, moet je juiste en actuele gegevens opgeven en ben je zelf verantwoordelijk voor het geheimhouden van je inloggegevens. Merk je onbevoegd gebruik van je account op, meld dit dan direct via [SUPPORT-E-MAILADRES]."
+        "body": "Je moet ten minste 16 jaar oud zijn om een account aan te maken. Als je een account aanmaakt, moet je juiste en actuele gegevens opgeven en ben je zelf verantwoordelijk voor het geheimhouden van je inloggegevens. Merk je onbevoegd gebruik van je account op, meld dit dan direct via support@huismusapp.com."
       },
       "accountSecurity": {
         "title": "Account en beveiliging",
@@ -506,7 +508,7 @@
       },
       "intellectualProperty": {
         "title": "Intellectueel eigendom",
-        "body": "Alle rechten op de Huismus-naam, het beeldmerk, de app, en de onderliggende software en vormgeving berusten bij [BEDRIJFSNAAM] of onze licentiegevers. Je krijgt een persoonlijke, niet-overdraagbare licentie om de app te gebruiken voor het beoogde doel. Het is niet toegestaan de app of onderdelen daarvan te kopiëren, aan te passen, te decompileren, of commercieel te (her)gebruiken zonder onze schriftelijke toestemming."
+        "body": "Alle rechten op de Huismus-naam, het beeldmerk, de app, en de onderliggende software en vormgeving berusten bij Fastvibes of onze licentiegevers. Je krijgt een persoonlijke, niet-overdraagbare licentie om de app te gebruiken voor het beoogde doel. Het is niet toegestaan de app of onderdelen daarvan te kopiëren, aan te passen, te decompileren, of commercieel te (her)gebruiken zonder onze schriftelijke toestemming."
       },
       "liability": {
         "title": "Aansprakelijkheid",
@@ -522,7 +524,7 @@
       },
       "governingLaw": {
         "title": "Toepasselijk recht en geschillen",
-        "body": "Op deze voorwaarden is Nederlands recht van toepassing. Geschillen leggen we bij voorkeur eerst samen op tafel — neem contact op via [SUPPORT-E-MAILADRES]. Kom je er met ons niet uit, dan is de rechter in [VESTIGINGSPLAATS] bevoegd, tenzij dwingend consumentenrecht anders bepaalt. Als consument kun je ook gebruikmaken van het Europese ODR-platform: ec.europa.eu/consumers/odr."
+        "body": "Op deze voorwaarden is Nederlands recht van toepassing. Geschillen leggen we bij voorkeur eerst samen op tafel — neem contact op via support@huismusapp.com. Kom je er met ons niet uit, dan is de Nederlandse rechter bevoegd, tenzij dwingend consumentenrecht anders bepaalt. Als consument kun je ook gebruikmaken van het Europese ODR-platform: ec.europa.eu/consumers/odr."
       },
       "otherProvisions": {
         "title": "Overig",
@@ -530,7 +532,7 @@
       },
       "contact": {
         "title": "Contact",
-        "body": "[BEDRIJFSNAAM]\n[ADRES]\nKvK: [KVK-NUMMER]\nE-mail: [SUPPORT-E-MAILADRES]"
+        "body": "Fastvibes\nE-mail: support@huismusapp.com"
       }
     }
   }

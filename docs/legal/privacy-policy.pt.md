@@ -2,11 +2,9 @@
 
 **Última atualização:** 18 de julho de 2026
 
-> **Nota para o proprietário da aplicação:** o texto entre parênteses retos (como `[NOME DA EMPRESA]`) é um marcador de posição. Preencha os dados reais da empresa antes de publicar esta política.
-
 O Huismus (“nós”) é uma aplicação e um website para descobrir imóveis à venda nos Países Baixos num mapa, com informações sobre os bairros com base em estatísticas públicas. Esta política explica que dados processamos, porquê, e que direitos tem. Foi escrita para corresponder ao que a aplicação realmente faz — não ao que é habitual em aplicações semelhantes.
 
-**Responsável pelo tratamento:** [NOME DA EMPRESA], [MORADA], número de registo comercial (KvK) [NÚMERO KVK], e-mail [E-MAIL DE PRIVACIDADE].
+**Responsável pelo tratamento:** Fastvibes, e-mail support@huismusapp.com.
 
 ## 1. A versão resumida
 
@@ -96,11 +94,11 @@ Ao abrigo do Regulamento Geral sobre a Proteção de Dados (RGPD), tem o direito
 - **opor-se** ao processamento baseado em interesse legítimo;
 - **retirar** qualquer consentimento dado anteriormente.
 
-Pode eliminar a sua conta e os dados associados diretamente em **Definições**, ou enviar um pedido para [E-MAIL DE PRIVACIDADE]. Respondemos no prazo de um mês. Se não concordar com a forma como tratamos o seu pedido, pode apresentar uma queixa junto da Autoridade de Proteção de Dados neerlandesa (Autoriteit Persoonsgegevens, autoriteitpersoonsgegevens.nl) ou da autoridade de supervisão do seu país.
+Pode eliminar a sua conta e os dados associados diretamente em **Definições**, ou enviar um pedido para support@huismusapp.com. Respondemos no prazo de um mês. Se não concordar com a forma como tratamos o seu pedido, pode apresentar uma queixa junto da Autoridade de Proteção de Dados neerlandesa (Autoriteit Persoonsgegevens, autoriteitpersoonsgegevens.nl) ou da autoridade de supervisão do seu país.
 
 ## 9. Crianças
 
-O Huismus não se destina a crianças com menos de 16 anos. Não recolhemos intencionalmente dados de crianças com menos desta idade. Se acredita que o fizemos, contacte-nos em [E-MAIL DE PRIVACIDADE] e eliminaremos esses dados.
+O Huismus não se destina a crianças com menos de 16 anos. Não recolhemos intencionalmente dados de crianças com menos desta idade. Se acredita que o fizemos, contacte-nos em support@huismusapp.com e eliminaremos esses dados.
 
 ## 10. Segurança
 
@@ -112,8 +110,6 @@ Podemos atualizar esta política, por exemplo quando a aplicação ganha novas f
 
 ## 12. Contacto
 
-Tem perguntas sobre esta política ou sobre os seus dados? Envie um e-mail para [E-MAIL DE PRIVACIDADE].
+Tem perguntas sobre esta política ou sobre os seus dados? Envie um e-mail para support@huismusapp.com.
 
-[NOME DA EMPRESA]
-[MORADA]
-KvK: [NÚMERO KVK]
+Fastvibes

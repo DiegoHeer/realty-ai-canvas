@@ -356,6 +356,8 @@
     "getStarted": "Get started",
     "stepOf": "Step {{current}} of {{total}}",
     "replay": "Replay intro",
+    "privacyLink": "Privacy",
+    "termsLink": "Terms",
     "welcome": {
       "title": "Welcome to Huismus",
       "subtitle": "Find your next home on a map built around the neighborhoods you care about."
@@ -397,7 +399,7 @@
   "privacyPolicyPage": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: 18 July 2026",
-    "controller": "Data controller: [COMPANY NAME], [ADDRESS], Chamber of Commerce (KvK) number [KVK NUMBER], email [PRIVACY EMAIL].",
+    "controller": "Data controller: Fastvibes, email support@huismusapp.com.",
     "intro": "Huismus (“we”, “us”) is an app and website for discovering homes for sale in the Netherlands on a map, with neighborhood insights based on public statistics. This policy explains what data we process, why, and what rights you have. It's written to match what the app actually does — not what's typical for similar apps.",
     "sections": {
       "shortVersion": {
@@ -450,11 +452,11 @@
       },
       "rights": {
         "title": "Your rights",
-        "body": "Under the General Data Protection Regulation (GDPR), you have the right to:\n• request access to the data we process about you;\n• have inaccurate data corrected;\n• have your data deleted (the \"right to be forgotten\");\n• have processing restricted;\n• receive your data in a structured format (data portability);\n• object to processing based on legitimate interest;\n• withdraw any consent you previously gave.\nYou can delete your account and its data yourself via Settings, or send a request to [PRIVACY EMAIL]. We respond within one month. If you disagree with how we handle your request, you can file a complaint with the Dutch Data Protection Authority (Autoriteit Persoonsgegevens, autoriteitpersoonsgegevens.nl) or your local supervisory authority."
+        "body": "Under the General Data Protection Regulation (GDPR), you have the right to:\n• request access to the data we process about you;\n• have inaccurate data corrected;\n• have your data deleted (the \"right to be forgotten\");\n• have processing restricted;\n• receive your data in a structured format (data portability);\n• object to processing based on legitimate interest;\n• withdraw any consent you previously gave.\nYou can delete your account and its data yourself via Settings, or send a request to support@huismusapp.com. We respond within one month. If you disagree with how we handle your request, you can file a complaint with the Dutch Data Protection Authority (Autoriteit Persoonsgegevens, autoriteitpersoonsgegevens.nl) or your local supervisory authority."
       },
       "children": {
         "title": "Children",
-        "body": "Huismus is not directed at children under 16. We don't knowingly collect data from children under this age. If you believe we have, please contact us at [PRIVACY EMAIL] and we'll delete it."
+        "body": "Huismus is not directed at children under 16. We don't knowingly collect data from children under this age. If you believe we have, please contact us at support@huismusapp.com and we'll delete it."
       },
       "security": {
         "title": "Security",
@@ -466,7 +468,7 @@
       },
       "contact": {
         "title": "Contact",
-        "body": "Questions about this policy or your data? Email [PRIVACY EMAIL].\n\n[COMPANY NAME]\n[ADDRESS]\nKvK: [KVK NUMBER]"
+        "body": "Questions about this policy or your data? Email support@huismusapp.com.\n\nFastvibes"
       }
     }
   },
@@ -474,7 +476,7 @@
     "title": "Terms of Use",
     "lastUpdated": "Last updated: 18 July 2026",
     "controller": "",
-    "intro": "These terms of use govern your use of the Huismus app and website (together, \"the Service\"), provided by [COMPANY NAME], located at [ADDRESS], Chamber of Commerce (KvK) number [KVK NUMBER] (\"we\", \"Huismus\"). By using the Service, you agree to these terms. If you don't agree, please don't use the Service.",
+    "intro": "These terms of use govern your use of the Huismus app and website (together, \"the Service\"), provided by Fastvibes (\"we\", \"Huismus\"). By using the Service, you agree to these terms. If you don't agree, please don't use the Service.",
     "sections": {
       "whatIsHuismus": {
         "title": "What Huismus is",
@@ -482,7 +484,7 @@
       },
       "eligibility": {
         "title": "Who can use the Service",
-        "body": "You must be at least 16 years old to create an account. When you create an account, you must provide accurate, current information and are responsible for keeping your login credentials confidential. If you notice unauthorized use of your account, report it immediately to [SUPPORT EMAIL]."
+        "body": "You must be at least 16 years old to create an account. When you create an account, you must provide accurate, current information and are responsible for keeping your login credentials confidential. If you notice unauthorized use of your account, report it immediately to support@huismusapp.com."
       },
       "accountSecurity": {
         "title": "Account and security",
@@ -506,7 +508,7 @@
       },
       "intellectualProperty": {
         "title": "Intellectual property",
-        "body": "All rights to the Huismus name, brand, app, and the underlying software and design belong to [COMPANY NAME] or our licensors. You're granted a personal, non-transferable license to use the app for its intended purpose. You may not copy, modify, decompile, or commercially (re)use the app or parts of it without our written permission."
+        "body": "All rights to the Huismus name, brand, app, and the underlying software and design belong to Fastvibes or our licensors. You're granted a personal, non-transferable license to use the app for its intended purpose. You may not copy, modify, decompile, or commercially (re)use the app or parts of it without our written permission."
       },
       "liability": {
         "title": "Liability",
@@ -522,7 +524,7 @@
       },
       "governingLaw": {
         "title": "Governing law and disputes",
-        "body": "These terms are governed by Dutch law. We'd prefer to resolve any dispute together first — contact us at [SUPPORT EMAIL]. If we can't resolve it, the courts of [PLACE OF ESTABLISHMENT] have jurisdiction, unless mandatory consumer law says otherwise. As a consumer, you can also use the EU Online Dispute Resolution platform: ec.europa.eu/consumers/odr."
+        "body": "These terms are governed by Dutch law. We'd prefer to resolve any dispute together first — contact us at support@huismusapp.com. If we can't resolve it, the Dutch courts have jurisdiction, unless mandatory consumer law says otherwise. As a consumer, you can also use the EU Online Dispute Resolution platform: ec.europa.eu/consumers/odr."
       },
       "otherProvisions": {
         "title": "Other provisions",
@@ -530,7 +532,7 @@
       },
       "contact": {
         "title": "Contact",
-        "body": "[COMPANY NAME]\n[ADDRESS]\nKvK: [KVK NUMBER]\nEmail: [SUPPORT EMAIL]"
+        "body": "Fastvibes\nEmail: support@huismusapp.com"
       }
     }
   }

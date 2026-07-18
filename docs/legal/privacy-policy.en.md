@@ -2,11 +2,9 @@
 
 **Last updated:** 18 July 2026
 
-> **Note to the app owner:** text in square brackets (like `[COMPANY NAME]`) is a placeholder. Fill in the real company details before publishing this policy.
-
 Huismus (“we”, “us”) is an app and website for discovering homes for sale in the Netherlands on a map, with neighborhood insights based on public statistics. This policy explains what data we process, why, and what rights you have. It's written to match what the app actually does — not what's typical for similar apps.
 
-**Data controller:** [COMPANY NAME], [ADDRESS], Chamber of Commerce (KvK) number [KVK NUMBER], email [PRIVACY EMAIL].
+**Data controller:** Fastvibes, email support@huismusapp.com.
 
 ## 1. The short version
 
@@ -96,11 +94,11 @@ Under the General Data Protection Regulation (GDPR), you have the right to:
 - **object** to processing based on legitimate interest;
 - **withdraw** any consent you previously gave.
 
-You can delete your account and its data yourself via **Settings**, or send a request to [PRIVACY EMAIL]. We respond within one month. If you disagree with how we handle your request, you can file a complaint with the Dutch Data Protection Authority (Autoriteit Persoonsgegevens, autoriteitpersoonsgegevens.nl) or your local supervisory authority.
+You can delete your account and its data yourself via **Settings**, or send a request to support@huismusapp.com. We respond within one month. If you disagree with how we handle your request, you can file a complaint with the Dutch Data Protection Authority (Autoriteit Persoonsgegevens, autoriteitpersoonsgegevens.nl) or your local supervisory authority.
 
 ## 9. Children
 
-Huismus is not directed at children under 16. We don't knowingly collect data from children under this age. If you believe we have, please contact us at [PRIVACY EMAIL] and we'll delete it.
+Huismus is not directed at children under 16. We don't knowingly collect data from children under this age. If you believe we have, please contact us at support@huismusapp.com and we'll delete it.
 
 ## 10. Security
 
@@ -112,8 +110,6 @@ We may update this policy, for example when the app gains new features. For sign
 
 ## 12. Contact
 
-Questions about this policy or your data? Email [PRIVACY EMAIL].
+Questions about this policy or your data? Email support@huismusapp.com.
 
-[COMPANY NAME]
-[ADDRESS]
-KvK: [KVK NUMBER]
+Fastvibes

@@ -2,9 +2,7 @@
 
 **Last updated:** 18 July 2026
 
-> **Note to the app owner:** text in square brackets (like `[COMPANY NAME]`) is a placeholder. Fill in the real company details before publishing these terms.
-
-These terms of use govern your use of the Huismus app and website (together, "the Service"), provided by [COMPANY NAME], located at [ADDRESS], Chamber of Commerce (KvK) number [KVK NUMBER] ("we", "Huismus"). By using the Service, you agree to these terms. If you don't agree, please don't use the Service.
+These terms of use govern your use of the Huismus app and website (together, "the Service"), provided by Fastvibes ("we", "Huismus"). By using the Service, you agree to these terms. If you don't agree, please don't use the Service.
 
 ## 1. What Huismus is
 
@@ -12,7 +10,7 @@ Huismus is an app for searching and exploring homes for sale in the Netherlands 
 
 ## 2. Who can use the Service
 
-You must be at least 16 years old to create an account. When you create an account, you must provide accurate, current information and are responsible for keeping your login credentials confidential. If you notice unauthorized use of your account, report it immediately to [SUPPORT EMAIL].
+You must be at least 16 years old to create an account. When you create an account, you must provide accurate, current information and are responsible for keeping your login credentials confidential. If you notice unauthorized use of your account, report it immediately to support@huismusapp.com.
 
 ## 3. Account and security
 
@@ -44,7 +42,7 @@ Huismus is currently free to use. Should we introduce paid features in the futur
 
 ## 8. Intellectual property
 
-All rights to the Huismus name, brand, app, and the underlying software and design belong to [COMPANY NAME] or our licensors. You're granted a personal, non-transferable license to use the app for its intended purpose. You may not copy, modify, decompile, or commercially (re)use the app or parts of it without our written permission.
+All rights to the Huismus name, brand, app, and the underlying software and design belong to Fastvibes or our licensors. You're granted a personal, non-transferable license to use the app for its intended purpose. You may not copy, modify, decompile, or commercially (re)use the app or parts of it without our written permission.
 
 ## 9. Liability
 
@@ -60,7 +58,7 @@ We may update these terms. For significant changes, we'll inform you via the app
 
 ## 12. Governing law and disputes
 
-These terms are governed by Dutch law. We'd prefer to resolve any dispute together first — contact us at [SUPPORT EMAIL]. If we can't resolve it, the courts of [PLACE OF ESTABLISHMENT] have jurisdiction, unless mandatory consumer law says otherwise. As a consumer, you can also use the EU Online Dispute Resolution platform: ec.europa.eu/consumers/odr.
+These terms are governed by Dutch law. We'd prefer to resolve any dispute together first — contact us at support@huismusapp.com. If we can't resolve it, the Dutch courts have jurisdiction, unless mandatory consumer law says otherwise. As a consumer, you can also use the EU Online Dispute Resolution platform: ec.europa.eu/consumers/odr.
 
 ## 13. Other provisions
 
@@ -68,7 +66,5 @@ If any provision of these terms is found invalid, the remaining provisions stay 
 
 ## 14. Contact
 
-[COMPANY NAME]
-[ADDRESS]
-KvK: [KVK NUMBER]
-Email: [SUPPORT EMAIL]
+Fastvibes
+Email: support@huismusapp.com

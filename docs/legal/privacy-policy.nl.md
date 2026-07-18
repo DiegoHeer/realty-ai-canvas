@@ -2,11 +2,9 @@
 
 **Laatst bijgewerkt:** 18 juli 2026
 
-> **Let op voor de eigenaar:** de tekst tussen vierkante haken (zoals `[BEDRIJFSNAAM]`) is een placeholder. Vul de echte bedrijfsgegevens in voordat je deze verklaring publiceert.
-
 Huismus (“wij”, “we”, “ons”) is een app en website waarmee je koopwoningen in Nederland kunt ontdekken op een kaart, met buurtinzichten op basis van openbare statistieken. Deze verklaring legt uit welke gegevens we verwerken, waarom, en welke rechten je hebt. Ze is geschreven om te kloppen met wat de app daadwerkelijk doet — niet met wat gebruikelijk is bij vergelijkbare apps.
 
-**Verwerkingsverantwoordelijke:** [BEDRIJFSNAAM], [ADRES], KvK-nummer [KVK-NUMMER], e-mail [PRIVACY-E-MAILADRES].
+**Verwerkingsverantwoordelijke:** Fastvibes, e-mail support@huismusapp.com.
 
 ## 1. De korte versie
 
@@ -96,11 +94,11 @@ Onder de Algemene Verordening Gegevensbescherming (AVG) heb je het recht om:
 - **bezwaar** te maken tegen verwerking op basis van gerechtvaardigd belang;
 - eerder gegeven toestemming **in te trekken**.
 
-Je kunt je account en de bijbehorende gegevens zelf verwijderen via **Instellingen**, of een verzoek sturen naar [PRIVACY-E-MAILADRES]. We reageren binnen een maand. Ben je het niet eens met hoe we je verzoek afhandelen, dan kun je een klacht indienen bij de **Autoriteit Persoonsgegevens** (autoriteitpersoonsgegevens.nl).
+Je kunt je account en de bijbehorende gegevens zelf verwijderen via **Instellingen**, of een verzoek sturen naar support@huismusapp.com. We reageren binnen een maand. Ben je het niet eens met hoe we je verzoek afhandelen, dan kun je een klacht indienen bij de **Autoriteit Persoonsgegevens** (autoriteitpersoonsgegevens.nl).
 
 ## 9. Kinderen
 
-Huismus is niet gericht op kinderen jonger dan 16 jaar. We verzamelen niet bewust gegevens van kinderen onder deze leeftijd. Vermoed je dat we dit toch doen? Neem contact op via [PRIVACY-E-MAILADRES], dan verwijderen we deze gegevens.
+Huismus is niet gericht op kinderen jonger dan 16 jaar. We verzamelen niet bewust gegevens van kinderen onder deze leeftijd. Vermoed je dat we dit toch doen? Neem contact op via support@huismusapp.com, dan verwijderen we deze gegevens.
 
 ## 10. Beveiliging
 
@@ -112,8 +110,6 @@ We kunnen deze verklaring aanpassen, bijvoorbeeld als de app nieuwe functies kri
 
 ## 12. Contact
 
-Vragen over deze verklaring of over je gegevens? Mail naar [PRIVACY-E-MAILADRES].
+Vragen over deze verklaring of over je gegevens? Mail naar support@huismusapp.com.
 
-[BEDRIJFSNAAM]
-[ADRES]
-KvK: [KVK-NUMMER]
+Fastvibes

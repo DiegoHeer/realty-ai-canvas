@@ -2,9 +2,7 @@
 
 **Última atualização:** 18 de julho de 2026
 
-> **Nota para o proprietário da aplicação:** o texto entre parênteses retos (como `[NOME DA EMPRESA]`) é um marcador de posição. Preencha os dados reais da empresa antes de publicar estes termos.
-
-Estes termos de utilização regem a utilização da aplicação e do website Huismus (em conjunto, “o Serviço”), fornecidos por [NOME DA EMPRESA], com sede em [MORADA], número de registo comercial (KvK) [NÚMERO KVK] (“nós”, “Huismus”). Ao utilizar o Serviço, aceita estes termos. Se não concordar, não utilize o Serviço.
+Estes termos de utilização regem a utilização da aplicação e do website Huismus (em conjunto, “o Serviço”), fornecidos pela Fastvibes (“nós”, “Huismus”). Ao utilizar o Serviço, aceita estes termos. Se não concordar, não utilize o Serviço.
 
 ## 1. O que é o Huismus
 
@@ -12,7 +10,7 @@ O Huismus é uma aplicação para pesquisar e explorar imóveis à venda nos Pa�
 
 ## 2. Quem pode utilizar o Serviço
 
-Tem de ter pelo menos 16 anos para criar uma conta. Ao criar uma conta, deve fornecer informações exatas e atuais, e é responsável por manter as suas credenciais de acesso confidenciais. Se detetar uma utilização não autorizada da sua conta, comunique-o de imediato para [E-MAIL DE SUPORTE].
+Tem de ter pelo menos 16 anos para criar uma conta. Ao criar uma conta, deve fornecer informações exatas e atuais, e é responsável por manter as suas credenciais de acesso confidenciais. Se detetar uma utilização não autorizada da sua conta, comunique-o de imediato para support@huismusapp.com.
 
 ## 3. Conta e segurança
 
@@ -44,7 +42,7 @@ O Huismus é atualmente gratuito. Caso venhamos a introduzir funcionalidades pag
 
 ## 8. Propriedade intelectual
 
-Todos os direitos sobre o nome Huismus, a marca, a aplicação, e o software e design subjacentes pertencem a [NOME DA EMPRESA] ou aos nossos licenciadores. É-lhe concedida uma licença pessoal e intransmissível para utilizar a aplicação para o seu fim previsto. Não pode copiar, modificar, descompilar, ou (re)utilizar comercialmente a aplicação ou partes dela sem a nossa autorização por escrito.
+Todos os direitos sobre o nome Huismus, a marca, a aplicação, e o software e design subjacentes pertencem à Fastvibes ou aos nossos licenciadores. É-lhe concedida uma licença pessoal e intransmissível para utilizar a aplicação para o seu fim previsto. Não pode copiar, modificar, descompilar, ou (re)utilizar comercialmente a aplicação ou partes dela sem a nossa autorização por escrito.
 
 ## 9. Responsabilidade
 
@@ -60,7 +58,7 @@ Podemos atualizar estes termos. Para alterações significativas, informá-lo-em
 
 ## 12. Lei aplicável e litígios
 
-Estes termos regem-se pela lei neerlandesa. Preferimos resolver qualquer litígio em conjunto — contacte-nos em [E-MAIL DE SUPORTE]. Se não for possível chegar a acordo, os tribunais de [LOCAL DE ESTABELECIMENTO] têm competência, salvo disposição legal imperativa de proteção do consumidor em contrário. Como consumidor, também pode recorrer à plataforma europeia de resolução de litígios em linha: ec.europa.eu/consumers/odr.
+Estes termos regem-se pela lei neerlandesa. Preferimos resolver qualquer litígio em conjunto — contacte-nos em support@huismusapp.com. Se não for possível chegar a acordo, os tribunais neerlandeses têm competência, salvo disposição legal imperativa de proteção do consumidor em contrário. Como consumidor, também pode recorrer à plataforma europeia de resolução de litígios em linha: ec.europa.eu/consumers/odr.
 
 ## 13. Outras disposições
 
@@ -68,7 +66,5 @@ Se alguma disposição destes termos for considerada inválida, as restantes dis
 
 ## 14. Contacto
 
-[NOME DA EMPRESA]
-[MORADA]
-KvK: [NÚMERO KVK]
-E-mail: [E-MAIL DE SUPORTE]
+Fastvibes
+E-mail: support@huismusapp.com

@@ -1,5 +1,6 @@
 import { useTranslation } from '@realty/i18n';
-import { Switch, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, Switch, Text, View } from 'react-native';
 
 import { InfoCard, Paragraph, SettingsContentScreen } from '@/components/settings-content';
 import { Brand } from '@/constants/theme';
@@ -14,6 +15,7 @@ import { useAnalyticsOptOut } from '@/lib/analytics';
 export default function PrivacySettingsScreen() {
   const { t } = useTranslation();
   const { optedOut, setOptedOut } = useAnalyticsOptOut();
+  const router = useRouter();
 
   return (
     <SettingsContentScreen>
@@ -42,6 +44,27 @@ export default function PrivacySettingsScreen() {
             trackColor={{ true: Brand.blue }}
           />
         </View>
+      </InfoCard>
+
+      <InfoCard>
+        <Pressable
+          onPress={() => router.push('/settings/legal/privacy-policy')}
+          accessibilityRole="button"
+          className="flex-row items-center justify-between active:opacity-60">
+          <Text className="text-lg text-neutral-900 dark:text-white">
+            {t('privacyPolicyPage.title')}
+          </Text>
+          <Text className="text-xl text-neutral-400">›</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push('/settings/legal/terms-of-use')}
+          accessibilityRole="button"
+          className="flex-row items-center justify-between border-t border-neutral-100 pt-3 active:opacity-60 dark:border-neutral-800">
+          <Text className="text-lg text-neutral-900 dark:text-white">
+            {t('termsOfUsePage.title')}
+          </Text>
+          <Text className="text-xl text-neutral-400">›</Text>
+        </Pressable>
       </InfoCard>
     </SettingsContentScreen>
   );
