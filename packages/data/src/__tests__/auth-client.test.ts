@@ -43,6 +43,18 @@ describe('auth-client', () => {
     expect(session.tokens).toEqual({ accessToken: 'AT', refreshToken: 'RT' });
   });
 
+  it('sends Accept-Language so the backend can localize verification/reset emails', async () => {
+    mockFetch(200, {
+      status: 200,
+      data: { user: { id: 1, email: 'ada@example.com', name: 'Ada Lovelace' } },
+      meta: { is_authenticated: true, access_token: 'AT', refresh_token: 'RT' },
+    });
+    await login({ email: 'ada@example.com', password: 'pw' });
+    const headers = (global.fetch as jest.Mock).mock.calls[0]![1].headers;
+    // Defaults to 'en' here since i18next hasn't been initialised in this test.
+    expect(headers['Accept-Language']).toBe('en');
+  });
+
   it('signup returns verifyPending with the session token on a 401 verify_email flow', async () => {
     mockFetch(401, {
       status: 401,

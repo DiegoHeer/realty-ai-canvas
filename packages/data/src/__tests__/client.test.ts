@@ -107,6 +107,10 @@ describe('client (API mode)', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
     const url = (global.fetch as jest.Mock).mock.calls[0]![0] as string;
     expect(url).toContain('/v1/residences');
+    // Every request carries the active UI language so the backend can
+    // localize transactional emails; defaults to 'en' before initI18n runs.
+    const headers = (global.fetch as jest.Mock).mock.calls[0]![1].headers;
+    expect(headers['Accept-Language']).toBe('en');
     // Only the geocoded residence (id:10) should be returned
     expect(listings).toHaveLength(1);
     expect(listings[0]!.id).toBe('10');

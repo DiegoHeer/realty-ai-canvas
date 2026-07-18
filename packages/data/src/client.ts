@@ -8,6 +8,7 @@ import type {
 } from '@realty/types';
 
 import { API_BASE, API_URL, API_VERSION } from './env';
+import { activeLanguage } from './language';
 import {
   hasCoordinates,
   LISTING_TO_RESIDENCE_STATUS,
@@ -70,7 +71,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
     return fetch(`${API_BASE}${path}`, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...authHeader, ...init?.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept-Language': activeLanguage(),
+        ...authHeader,
+        ...init?.headers,
+      },
     });
   };
 
