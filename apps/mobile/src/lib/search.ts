@@ -27,7 +27,10 @@ export type SearchSource = 'homes' | 'buurten' | 'places';
 const PLACE_TYPES_FQ = 'type:(gemeente OR woonplaats OR weg OR postcode OR adres)';
 const BUURT_TYPES_FQ = 'type:(buurt OR wijk)';
 
-// Per-section caps so a single source can't crowd out the dropdown.
+// Per-section caps so a single source can't crowd out the dropdown. Homes are
+// also capped here (not just by the backend's own limit) so the UI stays bounded
+// and independent of that server-side number.
+const HOME_LIMIT = 5;
 const BUURT_LIMIT = 4;
 const PLACE_LIMIT = 5;
 
@@ -134,7 +137,7 @@ export function splitSuggestionLabel(suggestion: SearchSuggestion): {
 }
 
 function toHomeSuggestions(listings: Listing[]): SearchSuggestion[] {
-  return listings.map((listing) => ({
+  return listings.slice(0, HOME_LIMIT).map((listing) => ({
     kind: 'residence',
     id: listing.id,
     label: homeLabel(listing),
@@ -268,6 +271,13 @@ function matchScore(query: string, label: string): number {
 // Average ("fractional") rank of each value under `cmp`: tied values share the
 // mean of the positions they span, so a tie on one axis leaves the other axis
 // to break it rather than leaking input order into the blend.
+// Equality-safe numeric comparators for averageRanks. A plain `a - b` yields
+// NaN for `Infinity - Infinity` (two coordinate-less rows), which reads as
+// "not equal" and stops their ranks from being averaged; these treat any equal
+// pair — Infinity included — as a tie so the other axis breaks it.
+const byAscending = (a: number, b: number) => (a === b ? 0 : a < b ? -1 : 1);
+const byDescending = (a: number, b: number) => (a === b ? 0 : a > b ? -1 : 1);
+
 function averageRanks(values: number[], cmp: (a: number, b: number) => number): number[] {
   const order = values.map((_, i) => i).sort((a, b) => cmp(values[a], values[b]));
   const rank = new Array<number>(values.length);
@@ -303,8 +313,8 @@ function rankSuggestions(
     return center ? distanceBetween(origin, center) : Infinity;
   });
   const scores = list.map((suggestion) => matchScore(query, suggestion.label));
-  const distanceRank = averageRanks(distances, (a, b) => a - b); // nearer → lower rank
-  const textRank = averageRanks(scores, (a, b) => b - a); // better match → lower rank
+  const distanceRank = averageRanks(distances, byAscending); // nearer → lower rank
+  const textRank = averageRanks(scores, byDescending); // better match → lower rank
   const blended = list.map((_, i) => TEXT_WEIGHT * textRank[i] + (1 - TEXT_WEIGHT) * distanceRank[i]);
   return list
     .map((suggestion, index) => ({ suggestion, index, blend: blended[index] }))

@@ -70,6 +70,14 @@ describe('suggestAll', () => {
     expect(list[2]).toMatchObject({ kind: 'place', id: 'p1' });
   });
 
+  it('caps homes so the backend page size cannot flood the dropdown', async () => {
+    mockSearchResidences.mockResolvedValue(
+      Array.from({ length: 8 }, (_, i) => makeListing({ id: `h${i}` })),
+    );
+    const list = await suggestAll('x', ['homes']);
+    expect(list.filter((s) => s.kind === 'residence')).toHaveLength(5);
+  });
+
   it('excludes buurt/wijk from Places only when the Buurten source is also on', async () => {
     await suggestAll('x', ['homes', 'buurten', 'places']);
     const placeFilters = mockSuggest.mock.calls.map((c) => c[2] as string | undefined);
@@ -124,6 +132,24 @@ describe('suggestAll', () => {
     );
     const list = await suggestAll('x', ['buurten', 'places'], undefined, { longitude: 4.9, latitude: 52.37 });
     expect(list.map((s) => s.id)).toEqual(['hascoord', 'nocoord']);
+  });
+
+  it('breaks a tie between two coordinate-less rows by text, not input order', async () => {
+    // Both rows lack a centroid, so the distance half ties (Infinity vs Infinity)
+    // and the exact text match must win even though it's listed second. A plain
+    // `a - b` distance comparator scores `Infinity - Infinity` as NaN, which fails
+    // to tie the two and lets input order leak through instead.
+    mockSearchResidences.mockResolvedValue([]);
+    mockSuggest.mockImplementation((_q: string, _signal?: AbortSignal, fq?: string) =>
+      fq?.includes('buurt')
+        ? Promise.resolve([])
+        : Promise.resolve([
+            { id: 'none', label: 'Zaanstad', type: 'weg', longitude: null, latitude: null },
+            { id: 'exact', label: 'Delft', type: 'weg', longitude: null, latitude: null },
+          ]),
+    );
+    const list = await suggestAll('delft', ['places'], undefined, { longitude: 4.9, latitude: 52.37 });
+    expect(list.map((s) => s.id)).toEqual(['exact', 'none']);
   });
 
   it('ranks by text-match quality among equidistant results (exact > prefix > word > substring)', async () => {

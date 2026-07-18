@@ -652,7 +652,12 @@ export const LocationSearch = forwardRef<LocationSearchRef, LocationSearchProps>
       {open && suggestions.length > 0 && (
         <View className="mt-1 overflow-hidden rounded-2xl bg-white shadow-md shadow-black/20 dark:bg-neutral-800">
           {suggestions.map((item, index) => (
-            <SuggestionRow key={item.id} item={item} bordered={index > 0} onPick={handlePick} />
+            <SuggestionRow
+              key={`${item.kind}|${item.id}`}
+              item={item}
+              bordered={index > 0}
+              onPick={handlePick}
+            />
           ))}
         </View>
       )}

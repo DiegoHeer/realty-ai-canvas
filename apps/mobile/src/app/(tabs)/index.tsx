@@ -282,17 +282,30 @@ export default function MapScreen() {
   //   the current query page, then select and fly to it.
   const handleSearchResult = useCallback(
     (r: SearchResult) => {
+      // A place/buurt pick isn't a home, so drop any home injected by a prior
+      // search — otherwise its marker lingers on the map with no way to clear it.
       if (r.kind === 'place') {
+        setSearchedListing(null);
         const { longitude, latitude, type } = r.result;
         mapRef.current?.flyTo({ longitude, latitude, zoom: zoomForType(type) });
         selectCityAt({ longitude, latitude });
         return;
       }
       if (r.kind === 'buurt') {
-        const city = cities.find((c) => c.code === r.gemeentecode);
-        if (city) setSelectedCity({ code: city.code, name: city.name, geometry: city.geometry });
+        setSearchedListing(null);
         setSelectedId(null);
-        setSelectedAreaId(r.buurtcode);
+        const city = cities.find((c) => c.code === r.gemeentecode);
+        if (city) {
+          // Select the municipality so its neighborhoods load; the AreaSheet
+          // then opens against the matching polygon once they arrive.
+          setSelectedCity({ code: city.code, name: city.name, geometry: city.geometry });
+          setSelectedAreaId(r.buurtcode);
+        } else {
+          // City shapes aren't loaded (or the CBS code is unknown), so no
+          // overlays will arrive to open the sheet against — fly there without a
+          // dangling area selection, same as a wijk (null buurtcode).
+          setSelectedAreaId(null);
+        }
         mapRef.current?.flyTo({ longitude: r.longitude, latitude: r.latitude, zoom: zoomForType('buurt') });
         return;
       }
