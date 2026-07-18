@@ -83,6 +83,8 @@ export interface Listing {
   images: ListingImage[];
   /** ISO 8601 timestamp. */
   createdAt: string;
+  /** SEO-friendly address slug for the shareable web URL, e.g. "martin-luther-kinglaan-129". */
+  slug?: string;
   /** URL of the original realtor/source listing, if known. */
   sourceUrl?: string;
   /** Every realtor/source the residence is listed on, one entry per source. */

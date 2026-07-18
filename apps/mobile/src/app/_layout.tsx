@@ -14,6 +14,7 @@ import {
   Stack,
   ThemeProvider,
   useRootNavigationState,
+  useSegments,
 } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform, useColorScheme } from 'react-native';
@@ -25,6 +26,7 @@ import { useScreenView } from '@/lib/analytics';
 import { useAppearance } from '@/lib/appearance';
 import { useOnboarding } from '@/lib/onboarding';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { isSharedListingRoute } from '@/app/[locale]/listing/[slug]/[id]';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -45,10 +47,22 @@ export default function RootLayout() {
   // demo/test surface and is never force-redirected (so the tour is reachable
   // there only by navigating to /onboarding directly). Waits for the root
   // navigator to mount before navigating.
+  //
+  // Skipped while on the shared-listing redirect (huismusapp.com share links,
+  // app/[locale]/listing/[slug]/[id].tsx) — that screen completes onboarding
+  // itself before forwarding to the listing, and both routing decisions read
+  // the same onboarding state in the same commit, so whichever fired last
+  // would otherwise win the race and could bounce a shared link into the tour.
+  // Widened to string[] — expo-router's typed useSegments() return type comes
+  // from the generated (gitignored) router.d.ts, which CI never regenerates,
+  // collapsing to an overly-narrow tuple there and breaking the isSharedListingRoute
+  // check below.
+  const segments: string[] = useSegments();
+  const isSharedListingLink = isSharedListingRoute(segments);
   const { status: onboardingStatus, hydrated: onboardingHydrated } = useOnboarding();
   const rootNavState = useRootNavigationState();
   const needsOnboarding =
-    Platform.OS !== 'web' && onboardingHydrated && onboardingStatus !== 'done';
+    Platform.OS !== 'web' && onboardingHydrated && onboardingStatus !== 'done' && !isSharedListingLink;
   useEffect(() => {
     if (rootNavState?.key && needsOnboarding) router.replace('/onboarding');
   }, [rootNavState?.key, needsOnboarding]);
@@ -82,6 +96,7 @@ export default function RootLayout() {
                 name="listing/[id]"
                 options={{ headerShown: true, title: t('tabs.listings') }}
               />
+              <Stack.Screen name="[locale]/listing/[slug]/[id]" options={{ headerShown: false }} />
               <Stack.Screen
                 name="settings/language"
                 options={{ headerShown: true, title: t('profile.language') }}

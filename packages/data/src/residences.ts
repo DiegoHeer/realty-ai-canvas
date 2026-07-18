@@ -46,6 +46,8 @@ export interface ResidenceSummaryOut {
   house_letter: string | null;
   house_number_suffix: string | null;
   postcode: string | null;
+  /** SEO-friendly address slug, e.g. "martin-luther-kinglaan-129". `null` when the residence has no street. */
+  slug: string | null;
   /** Required by the schema, but kept nullable defensively (see hasCoordinates). */
   latitude: number | null;
   longitude: number | null;
@@ -70,6 +72,8 @@ export interface ResidenceOut {
   house_letter: string | null;
   house_number_suffix: string | null;
   postcode: string | null;
+  /** SEO-friendly address slug, e.g. "martin-luther-kinglaan-129". `null` when the residence has no street. */
+  slug: string | null;
   latitude: number | null;
   longitude: number | null;
   neighbourhood: string | null;
@@ -191,6 +195,7 @@ export function summaryToListing(
     // The summary has no created_at; '' parses to NaN, which the relative-time
     // formatter treats as "unknown" (renders nothing).
     createdAt: '',
+    slug: r.slug ?? undefined,
   };
 }
 
@@ -231,6 +236,7 @@ export function residenceToListing(
     location: { latitude: r.latitude, longitude: r.longitude },
     images,
     createdAt: r.created_at,
+    slug: r.slug ?? undefined,
     // First source listing is the realtor page we link out to.
     sourceUrl: sources[0]?.url,
     // One entry per source listing, so the UI can link out to each realtor.

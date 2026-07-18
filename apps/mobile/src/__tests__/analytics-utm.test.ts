@@ -10,4 +10,14 @@ describe('withUtmParams', () => {
   ])('%s -> %s', (input, expected) => {
     expect(withUtmParams(input)).toBe(expected);
   });
+
+  it('is a no-op when the url already has our utm_source (e.g. a repeat share)', () => {
+    const url = 'https://funda.nl/detail?utm_source=huismusapp.com&utm_medium=referral';
+    expect(withUtmParams(url)).toBe(url);
+  });
+
+  it('is a no-op when the url already carries the realtor\'s own utm_source', () => {
+    const url = 'https://funda.nl/detail?utm_source=newsletter&utm_medium=email';
+    expect(withUtmParams(url)).toBe(url);
+  });
 });
