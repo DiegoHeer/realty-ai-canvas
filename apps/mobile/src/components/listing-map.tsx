@@ -195,13 +195,20 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
       onDidFinishLoadingMap={() => {
         mapLoadedRef.current = true;
         const target = pendingFlyToRef.current;
-        if (!target) return;
+        // Report the initial framing so the search bar has a centre to rank
+        // suggestions against before the user moves the map — the pending
+        // boot-time focus target if there is one, else the mount framing.
+        if (!target) {
+          onCameraIdle?.({ longitude: center[0], latitude: center[1], zoom: 11 });
+          return;
+        }
         pendingFlyToRef.current = null;
         cameraRef.current?.flyTo({
           center: [target.longitude, target.latitude],
           zoom: target.zoom,
           duration: 0,
         });
+        onCameraIdle?.({ longitude: target.longitude, latitude: target.latitude, zoom: target.zoom ?? 11 });
       }}
       compassPosition={{
         bottom: insets.bottom + COMPASS_MARGIN,

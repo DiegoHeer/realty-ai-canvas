@@ -283,8 +283,14 @@ failure strings **in all three locales** and map them in `authErrorKey` (`auth-u
 
 ## 11. Decisions to make now  *(they gate console setup)*
 
+<<<<<<< HEAD
+- **Bundle / package id is pinned to `com.fastvibes.huismus`** (`app.json`, both platforms; was
+  `com.anonymous.realtyaicanvas`, then briefly `com.anonymous.huismus`). Google console
+  registrations (and any future Apple / iOS App Store setup) must be re-checked against this id.
+=======
 - **Bundle / package id is `com.fastvibes.huismus`** (`app.json`). Google
   and Apple registration — and especially a future iOS app — want a real reverse-domain id;
   renaming the Android `package` later is disruptive. **Pin it before console setup.**
+>>>>>>> refs/remotes/origin/main
 - **Apple Developer membership** ($99/yr) is required even for the web/Android Apple flow. Confirm
   it's available, or ship Google-first and add Apple later.

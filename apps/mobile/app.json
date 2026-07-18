@@ -7,11 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": [
       "huismus",
-      "com.googleusercontent.apps.751654542404-7eo1jn9ram6adtdecinc9bmfk7a791f5"
+      "com.googleusercontent.apps.751654542404-7eo1jn9ram6adtdecinc9bmfk7a791f5",
+      "com.googleusercontent.apps.751654542404-066oobvgungucgk2v8diuoedas0atha2"
     ],
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.fastvibes.huismus",
       "associatedDomains": ["applinks:huismusapp.com"]
     },
