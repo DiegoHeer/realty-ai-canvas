@@ -26,6 +26,7 @@ import { useScreenView } from '@/lib/analytics';
 import { useAppearance } from '@/lib/appearance';
 import { useOnboarding } from '@/lib/onboarding';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { isSharedListingRoute } from '@/app/[locale]/listing/[slug]/[id]';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -54,10 +55,10 @@ export default function RootLayout() {
   // would otherwise win the race and could bounce a shared link into the tour.
   // Widened to string[] — expo-router's typed useSegments() return type comes
   // from the generated (gitignored) router.d.ts, which CI never regenerates,
-  // collapsing to an overly-narrow tuple there and breaking the length/index
-  // checks below.
+  // collapsing to an overly-narrow tuple there and breaking the isSharedListingRoute
+  // check below.
   const segments: string[] = useSegments();
-  const isSharedListingLink = segments.length === 4 && segments[1] === 'listing';
+  const isSharedListingLink = isSharedListingRoute(segments);
   const { status: onboardingStatus, hydrated: onboardingHydrated } = useOnboarding();
   const rootNavState = useRootNavigationState();
   const needsOnboarding =
