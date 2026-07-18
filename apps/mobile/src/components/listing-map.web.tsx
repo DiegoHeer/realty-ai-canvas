@@ -189,6 +189,12 @@ export const ListingMap = forwardRef<ListingMapRef, ListingMapProps>(function Li
       styleDiffing={false}
       style={{ width: '100%', height: '100%' }}
       interactiveLayerIds={polygons && polygons.length > 0 ? ['area-polygons-fill'] : []}
+      // Report the initial framing once the map loads, so the search bar has a
+      // centre to rank suggestions against before the user moves the map.
+      onLoad={(e) => {
+        const center = e.target.getCenter();
+        onCameraIdle?.({ longitude: center.lng, latitude: center.lat, zoom: e.target.getZoom() });
+      }}
       // Once a pan/zoom settles, report the viewport centre + zoom so the
       // screen can auto-load a city's neighborhoods when zoomed in far enough.
       onMoveEnd={(e) => {
