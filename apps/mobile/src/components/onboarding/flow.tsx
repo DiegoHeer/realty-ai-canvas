@@ -19,6 +19,7 @@ import { CitiesPage } from '@/components/onboarding/cities-page';
 import {
   AccountGlyph,
   HomeGlyph,
+  LegalLinksRow,
   MapPinGlyph,
   OnboardingHeader,
   OnboardingPage,
@@ -361,11 +362,19 @@ export function OnboardingFlow() {
 
   const pages = [
     <OnboardingPage key="welcome">
-      <OnboardingHeader
-        icon={<HomeGlyph />}
-        title={t('onboarding.welcome.title')}
-        subtitle={t('onboarding.welcome.subtitle')}
-      />
+      <View className="flex-1 justify-between">
+        <OnboardingHeader
+          icon={<HomeGlyph />}
+          title={t('onboarding.welcome.title')}
+          subtitle={t('onboarding.welcome.subtitle')}
+        />
+        <LegalLinksRow
+          privacyLabel={t('onboarding.privacyLink')}
+          termsLabel={t('onboarding.termsLink')}
+          onPrivacyPress={() => router.push('/settings/legal/privacy-policy')}
+          onTermsPress={() => router.push('/settings/legal/terms-of-use')}
+        />
+      </View>
     </OnboardingPage>,
 
     <OnboardingPage key="features">

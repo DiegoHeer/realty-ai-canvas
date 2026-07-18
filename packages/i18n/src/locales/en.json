@@ -356,6 +356,8 @@
     "getStarted": "Get started",
     "stepOf": "Step {{current}} of {{total}}",
     "replay": "Replay intro",
+    "privacyLink": "Privacy",
+    "termsLink": "Terms",
     "welcome": {
       "title": "Welcome to Huismus",
       "subtitle": "Find your next home on a map built around the neighborhoods you care about."
@@ -392,6 +394,146 @@
       "logIn": "Log in",
       "signedInAs": "Signed in as {{name}}",
       "getStartedWithoutAccount": "Get started without account"
+    }
+  },
+  "privacyPolicyPage": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: 18 July 2026",
+    "controller": "Data controller: Fastvibes, email support@huismusapp.com.",
+    "intro": "Huismus (“we”, “us”) is an app and website for discovering homes for sale in the Netherlands on a map, with neighborhood insights based on public statistics. This policy explains what data we process, why, and what rights you have. It's written to match what the app actually does — not what's typical for similar apps.",
+    "sections": {
+      "shortVersion": {
+        "title": "The short version",
+        "body": "• We don't build a profile of you, and we never sell or rent your data to third parties.\n• Without an account, your searches, favorites, recently viewed listings, and filters stay on your device. When you sign in, we sync them to your account so they're the same on all your devices.\n• We only measure anonymous, cookie-free app usage to see which features get used. You can turn this off in Settings.\n• If you create an account, we store your email address and name to make that account work."
+      },
+      "accountData": {
+        "title": "Account data",
+        "body": "If you sign in with Google or create an account with an email address, we receive and store your email address and (if available via Google) your name. This is needed to make your account work and to recognize you on your next visit. When signing in with an email address, your password is stored encrypted; we cannot read it in plain text.\n\nWhen you're signed in, your account also holds the data you sync from your device — your favorites, recently viewed listings, and search and notification preferences — so they're available across your devices (see section 2.2). We use these only to provide the features you use, not to build a profile of you.\n\nYour session is secured with a temporary access token (JWT). On phones and tablets this token is kept in the operating system's secure keychain; on the web version it's kept in your browser's local storage, since a browser has no keychain."
+      },
+      "deviceOnlyData": {
+        "title": "Data on your device, and cloud sync when you sign in",
+        "body": "As long as you use the app without an account, the following data stays only on your device — we don't send it to our servers:\n• Favorited listings\n• Recently viewed listings\n• Search filters and preferences (e.g. price range, number of rooms, selected cities)\n• Recent searches\n• Language and appearance settings (light/dark)\n• Whether you've already seen the intro tour\nWhen you sign in with an account, we sync your favorites, recently viewed listings, and search filters and preferences to the cloud (our servers), linked to your account, so your preferences stay the same across every device you sign in on. This lets your preferences follow you from one device to another. Settings that remain specific to each device — app language, appearance (light/dark), recent searches, and whether you've seen the intro — are not synced."
+      },
+      "analytics": {
+        "title": "Anonymous usage analytics",
+        "body": "We measure anonymized, cookie-free app usage (e.g. which screens get visited) via a self-hosted analytics service (Plausible). These measurements contain no name, email address, stored IP address, or other personally identifiable data, and are never used to track or profile you individually. You can turn this off entirely in Settings → Privacy & security."
+      },
+      "feedbackData": {
+        "title": "Feedback you send us",
+        "body": "If you use the feedback form, we receive the message you type, and (so we can reproduce technical issues) your app version, platform (iOS/Android/web), and app language. We use this only to handle your feedback."
+      },
+      "listingData": {
+        "title": "Listing data shown in the app",
+        "body": "The property listings you see in Huismus come from public and/or third-party real estate sources. This is not data about you — it's information about homes and (where listed) the offering party. We don't guarantee this data is current, complete, or accurate; see also our Terms of Use."
+      },
+      "neighborhoodStats": {
+        "title": "Neighborhood statistics",
+        "body": "The neighborhood insights in the app (e.g. about residents, income, or energy usage) are based on public, aggregated statistics from Statistics Netherlands (CBS) and similar public sources. These are statistics at the neighborhood or district level, not personal data about individual residents."
+      },
+      "purposes": {
+        "title": "Why we process this data",
+        "body": "• Account data — Making your account work, recognizing you when you sign in — Performance of a contract\n• Session token — Keeping you signed in, securing your account — Performance of a contract\n• Anonymous usage analytics — Improving the app based on what's actually used — Legitimate interest\n• Feedback message — Handling your question or report — Legitimate interest / performance of a contract\n• Listing data, neighborhood statistics — The app's core function: showing and comparing homes — Performance of a contract"
+      },
+      "cookies": {
+        "title": "Cookies and similar technologies",
+        "body": "The Huismus app doesn't use tracking cookies. Our usage analytics are cookie-free. The web version uses only technically necessary local storage (e.g. to keep you signed in) — no advertising or third-party tracking cookies."
+      },
+      "sharing": {
+        "title": "Who we share data with",
+        "body": "• Hosting provider: our servers and database run with a hosting provider that acts solely as a processor and doesn't use data for its own purposes.\n• Google: if you sign in with Google, Google processes the sign-in data needed to confirm your identity, under Google's own privacy policy.\n• Apple: if you sign in with Apple, Apple processes the sign-in data needed to confirm your identity, under Apple's own privacy policy.\n• Our anonymous analytics run on infrastructure we manage ourselves — not shared with an external advertising or tracking party.\nWe don't work with ad networks, data brokers, or third-party tracking pixels."
+      },
+      "transfers": {
+        "title": "Transfers outside the EEA",
+        "body": "Wherever possible, we process and store data within the European Economic Area (EEA). Should a processor process data outside the EEA, we ensure appropriate safeguards, such as EU Standard Contractual Clauses."
+      },
+      "retention": {
+        "title": "Retention periods",
+        "body": "• Account data — For as long as your account exists; deleted after account deletion\n• Favorites, recently viewed listings & synced preferences — While your account exists (recently viewed listings for up to 90 days); deleted when you delete your account\n• Session token — Until you sign out or the token expires\n• Anonymous usage analytics — Aggregated, not traceable to an individual — no retention period applies\n• Feedback message — As long as needed to handle your report, then deleted\n• Data stored locally on your device — Until you uninstall the app or clear the data yourself"
+      },
+      "rights": {
+        "title": "Your rights",
+        "body": "Under the General Data Protection Regulation (GDPR), you have the right to:\n• request access to the data we process about you;\n• have inaccurate data corrected;\n• have your data deleted (the \"right to be forgotten\");\n• have processing restricted;\n• receive your data in a structured format (data portability);\n• object to processing based on legitimate interest;\n• withdraw any consent you previously gave.\nYou can delete your account and its data yourself via Settings, or send a request to support@huismusapp.com. We respond within one month. If you disagree with how we handle your request, you can file a complaint with the Dutch Data Protection Authority (Autoriteit Persoonsgegevens, autoriteitpersoonsgegevens.nl) or your local supervisory authority."
+      },
+      "children": {
+        "title": "Children",
+        "body": "Huismus is not directed at children under 16. We don't knowingly collect data from children under this age. If you believe we have, please contact us at support@huismusapp.com and we'll delete it."
+      },
+      "security": {
+        "title": "Security",
+        "body": "We take appropriate technical and organizational measures to protect your data, including encrypted data transmission (HTTPS/TLS), encrypted storage of passwords, and restricted access to personal data within our team. No method of data transmission or storage can be guaranteed 100% secure, however."
+      },
+      "changes": {
+        "title": "Changes to this policy",
+        "body": "We may update this policy, for example when the app gains new features. For significant changes, we'll let you know via the app. The date at the top of this page shows when it was last updated."
+      },
+      "contact": {
+        "title": "Contact",
+        "body": "Questions about this policy or your data? Email support@huismusapp.com.\n\nFastvibes"
+      }
+    }
+  },
+  "termsOfUsePage": {
+    "title": "Terms of Use",
+    "lastUpdated": "Last updated: 18 July 2026",
+    "controller": "",
+    "intro": "These terms of use govern your use of the Huismus app and website (together, \"the Service\"), provided by Fastvibes (\"we\", \"Huismus\"). By using the Service, you agree to these terms. If you don't agree, please don't use the Service.",
+    "sections": {
+      "whatIsHuismus": {
+        "title": "What Huismus is",
+        "body": "Huismus is an app for searching and exploring homes for sale in the Netherlands in a map-driven way, with neighborhood insights based on public statistics (such as residents, income, and energy usage). Huismus displays listing data; Huismus is not a real estate agent, is not a party to any purchase or rental transaction, and does not provide advice about buying a home."
+      },
+      "eligibility": {
+        "title": "Who can use the Service",
+        "body": "You must be at least 16 years old to create an account. When you create an account, you must provide accurate, current information and are responsible for keeping your login credentials confidential. If you notice unauthorized use of your account, report it immediately to support@huismusapp.com."
+      },
+      "accountSecurity": {
+        "title": "Account and security",
+        "body": "You can sign in with Google or with an email address and password. You're responsible for all activity under your account. You can delete your account at any time via Settings; doing so also deletes the associated data, as described in our Privacy Policy."
+      },
+      "acceptableUse": {
+        "title": "Acceptable use",
+        "body": "You may use the Service for personal, non-commercial use: searching for and comparing homes. You may not:\n• automatically scrape, crawl, or bulk-extract the Service or the data shown in it;\n• use the Service to build a competing service;\n• circumvent security measures, reverse-engineer the source code, or modify the app;\n• provide false account information or impersonate someone else;\n• use the Service for unlawful purposes or in a way that disrupts its operation.\nViolating these terms may lead to suspension or termination of your account."
+      },
+      "listingDataDisclaimer": {
+        "title": "Listing data: no guarantee of accuracy",
+        "body": "The listing data in Huismus comes from public and/or third-party real estate sources. We don't guarantee that this data is accurate, complete, or current. A home's price, availability, and features may change after being shown in the app. Always verify important details with the offering party, agent, or an official source before making a decision. The same applies to neighborhood statistics: these are public, aggregated figures (including from Statistics Netherlands, CBS) that give a general indication, not a guarantee for any specific home or situation."
+      },
+      "availability": {
+        "title": "Availability of the Service",
+        "body": "We try to keep the Service available as much as possible, but we don't guarantee uninterrupted access. We may temporarily suspend the Service for maintenance, or change, add, or discontinue features."
+      },
+      "subscriptions": {
+        "title": "Subscriptions",
+        "body": "Huismus is currently free to use. Should we introduce paid features in the future, we'll inform you and additional terms will apply before you agree to pay."
+      },
+      "intellectualProperty": {
+        "title": "Intellectual property",
+        "body": "All rights to the Huismus name, brand, app, and the underlying software and design belong to Fastvibes or our licensors. You're granted a personal, non-transferable license to use the app for its intended purpose. You may not copy, modify, decompile, or commercially (re)use the app or parts of it without our written permission."
+      },
+      "liability": {
+        "title": "Liability",
+        "body": "The Service is provided \"as is\", without warranties. To the extent permitted by law, we're not liable for indirect damages, consequential damages, lost profits, or damages arising from decisions you make based on data in the app (including listing data and neighborhood statistics). Nothing in these terms limits liability for intent, gross negligence, or matters that cannot be excluded under Dutch law."
+      },
+      "termination": {
+        "title": "Termination",
+        "body": "You can stop using the Service at any time by deleting your account. We may restrict or terminate your access if you violate these terms, or if we discontinue the Service — in the latter case, we'll inform you in advance wherever reasonably possible."
+      },
+      "changes": {
+        "title": "Changes to these terms",
+        "body": "We may update these terms. For significant changes, we'll inform you via the app, with reasonable notice before the change takes effect. If you keep using the Service after that period, we'll treat that as acceptance of the new terms."
+      },
+      "governingLaw": {
+        "title": "Governing law and disputes",
+        "body": "These terms are governed by Dutch law. We'd prefer to resolve any dispute together first — contact us at support@huismusapp.com. If we can't resolve it, the Dutch courts have jurisdiction, unless mandatory consumer law says otherwise. As a consumer, you can also use the EU Online Dispute Resolution platform: ec.europa.eu/consumers/odr."
+      },
+      "otherProvisions": {
+        "title": "Other provisions",
+        "body": "If any provision of these terms is found invalid, the remaining provisions stay in effect. Together with our Privacy Policy, these terms form the entire agreement between you and us regarding use of the Service."
+      },
+      "contact": {
+        "title": "Contact",
+        "body": "Fastvibes\nEmail: support@huismusapp.com"
+      }
     }
   }
 }
