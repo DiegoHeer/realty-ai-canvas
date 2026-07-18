@@ -109,6 +109,21 @@ function ReplayIcon({ size, color }: IconProps) {
   );
 }
 
+function FileTextIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path
+        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+        stroke={color}
+        {...STROKE}
+      />
+      <Path d="M14 2v6h6" stroke={color} {...STROKE} />
+      <Path d="M16 13H8" stroke={color} {...STROKE} />
+      <Path d="M16 17H8" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
+
 function MessageIcon({ size, color }: IconProps) {
   return (
     <StrokeSvg size={size}>
@@ -293,6 +308,16 @@ function SupportCard() {
         icon={LockIcon}
         label={t('profile.privacy')}
         onPress={() => router.push('/settings/privacy')}
+      />
+      <MenuRow
+        icon={FileTextIcon}
+        label={t('privacyPolicyPage.title')}
+        onPress={() => router.push('/settings/legal/privacy-policy')}
+      />
+      <MenuRow
+        icon={FileTextIcon}
+        label={t('termsOfUsePage.title')}
+        onPress={() => router.push('/settings/legal/terms-of-use')}
       />
       <MenuRow
         icon={HelpIcon}
