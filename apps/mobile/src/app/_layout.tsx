@@ -52,7 +52,11 @@ export default function RootLayout() {
   // itself before forwarding to the listing, and both routing decisions read
   // the same onboarding state in the same commit, so whichever fired last
   // would otherwise win the race and could bounce a shared link into the tour.
-  const segments = useSegments();
+  // Widened to string[] — expo-router's typed useSegments() return type comes
+  // from the generated (gitignored) router.d.ts, which CI never regenerates,
+  // collapsing to an overly-narrow tuple there and breaking the length/index
+  // checks below.
+  const segments: string[] = useSegments();
   const isSharedListingLink = segments.length === 4 && segments[1] === 'listing';
   const { status: onboardingStatus, hydrated: onboardingHydrated } = useOnboarding();
   const rootNavState = useRootNavigationState();
