@@ -11,7 +11,7 @@ import { FilterPills } from '@/components/filter-pills';
 import { ListingCard } from '@/components/listing-card';
 import { ListingMap, type ListingMapRef } from '@/components/listing-map';
 import { LocationSearch, type LocationSearchRef } from '@/components/location-search';
-import { BUILDINGS_3D_PITCH } from '@/components/map-shared';
+import { BUILDINGS_3D_PITCH, DEFAULT_CENTER } from '@/components/map-shared';
 import { useEffectiveColorScheme } from '@/components/map-style';
 import { OverlayLegend } from '@/components/overlay-legend';
 import { Brand } from '@/constants/theme';
@@ -25,14 +25,19 @@ import { clearMapFocus, useMapFocus } from '@/lib/map-focus';
 import { overlayById, type OverlayId } from '@/lib/map-overlays';
 import { useMapSettings } from '@/lib/map-settings';
 import { normalizeStats } from '@/lib/neighborhood-stats';
-import { type GeocodeResult, zoomForType } from '@/lib/pdok';
+import { zoomForType } from '@/lib/pdok';
 import { recordRecentView, useRecentViews } from '@/lib/recent-views';
+import type { Origin, SearchResult } from '@/lib/search';
 
 // Zoom level at or above which the map auto-loads the neighborhoods under its
 // centre. The initial framing sits at zoom 11 (no city selected yet); zooming
 // past this — roughly a single municipality filling the screen, matching the
 // `woonplaats` search zoom in `zoomForType` — loads that city's overlays.
 const AUTO_LOAD_AREAS_ZOOM = 12;
+
+// The map search bar draws suggestions from all three sources (homes + buurten +
+// places); the explore tab keeps the default places-only bar.
+const SEARCH_SOURCES = ['homes', 'buurten', 'places'] as const;
 
 export default function MapScreen() {
   const { filters } = useFilters();
@@ -76,13 +81,24 @@ export default function MapScreen() {
     return soldActive ? { ...base, status: 'sold' as const } : base;
   }, [filters, soldActive]);
   const { data: listings = [], isLoading } = useListings(query);
+  // A home picked from the search bar. Injected into `shownListings` (deduped) so
+  // its marker + card appear even when it's outside the current query/snapshot set.
+  const [searchedListing, setSearchedListing] = useState<Listing | null>(null);
   const shownListings = useMemo(() => {
-    if (!snapshotsActive) return listings;
-    const merged = new Map<string, Listing>();
-    if (favoritesActive) for (const listing of likes) merged.set(listing.id, listing);
-    if (recentActive) for (const listing of recentViews) merged.set(listing.id, listing);
-    return [...merged.values()];
-  }, [snapshotsActive, favoritesActive, recentActive, listings, likes, recentViews]);
+    let base: Listing[];
+    if (snapshotsActive) {
+      const merged = new Map<string, Listing>();
+      if (favoritesActive) for (const listing of likes) merged.set(listing.id, listing);
+      if (recentActive) for (const listing of recentViews) merged.set(listing.id, listing);
+      base = [...merged.values()];
+    } else {
+      base = listings;
+    }
+    if (searchedListing && !base.some((l) => l.id === searchedListing.id)) {
+      return [searchedListing, ...base];
+    }
+    return base;
+  }, [snapshotsActive, favoritesActive, recentActive, listings, likes, recentViews, searchedListing]);
   // The active map overlay (noise, air quality, …) — one at a time: tapping an
   // overlay pill swaps to it, tapping the active one turns it off.
   const [overlayId, setOverlayId] = useState<OverlayId | null>(null);
@@ -98,6 +114,10 @@ export default function MapScreen() {
   // Viewport zoom as of the last camera settle — drives the legend's "zoom in"
   // hint for overlays that only render at building-level zooms.
   const [mapZoom, setMapZoom] = useState(11);
+  // Viewport centre as of the last camera settle — the origin the search bar
+  // ranks its suggestions against (nearest first). Seeded with the national
+  // default and replaced with the real centre once the map reports one.
+  const [mapCenter, setMapCenter] = useState<Origin>(DEFAULT_CENTER);
   // No city is selected until the user taps one. Until then the map shows no
   // neighborhoods; tapping a city loads + shows that city's neighborhoods.
   const [selectedCity, setSelectedCity] = useState<
@@ -229,13 +249,17 @@ export default function MapScreen() {
   // Find which city a coordinate lands in and switch to it (loading its
   // neighborhoods). A hit on the already-selected city is a no-op (its own
   // overlays handle taps); cities don't overlap, so at most one matches.
+  // `deselectListing` (on by default) also clears any selected marker — right
+  // for an explicit tap, where picking a city/area and viewing a listing card
+  // are mutually exclusive, but wrong for the passive camera-idle auto-load
+  // below, which must not clobber a marker the user just flew to on purpose.
   const selectCityAt = useCallback(
-    (coord: { longitude: number; latitude: number }) => {
+    (coord: { longitude: number; latitude: number }, opts: { deselectListing?: boolean } = {}) => {
       const hit = findCityAt([coord.longitude, coord.latitude], cityIndex);
       if (!hit || hit.code === selectedCity?.code) return;
       setSelectedCity({ code: hit.code, name: hit.name, geometry: hit.geometry });
       setSelectedAreaId(null);
-      setSelectedId(null);
+      if (opts.deselectListing ?? true) setSelectedId(null);
     },
     [cityIndex, selectedCity],
   );
@@ -247,26 +271,66 @@ export default function MapScreen() {
   // centre — but only when zoomed in far enough that the user is clearly
   // looking at a single city, as if they'd tapped the middle of the map. Below
   // that zoom we leave it to an explicit tap, so panning the country at a
-  // glance doesn't keep swapping cities underfoot.
+  // glance doesn't keep swapping cities underfoot. This can fire right after
+  // flying to a searched residence (its zoom crosses the threshold), so it
+  // must leave the just-selected marker alone.
   const handleCameraIdle = useCallback(
     ({ longitude, latitude, zoom }: { longitude: number; latitude: number; zoom: number }) => {
       setMapZoom(zoom);
+      setMapCenter({ longitude, latitude });
       if (zoom < AUTO_LOAD_AREAS_ZOOM) return;
-      selectCityAt({ longitude, latitude });
+      selectCityAt({ longitude, latitude }, { deselectListing: false });
     },
     [selectCityAt],
   );
 
-  // Picking a search result flies the camera there and loads the surrounding
-  // city's neighborhoods. The hit-test handles every result type — including a
-  // municipality (gemeente), which flies to a zoom below the auto-load
-  // threshold and so wouldn't otherwise trigger the camera-idle load.
+  // Picking a search result acts per kind:
+  // - place: fly + hit-test the surrounding city (loads its neighborhoods). The
+  //   hit-test handles a municipality (gemeente) too, which flies below the
+  //   auto-load threshold and so wouldn't otherwise trigger the camera-idle load.
+  // - buurt: select its municipality (loading overlays) and target the buurt
+  //   polygon so the AreaSheet opens once areas arrive; a wijk (null buurtcode)
+  //   has no polygon, so it just flies + loads the city.
+  // - residence: inject the home so its marker + card show even when it's outside
+  //   the current query page, then select and fly to it.
   const handleSearchResult = useCallback(
-    (r: GeocodeResult) => {
-      mapRef.current?.flyTo({ longitude: r.longitude, latitude: r.latitude, zoom: zoomForType(r.type) });
-      selectCityAt({ longitude: r.longitude, latitude: r.latitude });
+    (r: SearchResult) => {
+      // A place/buurt pick isn't a home, so drop any home injected by a prior
+      // search — otherwise its marker lingers on the map with no way to clear it.
+      if (r.kind === 'place') {
+        setSearchedListing(null);
+        const { longitude, latitude, type } = r.result;
+        mapRef.current?.flyTo({ longitude, latitude, zoom: zoomForType(type) });
+        selectCityAt({ longitude, latitude });
+        return;
+      }
+      if (r.kind === 'buurt') {
+        setSearchedListing(null);
+        setSelectedId(null);
+        const city = cities.find((c) => c.code === r.gemeentecode);
+        if (city) {
+          // Select the municipality so its neighborhoods load; the AreaSheet
+          // then opens against the matching polygon once they arrive.
+          setSelectedCity({ code: city.code, name: city.name, geometry: city.geometry });
+          setSelectedAreaId(r.buurtcode);
+        } else {
+          // City shapes aren't loaded (or the CBS code is unknown), so no
+          // overlays will arrive to open the sheet against — fly there without a
+          // dangling area selection, same as a wijk (null buurtcode).
+          setSelectedAreaId(null);
+        }
+        mapRef.current?.flyTo({ longitude: r.longitude, latitude: r.latitude, zoom: zoomForType('buurt') });
+        return;
+      }
+      // residence
+      setSearchedListing(r.listing);
+      setSelectedAreaId(null);
+      setSelectedId(r.listing.id);
+      recordRecentView(r.listing);
+      const { longitude, latitude } = r.listing.location;
+      mapRef.current?.flyTo({ longitude, latitude, zoom: 16 });
     },
-    [selectCityAt],
+    [selectCityAt, cities],
   );
 
   return (
@@ -302,6 +366,8 @@ export default function MapScreen() {
         pointerEvents="box-none">
         <LocationSearch
           ref={searchRef}
+          sources={SEARCH_SOURCES}
+          origin={mapCenter}
           onActiveChange={setSearchActive}
           placeholder={cityName}
           activeFilterCount={countActiveFilters(filters)}

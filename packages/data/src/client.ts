@@ -21,6 +21,9 @@ import {
 /** Max residences the API returns per request (the `limit` ceiling). */
 const RESIDENCE_PAGE_SIZE = 100;
 
+/** Max residence suggestions the search typeahead requests per keystroke. */
+const RESIDENCE_SEARCH_LIMIT = 8;
+
 /**
  * Auth hook for `request()`. The app (which owns token storage) registers a
  * config at boot via `configureAuthInterceptor`; the data package stays free of
@@ -146,6 +149,24 @@ export async function getListingsCount(query: ListingQuery = {}): Promise<number
   params.set('limit', '0');
   const res = await request<ResidenceSummaryOut[] | ResidencePage>(`/v1/residences?${params}`);
   return Array.isArray(res) ? res.length : res.total;
+}
+
+/**
+ * Fuzzy address search over residences via `GET /v1/residences/search`, mapped to
+ * {@link Listing}. Powers the map search bar's "Homes" suggestions: unlike
+ * {@link getListings} (structured filters over one capped page), this hits the
+ * backend's pg_trgm typeahead, so it finds a home anywhere in the country by
+ * street / city / postcode — the client never holds enough listings to do that
+ * itself. Returns `[]` for a blank query or when no backend is configured; every
+ * hit is geocoded, so it can be placed on the map. Pass an `AbortSignal` to cancel
+ * a superseded keystroke.
+ */
+export async function searchResidences(query: string, signal?: AbortSignal): Promise<Listing[]> {
+  const q = query.trim();
+  if (!q || !API_URL) return [];
+  const params = new URLSearchParams({ q, limit: String(RESIDENCE_SEARCH_LIMIT) });
+  const res = await request<ResidenceSummaryOut[]>(`/v1/residences/search?${params}`, { signal });
+  return res.filter(hasCoordinates).map(summaryToListing);
 }
 
 // --- Geographic shapes (cities & neighborhoods) -----------------------------
