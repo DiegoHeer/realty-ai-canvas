@@ -393,3 +393,77 @@ export async function submitFeedback(input: FeedbackIn): Promise<FeedbackAck> {
     body: JSON.stringify(input),
   });
 }
+
+// --- Account deletion --------------------------------------------------------
+
+/** Stable reasons {@link deleteAccount} can fail, mapped from the backend's 403 `detail`. */
+export type DeleteAccountErrorCode =
+  | 'password_incorrect'
+  | 'reauthentication_required'
+  | 'staff_account'
+  | 'generic';
+
+/** A handled account-deletion failure carrying a stable {@link DeleteAccountErrorCode}. */
+export class DeleteAccountError extends Error {
+  code: DeleteAccountErrorCode;
+  constructor(code: DeleteAccountErrorCode) {
+    super(`Account deletion failed: ${code}`);
+    this.name = 'DeleteAccountError';
+    this.code = code;
+  }
+}
+
+const DELETE_ACCOUNT_CODES = [
+  'password_incorrect',
+  'reauthentication_required',
+  'staff_account',
+] as const;
+
+/**
+ * Permanently delete the signed-in user's OWN account (`DELETE /v1/me/account`).
+ *
+ * The account is derived server-side from the Bearer token — it is never sent by
+ * the client, so this can only ever delete the caller's own account. `password`
+ * re-authenticates password accounts; social (Google) accounts prove identity by
+ * re-authenticating (a fresh provider-token login) immediately before this call
+ * and omit it. A recognized rejection (wrong password, missing re-auth, staff
+ * account) throws a {@link DeleteAccountError} with a stable `code`; anything else
+ * throws a generic one.
+ *
+ * Unlike {@link request}, this is hand-rolled because the endpoint replies `204`
+ * (no JSON body to parse) and encodes failures as `403` with a `detail` code we
+ * need to surface. A real `401` here means an expired access token (re-auth
+ * failures are `403`), so we refresh once and retry, mirroring `request()`.
+ */
+export async function deleteAccount(input: { password?: string } = {}): Promise<void> {
+  const send = (token: string | null) => {
+    const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    return fetch(`${API_BASE}/v1/me/account`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', ...authHeader },
+      body: JSON.stringify({ password: input.password }),
+    });
+  };
+
+  let res = await send(authInterceptor?.getAccessToken() ?? null);
+  if (res.status === 401 && authInterceptor) {
+    const newToken = await refreshOnce();
+    if (!newToken) throw new DeleteAccountError('generic');
+    res = await send(newToken);
+  }
+
+  if (res.status === 204) return;
+
+  if (res.status === 403) {
+    let detail: string | undefined;
+    try {
+      detail = ((await res.json()) as { detail?: string }).detail;
+    } catch {
+      // Non-JSON body — fall through to a generic failure.
+    }
+    const code = DELETE_ACCOUNT_CODES.find((c) => c === detail) ?? 'generic';
+    throw new DeleteAccountError(code);
+  }
+
+  throw new DeleteAccountError('generic');
+}

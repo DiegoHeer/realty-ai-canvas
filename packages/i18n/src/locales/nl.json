@@ -33,7 +33,8 @@
     "privacy": "Privacy en beveiliging",
     "help": "Help en ondersteuning",
     "about": "Over",
-    "map": "Kaart"
+    "map": "Kaart",
+    "deleteAccount": "Account verwijderen"
   },
   "privacyPage": {
     "zeroDataTitle": "Een zero-data bedrijf",
@@ -87,6 +88,22 @@
     "title": "Kaart",
     "buildings3D": "3D-gebouwen",
     "buildings3DDescription": "Toon gebouwen in 3D op de kaart."
+  },
+  "deleteAccountPage": {
+    "title": "Weet je zeker dat je je account wilt verwijderen?",
+    "warning": "Deze actie is permanent en kan niet ongedaan worden gemaakt. Al je gegevens, waaronder opgeslagen woningen en voorkeuren, worden definitief gewist.",
+    "confirm": "Account definitief verwijderen",
+    "deleting": "Verwijderen…",
+    "passwordLabel": "Bevestig je wachtwoord om door te gaan",
+    "passwordPlaceholder": "Voer je wachtwoord in",
+    "googleNote": "Je bevestigt je identiteit met Google voordat je account wordt verwijderd.",
+    "googleReauthLink": "Ingelogd met Google? Bevestig met Google",
+    "errorPasswordRequired": "Voer je wachtwoord in.",
+    "errorPasswordIncorrect": "Onjuist wachtwoord. Probeer het opnieuw.",
+    "errorReauthRequired": "We konden je identiteit niet verifiëren. Probeer het opnieuw.",
+    "errorStaff": "Dit account kan niet via de app worden verwijderd. Neem contact op met support.",
+    "errorGeneric": "Er is iets misgegaan. Probeer het opnieuw.",
+    "cancelledGoogle": "Identiteitsbevestiging is geannuleerd."
   },
   "feedback": {
     "title": "Feedback",

@@ -90,7 +90,11 @@ describe('LoginScreen', () => {
     // The pop is deferred to the next frame (see LoginScreen), so back is async.
     await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
     // Name is derived from the email local-part by the mock store.
-    expect(await storedSession()).toEqual({ name: 'Jane Doe', email: 'jane.doe@example.com' });
+    expect(await storedSession()).toEqual({
+      name: 'Jane Doe',
+      email: 'jane.doe@example.com',
+      provider: 'password',
+    });
   });
 
   it('signs in via the OAuth provider button and lands on the success view', async () => {
@@ -249,7 +253,11 @@ describe('LoginScreen (real mode, Google configured)', () => {
       clientId: '1-n.apps.googleusercontent.com',
       idToken: 'IDT',
     });
-    expect(await storedSession()).toEqual({ name: 'Ada Lovelace', email: 'ada@gmail.com' });
+    expect(await storedSession()).toEqual({
+      name: 'Ada Lovelace',
+      email: 'ada@gmail.com',
+      provider: 'google',
+    });
 
     await tap(getByTestId('auth-continue'));
     await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));

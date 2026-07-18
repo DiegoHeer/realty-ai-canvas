@@ -123,6 +123,10 @@ export default function RootLayout() {
                 options={{ headerShown: true, title: t('feedback.title') }}
               />
               <Stack.Screen
+                name="settings/delete-account"
+                options={{ headerShown: true, title: t('profile.deleteAccount') }}
+              />
+              <Stack.Screen
                 name="auth/login"
                 options={{ headerShown: true, title: t('auth.logInTitle') }}
               />
