@@ -103,7 +103,10 @@
     "errorReauthRequired": "We couldn't verify your identity. Please try again.",
     "errorStaff": "This account can't be deleted from the app. Please contact support.",
     "errorGeneric": "Something went wrong. Please try again.",
-    "cancelledGoogle": "Identity confirmation was cancelled."
+    "cancelledGoogle": "Identity confirmation was cancelled.",
+    "successTitle": "Account successfully deleted",
+    "successSubtitle": "Feel free to continue using the app without an account.",
+    "successCta": "Continue to the map"
   },
   "feedback": {
     "title": "Feedback",

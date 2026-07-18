@@ -109,9 +109,10 @@ export default function DeleteAccountScreen() {
     setErrorKey(key);
   }
 
-  // Account gone + session torn down → leave the settings stack; profile now guests.
+  // Account gone + session torn down → show the success screen. `replace` (not
+  // push) so the back stack no longer holds this now-inert screen.
   function onDeleted() {
-    if (mounted.current) router.back();
+    if (mounted.current) router.replace('/settings/account-deleted');
   }
 
   async function runPasswordDelete() {

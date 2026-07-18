@@ -72,7 +72,7 @@ describe('DeleteAccountScreen', () => {
     });
 
     expect(mockDeleteAccount).toHaveBeenCalledWith('s3cret-pass');
-    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/settings/account-deleted'));
   });
 
   it('surfaces an incorrect-password error and stays on the screen', async () => {
@@ -87,7 +87,7 @@ describe('DeleteAccountScreen', () => {
     });
 
     expect(await findByText('Incorrect password. Please try again.')).toBeTruthy();
-    expect(router.back).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
   it('re-authenticates with Google before deleting a Google account (no password field)', async () => {
@@ -103,7 +103,7 @@ describe('DeleteAccountScreen', () => {
 
     expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1);
     expect(mockDeleteAccount).toHaveBeenCalledWith(); // no password argument
-    await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/settings/account-deleted'));
   });
 
   it('does not delete when the Google re-authentication is cancelled', async () => {
@@ -118,6 +118,6 @@ describe('DeleteAccountScreen', () => {
     expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1);
     expect(mockDeleteAccount).not.toHaveBeenCalled();
     expect(await findByText('Identity confirmation was cancelled.')).toBeTruthy();
-    expect(router.back).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
   });
 });

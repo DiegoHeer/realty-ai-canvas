@@ -127,6 +127,12 @@ export default function RootLayout() {
                 options={{ headerShown: true, title: t('profile.deleteAccount') }}
               />
               <Stack.Screen
+                name="settings/account-deleted"
+                // Terminal success screen: no header/back and no swipe-back — the
+                // deletion screen it replaced is inert (the session is gone).
+                options={{ headerShown: false, gestureEnabled: false }}
+              />
+              <Stack.Screen
                 name="auth/login"
                 options={{ headerShown: true, title: t('auth.logInTitle') }}
               />

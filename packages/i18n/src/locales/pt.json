@@ -103,7 +103,10 @@
     "errorReauthRequired": "Não foi possível verificar a sua identidade. Tente novamente.",
     "errorStaff": "Esta conta não pode ser eliminada pela aplicação. Contacte o apoio.",
     "errorGeneric": "Ocorreu um erro. Tente novamente.",
-    "cancelledGoogle": "A confirmação de identidade foi cancelada."
+    "cancelledGoogle": "A confirmação de identidade foi cancelada.",
+    "successTitle": "Conta eliminada com sucesso",
+    "successSubtitle": "Fique à vontade para continuar a usar a aplicação sem conta.",
+    "successCta": "Continuar para o mapa"
   },
   "feedback": {
     "title": "Feedback",

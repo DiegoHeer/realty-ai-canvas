@@ -103,7 +103,10 @@
     "errorReauthRequired": "We konden je identiteit niet verifiëren. Probeer het opnieuw.",
     "errorStaff": "Dit account kan niet via de app worden verwijderd. Neem contact op met support.",
     "errorGeneric": "Er is iets misgegaan. Probeer het opnieuw.",
-    "cancelledGoogle": "Identiteitsbevestiging is geannuleerd."
+    "cancelledGoogle": "Identiteitsbevestiging is geannuleerd.",
+    "successTitle": "Account succesvol verwijderd",
+    "successSubtitle": "Je kunt de app gerust zonder account blijven gebruiken.",
+    "successCta": "Verder naar de kaart"
   },
   "feedback": {
     "title": "Feedback",
