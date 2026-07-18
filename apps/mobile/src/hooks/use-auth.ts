@@ -5,6 +5,8 @@ import {
   AuthError,
   coalescedRefresh,
   configureAuthInterceptor,
+  deleteAccount as authDeleteAccount,
+  DeleteAccountError,
   getSession as authGetSession,
   login as authLogin,
   logout as authLogout,
@@ -17,6 +19,7 @@ import {
   verifyEmail as authVerifyEmail,
   type AllauthFieldError,
   type AuthUserDto,
+  type DeleteAccountErrorCode,
 } from '@realty/data';
 import { requestGoogleIdToken } from '@/lib/google-auth';
 import {
@@ -40,11 +43,21 @@ import { loadJSON, removeKey, saveJSON, StorageKeys } from '@/lib/storage';
  * Screens depend only on `useAuth()` (the hook) and the `AuthUser` type. The
  * `getCurrentUser()` helper is exported for unit tests only.
  */
+/**
+ * How the current session was established. Drives the delete-account screen's
+ * re-authentication step (password prompt vs. Google re-login). `undefined` on
+ * sessions restored from a pre-this-feature cache — the screen treats that as
+ * "unknown" and offers both paths.
+ */
+export type AuthProvider = 'password' | 'google';
+
 export interface AuthUser {
   name: string;
   email: string;
   /** Optional avatar URL; falls back to initials when absent. */
   avatarUrl?: string;
+  /** Which sign-in method established this session; see {@link AuthProvider}. */
+  provider?: AuthProvider;
 }
 
 /**
@@ -66,6 +79,13 @@ export type AuthOutcome =
   | { ok: false; code: AuthErrorCode; fieldErrors?: AllauthFieldError[] }
   | { ok: 'verifyPending' };
 
+/**
+ * Result of {@link UseAuthReturn.deleteAccount}. On success the local session is
+ * already torn down (same as sign-out); on failure `code` is a stable reason the
+ * UI can localize (e.g. a wrong password).
+ */
+export type DeleteAccountOutcome = { ok: true } | { ok: false; code: DeleteAccountErrorCode };
+
 interface UseAuthReturn {
   user: AuthUser | null;
   isAuthenticated: boolean;
@@ -77,6 +97,8 @@ interface UseAuthReturn {
   signOut: () => Promise<void>;
   signIn: () => void;
   signInWithGoogle: () => Promise<AuthOutcome>;
+  /** Permanently delete the signed-in account; `password` re-auths password accounts. */
+  deleteAccount: (password?: string) => Promise<DeleteAccountOutcome>;
 }
 
 // ---------------------------------------------------------------------------
@@ -119,18 +141,20 @@ function toAuthUser(dto: AuthUserDto): AuthUser {
   return { name: dto.name, email: dto.email };
 }
 
-/** Apply a signed-in session: user + tokens, persisted to disk + keychain. */
+/** Apply a signed-in session: user (tagged with the sign-in method) + tokens,
+ * persisted to disk + keychain. */
 async function applySession(
   user: AuthUser,
   tokens: { accessToken: string; refreshToken: string },
+  provider: AuthProvider,
 ) {
-  currentUser = user;
+  currentUser = { ...user, provider };
   accessToken = tokens.accessToken;
   refreshToken = tokens.refreshToken;
   pendingSessionToken = null;
   await saveTokens(tokens);
   await clearPendingSession();
-  await saveJSON(StorageKeys.session, user);
+  await saveJSON(StorageKeys.session, currentUser);
   emit();
 }
 
@@ -166,7 +190,7 @@ function failure(error: unknown): AuthOutcome {
 async function realSignIn(email: string, password: string): Promise<AuthOutcome> {
   try {
     const session = await authLogin({ email: email.trim(), password });
-    await applySession(toAuthUser(session.user), session.tokens);
+    await applySession(toAuthUser(session.user), session.tokens, 'password');
     return { ok: true };
   } catch (error) {
     return failure(error);
@@ -185,7 +209,7 @@ async function realRegister(p: {
       password: p.password,
     });
     if (result.kind === 'authenticated') {
-      await applySession(toAuthUser(result.session.user), result.session.tokens);
+      await applySession(toAuthUser(result.session.user), result.session.tokens, 'password');
       return { ok: true };
     }
     pendingSessionToken = result.sessionToken;
@@ -208,7 +232,7 @@ async function realVerify(code: string): Promise<AuthOutcome> {
       code: code.trim(),
       sessionToken,
     });
-    await applySession(toAuthUser(session.user), session.tokens);
+    await applySession(toAuthUser(session.user), session.tokens, 'password');
     return { ok: true };
   } catch (error) {
     return failure(error);
@@ -254,7 +278,7 @@ async function realResetPassword(code: string, password: string): Promise<AuthOu
     // credentials to land the user in the app — the auto-login UX. This also
     // confirms the reset actually took effect.
     const session = await authLogin({ email, password });
-    await applySession(toAuthUser(session.user), session.tokens);
+    await applySession(toAuthUser(session.user), session.tokens, 'password');
     pendingResetToken = null;
     pendingResetEmail = null;
     await clearPendingReset();
@@ -280,7 +304,7 @@ async function realSignInWithGoogle(): Promise<AuthOutcome> {
       clientId: result.clientId,
       idToken: result.idToken,
     });
-    await applySession(toAuthUser(session.user), session.tokens);
+    await applySession(toAuthUser(session.user), session.tokens, 'google');
     return { ok: true };
   } catch (error) {
     return failure(error);
@@ -323,6 +347,19 @@ async function realSignOut(): Promise<void> {
   }
 }
 
+async function realDeleteAccount(password?: string): Promise<DeleteAccountOutcome> {
+  try {
+    await authDeleteAccount(password ? { password } : {});
+  } catch (error) {
+    return { ok: false, code: error instanceof DeleteAccountError ? error.code : 'generic' };
+  }
+  // The account is gone server-side; tear the local session down exactly like
+  // sign-out (clears tokens, cached session and the query cache). The best-effort
+  // authLogout it fires is harmless — that session no longer exists.
+  await realSignOut();
+  return { ok: true };
+}
+
 let hydrated = false;
 
 async function realHydrate() {
@@ -339,7 +376,8 @@ async function realHydrate() {
   }
   try {
     const dto = await authGetSession(tokens.accessToken);
-    currentUser = toAuthUser(dto);
+    // Preserve the sign-in method across the session refresh (the DTO doesn't carry it).
+    currentUser = { ...toAuthUser(dto), provider: cached?.provider };
     await saveJSON(StorageKeys.session, currentUser);
     emit();
   } catch {
@@ -353,7 +391,8 @@ async function realHydrate() {
     if (newAccess) {
       try {
         const dto = await authGetSession(newAccess);
-        currentUser = toAuthUser(dto);
+        // Preserve the sign-in method across the session refresh (the DTO doesn't carry it).
+        currentUser = { ...toAuthUser(dto), provider: cached?.provider };
         await saveJSON(StorageKeys.session, currentUser);
         emit();
       } catch {
@@ -390,12 +429,12 @@ function nameFromEmail(email: string): string {
 /** Email sign-in (mock): establishes a session derived from the address. */
 function mockSignInWithEmail(email: string) {
   const trimmed = email.trim();
-  mockSetSession({ name: nameFromEmail(trimmed), email: trimmed });
+  mockSetSession({ name: nameFromEmail(trimmed), email: trimmed, provider: 'password' });
 }
 
 /** Email registration (mock): establishes a session for the new account. */
 function mockRegisterWithEmail(params: { name: string; email: string }) {
-  mockSetSession({ name: params.name.trim(), email: params.email.trim() });
+  mockSetSession({ name: params.name.trim(), email: params.email.trim(), provider: 'password' });
 }
 
 // The email captured during a mock password-reset request, so the reset step can
@@ -410,7 +449,7 @@ function mockRequestPasswordReset(email: string) {
 /** Password reset step 2 (mock): auto-sign-in the account whose reset was requested. */
 function mockResetPassword() {
   const email = mockResetEmail ?? 'user@example.com';
-  mockSetSession({ name: nameFromEmail(email), email });
+  mockSetSession({ name: nameFromEmail(email), email, provider: 'password' });
   mockResetEmail = null;
 }
 
@@ -420,12 +459,13 @@ function mockResetPassword() {
  * backend we synthesize a Google-style account so the flow is demoable.
  */
 function mockSignInWithGoogle() {
-  mockSetSession({ name: 'Google User', email: 'user@gmail.com' });
+  mockSetSession({ name: 'Google User', email: 'user@gmail.com', provider: 'google' });
 }
 
 const MOCK_USER: AuthUser = {
   name: 'Jeroen Esseveld',
   email: 'jeroen_esseveld@hotmail.com',
+  provider: 'password',
 };
 
 /** Mock sign-in into a fixed demo account (used by tests and demos). */
@@ -504,6 +544,13 @@ export function signInWithGoogle(): Promise<AuthOutcome> {
   return Promise.resolve({ ok: true });
 }
 
+export function deleteAccount(password?: string): Promise<DeleteAccountOutcome> {
+  if (AUTH_ENABLED) return realDeleteAccount(password);
+  // Mock mode: simulate a successful deletion by clearing the local session.
+  mockSignOut();
+  return Promise.resolve({ ok: true });
+}
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -521,6 +568,7 @@ export function useAuth(): UseAuthReturn {
     signOut,
     signIn,
     signInWithGoogle,
+    deleteAccount,
   };
 }
 
