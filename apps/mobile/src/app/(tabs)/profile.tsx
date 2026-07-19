@@ -121,9 +121,26 @@ function MessageIcon({ size, color }: IconProps) {
   );
 }
 
+function TrashIcon({ size, color }: IconProps) {
+  return (
+    <StrokeSvg size={size}>
+      <Path d="M3 6h18" stroke={color} {...STROKE} />
+      <Path
+        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+        stroke={color}
+        {...STROKE}
+      />
+      <Path d="M10 11v6" stroke={color} {...STROKE} />
+      <Path d="M14 11v6" stroke={color} {...STROKE} />
+    </StrokeSvg>
+  );
+}
+
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const { user, isAuthenticated, signOut } = useAuth();
+  const router = useRouter();
+  const scheme = useColorScheme();
 
   // Signing out is destructive (it drops back to the guest state), so confirm
   // instead of acting on the first tap. react-native-web's Alert.alert is a
@@ -170,6 +187,18 @@ export default function ProfileScreen() {
             className="items-center rounded-2xl bg-white py-3 shadow-sm active:opacity-70 dark:bg-neutral-900">
             <Text className="text-base font-semibold text-red-600 dark:text-red-400">
               {t('profile.signOut')}
+            </Text>
+          </Pressable>
+        )}
+
+        {isAuthenticated && (
+          <Pressable
+            onPress={() => router.push('/settings/delete-account')}
+            accessibilityRole="button"
+            className="flex-row items-center justify-center gap-2 rounded-2xl bg-white py-3 shadow-sm active:opacity-70 dark:bg-neutral-900">
+            <TrashIcon size={18} color={scheme === 'dark' ? '#f87171' : '#dc2626'} />
+            <Text className="text-base font-semibold text-red-600 dark:text-red-400">
+              {t('profile.deleteAccount')}
             </Text>
           </Pressable>
         )}

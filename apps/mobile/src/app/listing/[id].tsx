@@ -2,7 +2,6 @@ import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { formatPrice, relativeTimeSince, useListing } from '@realty/data';
 import { useTranslation } from '@realty/i18n';
 import { Image } from 'expo-image';
-import { createURL } from 'expo-linking';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { openBrowserAsync } from 'expo-web-browser';
 import { useEffect } from 'react';
@@ -17,6 +16,7 @@ import {
 } from 'react-native';
 
 import { trackOutboundLink, withUtmParams } from '@/lib/analytics';
+import { listingWebUrl } from '@/lib/listing-share-url';
 import { toggleLike, useIsLiked } from '@/lib/likes';
 import { recordRecentView } from '@/lib/recent-views';
 import { Brand } from '@/constants/theme';
@@ -62,10 +62,13 @@ export default function ListingDetailScreen() {
   const isDark = scheme === 'dark';
   const headerTint = isDark ? '#f5f5f5' : '#404040';
 
-  // Native share sheet with a deep link back to this listing. `url` is honoured
-  // by iOS; Android only reads `message`, so the link is included in both.
+  // Native share sheet with the public web link for this listing. `url` is
+  // honoured by iOS; Android only reads `message`, so the link is included in
+  // both. Opening it hands off to this same screen via Universal/App Links
+  // when the app is installed (see app/[locale]/listing/[slug]/[id].tsx),
+  // or an SEO landing page on huismusapp.com when it isn't.
   const onShare = async () => {
-    const url = createURL(`/listing/${listing.id}`);
+    const url = listingWebUrl(listing, i18n.language);
     try {
       await Share.share({ title: listing.title, message: `${listing.title}\n${url}`, url });
     } catch {

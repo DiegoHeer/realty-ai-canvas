@@ -12,7 +12,8 @@
     ],
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.fastvibes.huismus"
+      "bundleIdentifier": "com.fastvibes.huismus",
+      "associatedDomains": ["applinks:huismusapp.com"]
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +23,15 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.fastvibes.huismus"
+      "package": "com.fastvibes.huismus",
+      "intentFilters": [
+        {
+          "autoVerify": true,
+          "action": "VIEW",
+          "data": { "scheme": "https", "host": "huismusapp.com" },
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",

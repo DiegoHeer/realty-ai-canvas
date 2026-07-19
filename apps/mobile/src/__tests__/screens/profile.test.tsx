@@ -68,6 +68,22 @@ describe('ProfileScreen', () => {
     }
   });
 
+  it('shows Delete account when signed in and opens the delete-account screen', async () => {
+    const { getByText } = await renderScreen('en');
+    await act(async () => {
+      fireEvent.press(getByText('Delete account'));
+    });
+    expect(router.push).toHaveBeenCalledWith('/settings/delete-account');
+  });
+
+  it('hides Delete account when signed out', async () => {
+    await act(async () => {
+      await signOut();
+    });
+    const { queryByText } = await renderScreen('en');
+    expect(queryByText('Delete account')).toBeNull();
+  });
+
   it('confirms with a native dialog before signing out, and signs out only after confirming', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const { getByText, queryByText } = await renderScreen('en');

@@ -78,7 +78,11 @@ describe('RegisterScreen', () => {
     await tap(getByTestId('auth-submit'));
 
     await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
-    expect(await storedSession()).toEqual({ name: 'Alice Smith', email: 'alice@example.com' });
+    expect(await storedSession()).toEqual({
+      name: 'Alice Smith',
+      email: 'alice@example.com',
+      provider: 'password',
+    });
   });
 
   it('registers via the OAuth provider button and lands on the success view', async () => {

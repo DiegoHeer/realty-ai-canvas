@@ -16,6 +16,7 @@ function makeResidence(overrides: Partial<ResidenceOut> = {}): ResidenceOut & { 
     house_letter: null,
     house_number_suffix: null,
     postcode: '2551 TW',
+    slug: 'kardoenhof-53',
     latitude: 52.0705,
     longitude: 4.2689,
     neighbourhood: 'Morgenstond',
@@ -49,6 +50,7 @@ function makeSummary(
     house_letter: 'D',
     house_number_suffix: null,
     postcode: '2611AZ',
+    slug: 'westvest-36d',
     latitude: 52.0079,
     longitude: 4.3575,
     current_price_eur: 675000,
@@ -81,6 +83,12 @@ describe('summaryToListing', () => {
       country: 'NL',
     });
     expect(listing.location).toEqual({ latitude: 52.0079, longitude: 4.3575 });
+    expect(listing.slug).toBe('westvest-36d');
+  });
+
+  it('leaves slug undefined when the API reports null', () => {
+    const listing = summaryToListing(makeSummary({ slug: null }));
+    expect(listing.slug).toBeUndefined();
   });
 
   it('wraps image_url in a single-image array', () => {
@@ -135,6 +143,12 @@ describe('residenceToListing', () => {
     expect(listing.location).toEqual({ latitude: 52.0705, longitude: 4.2689 });
     expect(listing.createdAt).toBe('2026-05-01T10:00:00Z');
     expect(listing.sourceUrl).toBe('https://funda.nl/koop/den-haag/huis-1/');
+    expect(listing.slug).toBe('kardoenhof-53');
+  });
+
+  it('leaves slug undefined when the API reports null', () => {
+    const listing = residenceToListing(makeResidence({ slug: null }));
+    expect(listing.slug).toBeUndefined();
   });
 
   it('concatenates house_letter and suffix into the address', () => {

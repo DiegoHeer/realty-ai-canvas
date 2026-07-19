@@ -33,7 +33,8 @@
     "privacy": "Privacy en beveiliging",
     "help": "Help en ondersteuning",
     "about": "Over",
-    "map": "Kaart"
+    "map": "Kaart",
+    "deleteAccount": "Account verwijderen"
   },
   "privacyPage": {
     "zeroDataTitle": "Een zero-data bedrijf",
@@ -87,6 +88,25 @@
     "title": "Kaart",
     "buildings3D": "3D-gebouwen",
     "buildings3DDescription": "Toon gebouwen in 3D op de kaart."
+  },
+  "deleteAccountPage": {
+    "title": "Weet je zeker dat je je account wilt verwijderen?",
+    "warning": "Deze actie is permanent en kan niet ongedaan worden gemaakt. Al je gegevens, waaronder opgeslagen woningen en voorkeuren, worden definitief gewist.",
+    "confirm": "Account definitief verwijderen",
+    "deleting": "Verwijderen…",
+    "passwordLabel": "Bevestig je wachtwoord om door te gaan",
+    "passwordPlaceholder": "Voer je wachtwoord in",
+    "googleNote": "Je bevestigt je identiteit met Google voordat je account wordt verwijderd.",
+    "googleReauthLink": "Ingelogd met Google? Bevestig met Google",
+    "errorPasswordRequired": "Voer je wachtwoord in.",
+    "errorPasswordIncorrect": "Onjuist wachtwoord. Probeer het opnieuw.",
+    "errorReauthRequired": "We konden je identiteit niet verifiëren. Probeer het opnieuw.",
+    "errorStaff": "Dit account kan niet via de app worden verwijderd. Neem contact op met support.",
+    "errorGeneric": "Er is iets misgegaan. Probeer het opnieuw.",
+    "cancelledGoogle": "Identiteitsbevestiging is geannuleerd.",
+    "successTitle": "Account succesvol verwijderd",
+    "successSubtitle": "Je kunt de app gerust zonder account blijven gebruiken.",
+    "successCta": "Verder naar de kaart"
   },
   "feedback": {
     "title": "Feedback",
@@ -356,6 +376,8 @@
     "getStarted": "Aan de slag",
     "stepOf": "Stap {{current}} van {{total}}",
     "replay": "Introductie opnieuw bekijken",
+    "privacyLink": "Privacy",
+    "termsLink": "Voorwaarden",
     "welcome": {
       "title": "Welkom bij Huismus",
       "subtitle": "Vind je volgende woning op een kaart, opgebouwd rond de buurten die er voor jou toe doen."
@@ -392,6 +414,146 @@
       "logIn": "Inloggen",
       "signedInAs": "Ingelogd als {{name}}",
       "getStartedWithoutAccount": "Aan de slag zonder account"
+    }
+  },
+  "privacyPolicyPage": {
+    "title": "Privacyverklaring",
+    "lastUpdated": "Laatst bijgewerkt: 18 juli 2026",
+    "controller": "Verwerkingsverantwoordelijke: Fastvibes, e-mail support@huismusapp.com.",
+    "intro": "Huismus (“wij”, “we”, “ons”) is een app en website waarmee je koopwoningen in Nederland kunt ontdekken op een kaart, met buurtinzichten op basis van openbare statistieken. Deze verklaring legt uit welke gegevens we verwerken, waarom, en welke rechten je hebt. Ze is geschreven om te kloppen met wat de app daadwerkelijk doet — niet met wat gebruikelijk is bij vergelijkbare apps.",
+    "sections": {
+      "shortVersion": {
+        "title": "De korte versie",
+        "body": "• We bouwen geen profiel van je op en verkopen of verhuren je gegevens nooit aan derden.\n• Zonder account blijven je zoekopdrachten, favorieten, recent bekeken woningen en filters op je toestel. Als je inlogt, synchroniseren we ze met je account, zodat ze op al je apparaten hetzelfde zijn.\n• We meten alleen anonieme, cookieloze app-statistieken om te zien welke functies gebruikt worden. Je kunt dit uitzetten in Instellingen.\n• Als je een account aanmaakt, bewaren we je e-mailadres en naam om dat account te laten werken."
+      },
+      "accountData": {
+        "title": "Accountgegevens",
+        "body": "Als je inlogt met Google of een account aanmaakt met e-mailadres, ontvangen en bewaren we je e-mailadres en (indien beschikbaar via Google) je naam. Dit is nodig om je account te laten functioneren en om je bij een volgend bezoek te herkennen. Bij inloggen met e-mailadres wordt je wachtwoord versleuteld opgeslagen; wij kunnen het niet in leesbare vorm inzien.\n\nAls je bent ingelogd, bevat je account ook de gegevens die je vanaf je toestel synchroniseert — je favorieten, recent bekeken woningen en zoek- en meldingsvoorkeuren — zodat ze op al je apparaten beschikbaar zijn (zie sectie 2.2). We gebruiken deze alleen om de functies te bieden die je gebruikt, niet om een profiel van je op te bouwen.\n\nJe sessie wordt beveiligd met een tijdelijk toegangstoken (JWT). Op telefoons en tablets staat dit token in de beveiligde sleutelhanger van het besturingssysteem; in de webversie staat het in de lokale opslag van je browser, omdat een browser geen sleutelhanger heeft."
+      },
+      "deviceOnlyData": {
+        "title": "Gegevens op je toestel, en cloudsynchronisatie als je inlogt",
+        "body": "Zolang je de app zonder account gebruikt, blijven de volgende gegevens alleen op je toestel — we versturen ze niet naar onze servers:\n• Favoriete woningen\n• Recent bekeken woningen\n• Zoekfilters en voorkeuren (bijvoorbeeld prijsklasse, aantal kamers, geselecteerde gemeenten)\n• Recente zoekopdrachten\n• Taal- en weergave-instellingen (licht/donker)\n• Of je de introductie-tour al hebt gezien\nZodra je inlogt met een account, synchroniseren we je favorieten, recent bekeken woningen en zoekfilters en voorkeuren met de cloud (onze servers), gekoppeld aan je account. Zo blijven je voorkeuren op al je apparaten hetzelfde en reizen ze met je mee van het ene toestel naar het andere. Instellingen die per toestel blijven — de app-taal, weergave (licht/donker), recente zoekopdrachten en of je de introductie hebt gezien — worden niet gesynchroniseerd."
+      },
+      "analytics": {
+        "title": "Anonieme gebruiksstatistieken",
+        "body": "We meten geanonimiseerd en cookieloos hoe de app gebruikt wordt (bijvoorbeeld welke schermen bezocht worden), via een door onszelf beheerde analytics-dienst (Plausible). Deze metingen bevatten geen naam, e-mailadres, IP-adres-opslag of ander persoonlijk identificeerbaar gegeven, en worden niet gebruikt om je individueel te volgen of te profileren. Je kunt dit volledig uitzetten via Instellingen → Privacy en beveiliging."
+      },
+      "feedbackData": {
+        "title": "Feedback die je ons stuurt",
+        "body": "Als je het feedbackformulier gebruikt, ontvangen we het bericht dat je typt, en (om technische problemen te kunnen reproduceren) je app-versie, platform (iOS/Android/web) en app-taal. We gebruiken dit alleen om je feedback te behandelen."
+      },
+      "listingData": {
+        "title": "Woninggegevens die je in de app ziet",
+        "body": "De woningaanbiedingen die je in Huismus ziet zijn afkomstig van openbare en/of externe vastgoedbronnen. Dit zijn geen gegevens over jou — het gaat om informatie over woningen en (indien vermeld) de aanbiedende partij. We garanderen niet dat deze gegevens actueel, volledig of juist zijn; zie ook onze Gebruiksvoorwaarden."
+      },
+      "neighborhoodStats": {
+        "title": "Buurtstatistieken",
+        "body": "De buurtinzichten in de app (bijvoorbeeld over bewoners, inkomen of energieverbruik) zijn gebaseerd op openbare, geaggregeerde statistieken van het CBS (Centraal Bureau voor de Statistiek) en vergelijkbare openbare bronnen. Dit zijn statistische gegevens op buurt- of wijkniveau, geen persoonsgegevens van individuele bewoners."
+      },
+      "purposes": {
+        "title": "Waarom we deze gegevens verwerken",
+        "body": "• Accountgegevens — Je account laten werken, je herkennen bij inloggen — Uitvoering van de overeenkomst\n• Sessietoken — Je ingelogd houden, je account beveiligen — Uitvoering van de overeenkomst\n• Anonieme gebruiksstatistieken — De app verbeteren op basis van wat echt gebruikt wordt — Gerechtvaardigd belang\n• Feedbackbericht — Je vraag of melding kunnen behandelen — Gerechtvaardigd belang / uitvoering van de overeenkomst\n• Woninggegevens, buurtstatistieken — De kernfunctie van de app: woningen tonen en vergelijken — Uitvoering van de overeenkomst"
+      },
+      "cookies": {
+        "title": "Cookies en vergelijkbare technieken",
+        "body": "De Huismus-app gebruikt geen trackingcookies. Onze gebruiksstatistieken zijn cookieloos. De webversie gebruikt uitsluitend technisch noodzakelijke lokale opslag (bijvoorbeeld om je ingelogd te houden) — geen advertentie- of trackingcookies van derden."
+      },
+      "sharing": {
+        "title": "Met wie we gegevens delen",
+        "body": "• Hostingpartij: onze servers en database draaien bij een hostingprovider die uitsluitend als verwerker optreedt en gegevens niet voor eigen doeleinden gebruikt.\n• Google: als je inlogt met Google, verwerkt Google de aanmeldgegevens die nodig zijn om jouw identiteit te bevestigen, volgens Googles eigen privacybeleid.\n• Apple: als je inlogt met Apple, verwerkt Apple de aanmeldgegevens die nodig zijn om jouw identiteit te bevestigen, volgens Apples eigen privacybeleid.\n• Onze anonieme statistieken worden verwerkt op infrastructuur die wijzelf beheren — niet gedeeld met een externe advertentie- of trackingpartij.\nWe werken niet met advertentienetwerken, data-brokers of trackingpixels van derden."
+      },
+      "transfers": {
+        "title": "Doorgifte buiten de EER",
+        "body": "Waar mogelijk verwerken en bewaren we gegevens binnen de Europese Economische Ruimte (EER). Mocht een verwerker gegevens buiten de EER verwerken, dan zorgen we voor passende waarborgen zoals EU-standaardcontractbepalingen."
+      },
+      "retention": {
+        "title": "Bewaartermijnen",
+        "body": "• Accountgegevens — Zolang je account bestaat; verwijderd na accountverwijdering\n• Favorieten, recent bekeken woningen en gesynchroniseerde voorkeuren — Zolang je account bestaat (recent bekeken woningen tot 90 dagen); verwijderd wanneer je je account verwijdert\n• Sessietoken — Tot je uitlogt of het token verloopt\n• Anonieme gebruiksstatistieken — Geaggregeerd, niet herleidbaar tot een individu — geen bewaartermijn van toepassing\n• Feedbackbericht — Zolang nodig om je melding te behandelen, daarna verwijderd\n• Lokale gegevens op je toestel — Tot je de app verwijdert of de gegevens zelf wist"
+      },
+      "rights": {
+        "title": "Jouw rechten",
+        "body": "Onder de Algemene Verordening Gegevensbescherming (AVG) heb je het recht om:\n• inzage te vragen in de gegevens die we van je verwerken;\n• onjuiste gegevens te laten corrigeren;\n• je gegevens te laten verwijderen (“recht op vergetelheid”);\n• de verwerking te laten beperken;\n• je gegevens in een gestructureerd formaat te ontvangen (dataportabiliteit);\n• bezwaar te maken tegen verwerking op basis van gerechtvaardigd belang;\n• eerder gegeven toestemming in te trekken.\nJe kunt je account en de bijbehorende gegevens zelf verwijderen via Instellingen, of een verzoek sturen naar support@huismusapp.com. We reageren binnen een maand. Ben je het niet eens met hoe we je verzoek afhandelen, dan kun je een klacht indienen bij de Autoriteit Persoonsgegevens (autoriteitpersoonsgegevens.nl)."
+      },
+      "children": {
+        "title": "Kinderen",
+        "body": "Huismus is niet gericht op kinderen jonger dan 16 jaar. We verzamelen niet bewust gegevens van kinderen onder deze leeftijd. Vermoed je dat we dit toch doen? Neem contact op via support@huismusapp.com, dan verwijderen we deze gegevens."
+      },
+      "security": {
+        "title": "Beveiliging",
+        "body": "We nemen passende technische en organisatorische maatregelen om je gegevens te beschermen, waaronder versleuteld dataverkeer (HTTPS/TLS), versleutelde opslag van wachtwoorden, en beperkte toegang tot persoonsgegevens binnen ons team. Geen enkele methode van gegevensoverdracht of -opslag is echter voor 100% veilig te garanderen."
+      },
+      "changes": {
+        "title": "Wijzigingen in deze verklaring",
+        "body": "We kunnen deze verklaring aanpassen, bijvoorbeeld als de app nieuwe functies krijgt. Bij belangrijke wijzigingen laten we dit weten via de app. De datum bovenaan deze pagina geeft aan wanneer de verklaring voor het laatst is bijgewerkt."
+      },
+      "contact": {
+        "title": "Contact",
+        "body": "Vragen over deze verklaring of over je gegevens? Mail naar support@huismusapp.com.\n\nFastvibes"
+      }
+    }
+  },
+  "termsOfUsePage": {
+    "title": "Gebruiksvoorwaarden",
+    "lastUpdated": "Laatst bijgewerkt: 18 juli 2026",
+    "controller": "",
+    "intro": "Deze gebruiksvoorwaarden gelden voor het gebruik van de Huismus-app en -website (samen: “de Dienst”), aangeboden door Fastvibes (“wij”, “Huismus”). Door de Dienst te gebruiken ga je akkoord met deze voorwaarden. Ga je hier niet mee akkoord, gebruik de Dienst dan niet.",
+    "sections": {
+      "whatIsHuismus": {
+        "title": "Wat Huismus is",
+        "body": "Huismus is een app waarmee je koopwoningen in Nederland kunt zoeken en verkennen op een kaartgerichte manier, met buurtinzichten op basis van openbare statistieken (zoals bewoners, inkomen en energieverbruik). Huismus toont woninggegevens; Huismus is geen makelaar, geen partij bij enige koop- of huurtransactie, en geeft geen advies over de aankoop van een woning."
+      },
+      "eligibility": {
+        "title": "Wie de Dienst mag gebruiken",
+        "body": "Je moet ten minste 16 jaar oud zijn om een account aan te maken. Als je een account aanmaakt, moet je juiste en actuele gegevens opgeven en ben je zelf verantwoordelijk voor het geheimhouden van je inloggegevens. Merk je onbevoegd gebruik van je account op, meld dit dan direct via support@huismusapp.com."
+      },
+      "accountSecurity": {
+        "title": "Account en beveiliging",
+        "body": "Je kunt inloggen met Google of met een e-mailadres en wachtwoord. Je bent verantwoordelijk voor alle activiteit onder je account. Je kunt je account op elk moment verwijderen via Instellingen; daarmee verwijderen we ook de bijbehorende gegevens, zoals beschreven in onze Privacyverklaring."
+      },
+      "acceptableUse": {
+        "title": "Toegestaan gebruik",
+        "body": "Je mag de Dienst gebruiken voor persoonlijk, niet-commercieel gebruik: het zoeken naar en vergelijken van woningen. Het is niet toegestaan om:\n• de Dienst of de daarin getoonde gegevens geautomatiseerd te doorzoeken, te scrapen of in bulk te extraheren;\n• de Dienst te gebruiken om een concurrerende dienst op te bouwen;\n• beveiligingsmaatregelen te omzeilen, de broncode te reverse-engineeren, of de app aan te passen;\n• valse accountgegevens op te geven of je voor te doen als iemand anders;\n• de Dienst te gebruiken voor onwettige doeleinden of op een manier die de werking ervan verstoort.\nOvertreding kan leiden tot opschorting of beëindiging van je account."
+      },
+      "listingDataDisclaimer": {
+        "title": "Woninggegevens: geen garantie op juistheid",
+        "body": "De woninggegevens in Huismus zijn afkomstig uit openbare en/of externe vastgoedbronnen. We garanderen niet dat deze gegevens juist, volledig of actueel zijn. Prijzen, beschikbaarheid en kenmerken van een woning kunnen wijzigen nadat ze getoond zijn in de app. Controleer belangrijke gegevens altijd bij de aanbiedende partij, makelaar of officiële bron voordat je een beslissing neemt. Hetzelfde geldt voor de buurtstatistieken: dit zijn openbare, geaggregeerde cijfers (o.a. van het CBS) die een algemene indicatie geven, geen garantie voor een specifieke woning of situatie."
+      },
+      "availability": {
+        "title": "Beschikbaarheid van de Dienst",
+        "body": "We proberen de Dienst zo goed mogelijk beschikbaar te houden, maar garanderen geen ononderbroken toegang. We kunnen de Dienst tijdelijk onderbreken voor onderhoud, of functies wijzigen, toevoegen of stopzetten."
+      },
+      "subscriptions": {
+        "title": "Abonnementen",
+        "body": "Huismus is op dit moment gratis te gebruiken. Mochten we in de toekomst betaalde functies introduceren, dan informeren we je daarover en gelden daarvoor aanvullende voorwaarden, voordat je met betalen instemt."
+      },
+      "intellectualProperty": {
+        "title": "Intellectueel eigendom",
+        "body": "Alle rechten op de Huismus-naam, het beeldmerk, de app, en de onderliggende software en vormgeving berusten bij Fastvibes of onze licentiegevers. Je krijgt een persoonlijke, niet-overdraagbare licentie om de app te gebruiken voor het beoogde doel. Het is niet toegestaan de app of onderdelen daarvan te kopiëren, aan te passen, te decompileren, of commercieel te (her)gebruiken zonder onze schriftelijke toestemming."
+      },
+      "liability": {
+        "title": "Aansprakelijkheid",
+        "body": "De Dienst wordt aangeboden “zoals hij is”, zonder garanties. Voor zover wettelijk toegestaan zijn we niet aansprakelijk voor indirecte schade, gevolgschade, gederfde winst, of schade die voortvloeit uit beslissingen die je neemt op basis van gegevens in de app (waaronder woninggegevens en buurtstatistieken). Niets in deze voorwaarden beperkt aansprakelijkheid voor opzet, grove schuld, of zaken die naar Nederlands recht niet uitgesloten mogen worden."
+      },
+      "termination": {
+        "title": "Beëindiging",
+        "body": "Je kunt het gebruik van de Dienst op elk moment stoppen door je account te verwijderen. Wij kunnen je toegang beperken of beëindigen bij overtreding van deze voorwaarden, of als we de Dienst stopzetten — in dat laatste geval informeren we je vooraf waar redelijkerwijs mogelijk."
+      },
+      "changes": {
+        "title": "Wijzigingen in deze voorwaarden",
+        "body": "We kunnen deze voorwaarden aanpassen. Bij ingrijpende wijzigingen informeren we je via de app, met een redelijke termijn voordat de wijziging ingaat. Blijf je de Dienst gebruiken na die termijn, dan gaan we ervan uit dat je akkoord bent met de nieuwe voorwaarden."
+      },
+      "governingLaw": {
+        "title": "Toepasselijk recht en geschillen",
+        "body": "Op deze voorwaarden is Nederlands recht van toepassing. Geschillen leggen we bij voorkeur eerst samen op tafel — neem contact op via support@huismusapp.com. Kom je er met ons niet uit, dan is de Nederlandse rechter bevoegd, tenzij dwingend consumentenrecht anders bepaalt. Als consument kun je ook gebruikmaken van het Europese ODR-platform: ec.europa.eu/consumers/odr."
+      },
+      "otherProvisions": {
+        "title": "Overig",
+        "body": "Als een bepaling uit deze voorwaarden ongeldig blijkt, blijven de overige bepalingen gewoon van kracht. Deze voorwaarden vormen samen met onze Privacyverklaring de volledige afspraak tussen jou en ons over het gebruik van de Dienst."
+      },
+      "contact": {
+        "title": "Contact",
+        "body": "Fastvibes\nE-mail: support@huismusapp.com"
+      }
     }
   }
 }

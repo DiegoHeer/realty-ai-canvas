@@ -33,7 +33,8 @@
     "privacy": "Privacidade e segurança",
     "help": "Ajuda e apoio",
     "about": "Sobre",
-    "map": "Mapa"
+    "map": "Mapa",
+    "deleteAccount": "Eliminar conta"
   },
   "privacyPage": {
     "zeroDataTitle": "Uma empresa sem dados",
@@ -87,6 +88,25 @@
     "title": "Mapa",
     "buildings3D": "Edifícios em 3D",
     "buildings3DDescription": "Mostrar edifícios em 3D no mapa."
+  },
+  "deleteAccountPage": {
+    "title": "Tem a certeza de que quer eliminar a sua conta?",
+    "warning": "Esta ação é permanente e não pode ser anulada. Todos os seus dados, incluindo imóveis guardados e preferências, serão eliminados definitivamente.",
+    "confirm": "Confirmar eliminação da conta",
+    "deleting": "A eliminar…",
+    "passwordLabel": "Confirme a sua palavra-passe para continuar",
+    "passwordPlaceholder": "Introduza a sua palavra-passe",
+    "googleNote": "Vai confirmar a sua identidade com o Google antes de a conta ser eliminada.",
+    "googleReauthLink": "Iniciou sessão com o Google? Confirme com o Google",
+    "errorPasswordRequired": "Introduza a sua palavra-passe.",
+    "errorPasswordIncorrect": "Palavra-passe incorreta. Tente novamente.",
+    "errorReauthRequired": "Não foi possível verificar a sua identidade. Tente novamente.",
+    "errorStaff": "Esta conta não pode ser eliminada pela aplicação. Contacte o apoio.",
+    "errorGeneric": "Ocorreu um erro. Tente novamente.",
+    "cancelledGoogle": "A confirmação de identidade foi cancelada.",
+    "successTitle": "Conta eliminada com sucesso",
+    "successSubtitle": "Fique à vontade para continuar a usar a aplicação sem conta.",
+    "successCta": "Continuar para o mapa"
   },
   "feedback": {
     "title": "Feedback",
@@ -356,6 +376,8 @@
     "getStarted": "Começar",
     "stepOf": "Passo {{current}} de {{total}}",
     "replay": "Rever introdução",
+    "privacyLink": "Privacidade",
+    "termsLink": "Termos",
     "welcome": {
       "title": "Bem-vindo ao Huismus",
       "subtitle": "Encontre a sua próxima casa num mapa construído em torno dos bairros que lhe interessam."
@@ -392,6 +414,146 @@
       "logIn": "Iniciar sessão",
       "signedInAs": "Sessão iniciada como {{name}}",
       "getStartedWithoutAccount": "Começar sem conta"
+    }
+  },
+  "privacyPolicyPage": {
+    "title": "Política de Privacidade",
+    "lastUpdated": "Última atualização: 18 de julho de 2026",
+    "controller": "Responsável pelo tratamento: Fastvibes, e-mail support@huismusapp.com.",
+    "intro": "O Huismus (“nós”) é uma aplicação e um website para descobrir imóveis à venda nos Países Baixos num mapa, com informações sobre os bairros com base em estatísticas públicas. Esta política explica que dados processamos, porquê, e que direitos tem. Foi escrita para corresponder ao que a aplicação realmente faz — não ao que é habitual em aplicações semelhantes.",
+    "sections": {
+      "shortVersion": {
+        "title": "A versão resumida",
+        "body": "• Não criamos um perfil sobre si, e nunca vendemos nem alugamos os seus dados a terceiros.\n• Sem uma conta, as suas pesquisas, favoritos, imóveis vistos recentemente e filtros permanecem no seu dispositivo. Quando inicia sessão, sincronizamo-los com a sua conta, para que sejam iguais em todos os seus dispositivos.\n• Apenas medimos a utilização anónima e sem cookies da aplicação, para perceber que funcionalidades são usadas. Pode desativar isto nas Definições.\n• Se criar uma conta, guardamos o seu e-mail e nome para que essa conta funcione."
+      },
+      "accountData": {
+        "title": "Dados da conta",
+        "body": "Se iniciar sessão com o Google ou criar uma conta com um e-mail, recebemos e guardamos o seu e-mail e (se disponível através do Google) o seu nome. Isto é necessário para que a sua conta funcione e para o reconhecermos na próxima visita. Ao iniciar sessão com e-mail, a sua palavra-passe é guardada de forma encriptada; não conseguimos lê-la em texto simples.\n\nQuando tem sessão iniciada, a sua conta também contém os dados que sincroniza a partir do seu dispositivo — os seus favoritos, imóveis vistos recentemente e preferências de pesquisa e de notificações — para que fiquem disponíveis em todos os seus dispositivos (ver secção 2.2). Usamo-los apenas para fornecer as funcionalidades que utiliza, não para criar um perfil sobre si.\n\nA sua sessão é protegida por um token de acesso temporário (JWT). Em telemóveis e tablets, este token é guardado no porta-chaves seguro do sistema operativo; na versão web, é guardado no armazenamento local do seu navegador, já que um navegador não tem porta-chaves."
+      },
+      "deviceOnlyData": {
+        "title": "Dados no seu dispositivo e sincronização na cloud ao iniciar sessão",
+        "body": "Enquanto usar a aplicação sem uma conta, os seguintes dados ficam apenas no seu dispositivo — não os enviamos para os nossos servidores:\n• Imóveis favoritos\n• Imóveis vistos recentemente\n• Filtros e preferências de pesquisa (por exemplo, faixa de preço, número de quartos, cidades selecionadas)\n• Pesquisas recentes\n• Definições de idioma e aparência (claro/escuro)\n• Se já viu o tour de introdução\nQuando inicia sessão com uma conta, sincronizamos os seus favoritos, imóveis vistos recentemente e filtros e preferências de pesquisa com a cloud (os nossos servidores), associados à sua conta. Assim, as suas preferências ficam iguais em todos os dispositivos e acompanham-no de um dispositivo para outro. As definições que permanecem específicas de cada dispositivo — o idioma da aplicação, a aparência (claro/escuro), as pesquisas recentes e se já viu a introdução — não são sincronizadas."
+      },
+      "analytics": {
+        "title": "Estatísticas de utilização anónimas",
+        "body": "Medimos, de forma anonimizada e sem cookies, a utilização da aplicação (por exemplo, que ecrãs são visitados), através de um serviço de análise que gerimos nós próprios (Plausible). Estas medições não contêm nome, e-mail, endereço IP guardado ou qualquer outro dado pessoal identificável, e nunca são usadas para o seguir ou traçar um perfil individual. Pode desativar isto por completo em Definições → Privacidade e segurança."
+      },
+      "feedbackData": {
+        "title": "Feedback que nos envia",
+        "body": "Se usar o formulário de feedback, recebemos a mensagem que escreve e (para podermos reproduzir problemas técnicos) a versão da aplicação, a plataforma (iOS/Android/web) e o idioma da aplicação. Usamos isto apenas para tratar do seu feedback."
+      },
+      "listingData": {
+        "title": "Dados de imóveis apresentados na aplicação",
+        "body": "Os anúncios de imóveis que vê no Huismus provêm de fontes imobiliárias públicas e/ou de terceiros. Estes não são dados sobre si — são informações sobre imóveis e (quando indicado) sobre quem os anuncia. Não garantimos que estes dados sejam atuais, completos ou exatos; consulte também os nossos Termos de Utilização."
+      },
+      "neighborhoodStats": {
+        "title": "Estatísticas de bairro",
+        "body": "As informações sobre bairros na aplicação (por exemplo, sobre residentes, rendimento ou consumo de energia) baseiam-se em estatísticas públicas e agregadas do CBS (o instituto de estatística dos Países Baixos) e fontes públicas semelhantes. São estatísticas ao nível do bairro ou distrito, não dados pessoais de residentes individuais."
+      },
+      "purposes": {
+        "title": "Porque processamos estes dados",
+        "body": "• Dados da conta — Fazer a sua conta funcionar, reconhecê-lo ao iniciar sessão — Execução de um contrato\n• Token de sessão — Manter a sessão iniciada, proteger a sua conta — Execução de um contrato\n• Estatísticas de utilização anónimas — Melhorar a aplicação com base no que é realmente usado — Interesse legítimo\n• Mensagem de feedback — Tratar da sua pergunta ou relato — Interesse legítimo / execução de um contrato\n• Dados de imóveis, estatísticas de bairro — A função principal da aplicação: mostrar e comparar imóveis — Execução de um contrato"
+      },
+      "cookies": {
+        "title": "Cookies e tecnologias semelhantes",
+        "body": "A aplicação Huismus não utiliza cookies de rastreio. As nossas estatísticas de utilização são sem cookies. A versão web utiliza apenas armazenamento local tecnicamente necessário (por exemplo, para manter a sessão iniciada) — sem cookies de publicidade ou de rastreio de terceiros."
+      },
+      "sharing": {
+        "title": "Com quem partilhamos dados",
+        "body": "• Fornecedor de alojamento: os nossos servidores e base de dados funcionam junto de um fornecedor de alojamento que atua exclusivamente como subcontratante e não utiliza os dados para fins próprios.\n• Google: se iniciar sessão com o Google, o Google processa os dados de início de sessão necessários para confirmar a sua identidade, de acordo com a política de privacidade própria do Google.\n• Apple: se iniciar sessão com a Apple, a Apple processa os dados de início de sessão necessários para confirmar a sua identidade, de acordo com a política de privacidade própria da Apple.\n• As nossas estatísticas anónimas são processadas em infraestrutura que gerimos nós próprios — não são partilhadas com terceiros de publicidade ou rastreio.\nNão trabalhamos com redes de publicidade, corretores de dados ou pixels de rastreio de terceiros."
+      },
+      "transfers": {
+        "title": "Transferências para fora do EEE",
+        "body": "Sempre que possível, processamos e guardamos os dados dentro do Espaço Económico Europeu (EEE). Caso um subcontratante processe dados fora do EEE, garantimos salvaguardas adequadas, como as Cláusulas Contratuais-Tipo da UE."
+      },
+      "retention": {
+        "title": "Prazos de conservação",
+        "body": "• Dados da conta — Enquanto a conta existir; eliminados após a eliminação da conta\n• Favoritos, imóveis vistos recentemente e preferências sincronizadas — Enquanto a conta existir (imóveis vistos recentemente até 90 dias); eliminados quando elimina a conta\n• Token de sessão — Até terminar sessão ou o token expirar\n• Estatísticas de utilização anónimas — Agregadas, não rastreáveis até um indivíduo — não se aplica prazo de conservação\n• Mensagem de feedback — Enquanto necessário para tratar o seu relato, depois eliminada\n• Dados guardados localmente no dispositivo — Até desinstalar a aplicação ou apagar os dados"
+      },
+      "rights": {
+        "title": "Os seus direitos",
+        "body": "Ao abrigo do Regulamento Geral sobre a Proteção de Dados (RGPD), tem o direito de:\n• solicitar acesso aos dados que processamos sobre si;\n• fazer corrigir dados incorretos;\n• fazer eliminar os seus dados (“direito ao esquecimento”);\n• fazer limitar o processamento;\n• receber os seus dados num formato estruturado (portabilidade de dados);\n• opor-se ao processamento baseado em interesse legítimo;\n• retirar qualquer consentimento dado anteriormente.\nPode eliminar a sua conta e os dados associados diretamente em Definições, ou enviar um pedido para support@huismusapp.com. Respondemos no prazo de um mês. Se não concordar com a forma como tratamos o seu pedido, pode apresentar uma queixa junto da Autoridade de Proteção de Dados neerlandesa (Autoriteit Persoonsgegevens, autoriteitpersoonsgegevens.nl) ou da autoridade de supervisão do seu país."
+      },
+      "children": {
+        "title": "Crianças",
+        "body": "O Huismus não se destina a crianças com menos de 16 anos. Não recolhemos intencionalmente dados de crianças com menos desta idade. Se acredita que o fizemos, contacte-nos em support@huismusapp.com e eliminaremos esses dados."
+      },
+      "security": {
+        "title": "Segurança",
+        "body": "Adotamos medidas técnicas e organizativas adequadas para proteger os seus dados, incluindo transmissão de dados encriptada (HTTPS/TLS), armazenamento encriptado de palavras-passe, e acesso restrito a dados pessoais dentro da nossa equipa. No entanto, nenhum método de transmissão ou armazenamento de dados pode ser garantido como 100% seguro."
+      },
+      "changes": {
+        "title": "Alterações a esta política",
+        "body": "Podemos atualizar esta política, por exemplo quando a aplicação ganha novas funcionalidades. Para alterações significativas, informá-lo-emos através da aplicação. A data no topo desta página indica quando foi atualizada pela última vez."
+      },
+      "contact": {
+        "title": "Contacto",
+        "body": "Tem perguntas sobre esta política ou sobre os seus dados? Envie um e-mail para support@huismusapp.com.\n\nFastvibes"
+      }
+    }
+  },
+  "termsOfUsePage": {
+    "title": "Termos de Utilização",
+    "lastUpdated": "Última atualização: 18 de julho de 2026",
+    "controller": "",
+    "intro": "Estes termos de utilização regem a utilização da aplicação e do website Huismus (em conjunto, “o Serviço”), fornecidos pela Fastvibes (“nós”, “Huismus”). Ao utilizar o Serviço, aceita estes termos. Se não concordar, não utilize o Serviço.",
+    "sections": {
+      "whatIsHuismus": {
+        "title": "O que é o Huismus",
+        "body": "O Huismus é uma aplicação para pesquisar e explorar imóveis à venda nos Países Baixos de forma centrada no mapa, com informações sobre bairros baseadas em estatísticas públicas (como residentes, rendimento e consumo de energia). O Huismus apresenta dados de imóveis; o Huismus não é uma agência imobiliária, não é parte em qualquer transação de compra ou arrendamento, e não presta aconselhamento sobre a compra de um imóvel."
+      },
+      "eligibility": {
+        "title": "Quem pode utilizar o Serviço",
+        "body": "Tem de ter pelo menos 16 anos para criar uma conta. Ao criar uma conta, deve fornecer informações exatas e atuais, e é responsável por manter as suas credenciais de acesso confidenciais. Se detetar uma utilização não autorizada da sua conta, comunique-o de imediato para support@huismusapp.com."
+      },
+      "accountSecurity": {
+        "title": "Conta e segurança",
+        "body": "Pode iniciar sessão com o Google ou com um e-mail e palavra-passe. É responsável por toda a atividade na sua conta. Pode eliminar a sua conta a qualquer momento em Definições; ao fazê-lo, os dados associados também são eliminados, conforme descrito na nossa Política de Privacidade."
+      },
+      "acceptableUse": {
+        "title": "Utilização permitida",
+        "body": "Pode utilizar o Serviço para fins pessoais e não comerciais: pesquisar e comparar imóveis. Não é permitido:\n• pesquisar, rastrear ou extrair automaticamente e em massa o Serviço ou os dados nele apresentados;\n• utilizar o Serviço para criar um serviço concorrente;\n• contornar medidas de segurança, fazer engenharia inversa do código-fonte, ou modificar a aplicação;\n• fornecer informações de conta falsas ou fazer-se passar por outra pessoa;\n• utilizar o Serviço para fins ilegais ou de forma que perturbe o seu funcionamento.\nA violação destes termos pode levar à suspensão ou ao encerramento da sua conta."
+      },
+      "listingDataDisclaimer": {
+        "title": "Dados de imóveis: sem garantia de exatidão",
+        "body": "Os dados de imóveis no Huismus provêm de fontes imobiliárias públicas e/ou de terceiros. Não garantimos que estes dados sejam exatos, completos ou atuais. O preço, a disponibilidade e as características de um imóvel podem mudar depois de serem apresentados na aplicação. Confirme sempre os detalhes importantes junto de quem anuncia o imóvel, do agente imobiliário ou de uma fonte oficial antes de tomar uma decisão. O mesmo se aplica às estatísticas de bairro: são valores públicos e agregados (incluindo do CBS) que dão uma indicação geral, não uma garantia para um imóvel ou situação específica."
+      },
+      "availability": {
+        "title": "Disponibilidade do Serviço",
+        "body": "Procuramos manter o Serviço disponível o máximo possível, mas não garantimos acesso ininterrupto. Podemos suspender temporariamente o Serviço para manutenção, ou alterar, adicionar ou descontinuar funcionalidades."
+      },
+      "subscriptions": {
+        "title": "Subscrições",
+        "body": "O Huismus é atualmente gratuito. Caso venhamos a introduzir funcionalidades pagas no futuro, informá-lo-emos e aplicar-se-ão termos adicionais antes de aceitar pagar."
+      },
+      "intellectualProperty": {
+        "title": "Propriedade intelectual",
+        "body": "Todos os direitos sobre o nome Huismus, a marca, a aplicação, e o software e design subjacentes pertencem à Fastvibes ou aos nossos licenciadores. É-lhe concedida uma licença pessoal e intransmissível para utilizar a aplicação para o seu fim previsto. Não pode copiar, modificar, descompilar, ou (re)utilizar comercialmente a aplicação ou partes dela sem a nossa autorização por escrito."
+      },
+      "liability": {
+        "title": "Responsabilidade",
+        "body": "O Serviço é fornecido “tal como está”, sem garantias. Na medida permitida por lei, não somos responsáveis por danos indiretos, danos consequenciais, lucros cessantes, ou danos resultantes de decisões que tome com base em dados da aplicação (incluindo dados de imóveis e estatísticas de bairro). Nada nestes termos limita a responsabilidade por dolo, negligência grave, ou matérias que não possam ser excluídas ao abrigo da lei neerlandesa."
+      },
+      "termination": {
+        "title": "Cessação",
+        "body": "Pode deixar de utilizar o Serviço a qualquer momento, eliminando a sua conta. Podemos restringir ou encerrar o seu acesso em caso de violação destes termos, ou se descontinuarmos o Serviço — neste último caso, informá-lo-emos antecipadamente sempre que razoavelmente possível."
+      },
+      "changes": {
+        "title": "Alterações a estes termos",
+        "body": "Podemos atualizar estes termos. Para alterações significativas, informá-lo-emos através da aplicação, com um prazo razoável antes de a alteração entrar em vigor. Se continuar a utilizar o Serviço após esse prazo, consideraremos isso como aceitação dos novos termos."
+      },
+      "governingLaw": {
+        "title": "Lei aplicável e litígios",
+        "body": "Estes termos regem-se pela lei neerlandesa. Preferimos resolver qualquer litígio em conjunto — contacte-nos em support@huismusapp.com. Se não for possível chegar a acordo, os tribunais neerlandeses têm competência, salvo disposição legal imperativa de proteção do consumidor em contrário. Como consumidor, também pode recorrer à plataforma europeia de resolução de litígios em linha: ec.europa.eu/consumers/odr."
+      },
+      "otherProvisions": {
+        "title": "Outras disposições",
+        "body": "Se alguma disposição destes termos for considerada inválida, as restantes disposições mantêm-se em vigor. Em conjunto com a nossa Política de Privacidade, estes termos constituem o acordo completo entre si e nós relativamente à utilização do Serviço."
+      },
+      "contact": {
+        "title": "Contacto",
+        "body": "Fastvibes\nE-mail: support@huismusapp.com"
+      }
     }
   }
 }

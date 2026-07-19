@@ -57,9 +57,9 @@ describe('useAuth (mock mode)', () => {
     });
 
     expect(result.current.isAuthenticated).toBe(true);
-    expect(result.current.user).toEqual({ name: 'John Doe', email: 'john.doe@example.com' });
+    expect(result.current.user).toEqual({ name: 'John Doe', email: 'john.doe@example.com', provider: 'password' });
     await waitFor(async () =>
-      expect(await storedSession()).toEqual({ name: 'John Doe', email: 'john.doe@example.com' }),
+      expect(await storedSession()).toEqual({ name: 'John Doe', email: 'john.doe@example.com', provider: 'password' }),
     );
   });
 
@@ -70,7 +70,11 @@ describe('useAuth (mock mode)', () => {
       await result.current.registerWithEmail({ name: '  Alice Smith ', email: 'alice@example.com' });
     });
 
-    expect(result.current.user).toEqual({ name: 'Alice Smith', email: 'alice@example.com' });
+    expect(result.current.user).toEqual({
+      name: 'Alice Smith',
+      email: 'alice@example.com',
+      provider: 'password',
+    });
   });
 
   it('establishes a Google session', async () => {
