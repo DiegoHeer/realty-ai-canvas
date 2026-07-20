@@ -2,7 +2,8 @@
   "expo": {
     "name": "Huismus",
     "slug": "huismus",
-    "version": "1.0.0",
+    "owner": "huismus",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": [
@@ -13,7 +14,9 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.fastvibes.huismus",
-      "associatedDomains": ["applinks:huismusapp.com"]
+      "associatedDomains": [
+        "applinks:huismusapp.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -28,8 +31,14 @@
         {
           "autoVerify": true,
           "action": "VIEW",
-          "data": { "scheme": "https", "host": "huismusapp.com" },
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": {
+            "scheme": "https",
+            "host": "huismusapp.com"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -59,7 +68,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "8070490a-3e59-44ec-879b-56cc0ea4f440"
+        "projectId": "d5a8e7ed-293c-4105-ba05-1ecc6cb0a5ec"
       }
     }
   }

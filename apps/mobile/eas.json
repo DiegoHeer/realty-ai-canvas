@@ -26,6 +26,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-staging.realty-ai.nl",
+        "APP_PR_NUMBER": "47",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "751654542404-kekqcv06s7tl68954qv0er5gmfr64850.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "751654542404-7eo1jn9ram6adtdecinc9bmfk7a791f5.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "751654542404-066oobvgungucgk2v8diuoedas0atha2.apps.googleusercontent.com",

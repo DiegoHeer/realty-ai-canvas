@@ -5,7 +5,14 @@
  * safe to reference on every platform (native + web).
  */
 
-/** Base URL of the listings API (the Realty Alerts backend). */
+/**
+ * Base URL of the listings API (the Realty Alerts backend).
+ *
+ * TODO(prod): the EAS `production` build profile currently points
+ * EXPO_PUBLIC_API_URL at STAGING (https://api-staging.realty-ai.nl), set in
+ * `apps/mobile/eas.json` → build.production.env. Switch it to the real
+ * production API before the public Play Store release.
+ */
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
 
 /**
